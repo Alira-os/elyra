@@ -12,6 +12,8 @@ Elyra is an AI-native website creation and migration engine that takes a fundame
 
 **Core Principle:** Memory is a first-class citizen. Every migration or site build produces lessons that make the next one better. Generic "give AI tools" doesn't have this. Elyra does.
 
+**Why Elyra Wins:** Unlike CrewAI/AutoGen (rigid pipelines), Replit Agent (no memory), or v0/Bolt.new (one-shot), Elyra compounds. Each migration makes the next smarter. The Conductor doesn't just execute — it learns routing patterns, detects anti-patterns, and evolves. After 5 real migrations, the routing should visibly outperform any generic AI codegen approach on the same site.
+
 **Target Users:** Anyone who needs to migrate legacy sites (Wix, Squarespace, WordPress) or build new sites, with the intelligence and quality of an expert web agency.
 
 ---
@@ -140,9 +142,14 @@ elyra/
 │   └── onboarding.py      # Onboarding persona
 │
 ├── infra/                   # Infrastructure
-│   ├── github/            # GitHub Actions templates (from templates repo)
+│   ├── github/            # GitHub Actions templates (pulled from merimeesoftware/templates)
 │   ├── docker/            # Docker configuration
 │   └── config.py         # Configuration management
+│
+├── tests/                  # Test suite (empty, to be populated)
+│
+├── examples/               # Example inputs and expected outputs
+│   └── test_sites/        # Real test site URLs + fidelity baselines
 │
 └── docs/                   # Documentation
     ├── NORTH_STAR.md       # This file
@@ -321,80 +328,41 @@ Should I modify the routing? If so, what personas should I add/remove/reorder?
 
 **Goal:** One successful end-to-end migration, human approval at start + end.
 
+**Scope:** Phase 0 supports static + light CMS sites only (Wix, Squarespace, WordPress blogs/portfolios). Sites with large product databases or heavy backend logic (Shopify, custom apps) are explicitly out of scope until Phase 1.5.
+
+**Success Criteria:**
+- Conductor runs end-to-end with minimal code changes
+- Output is visibly better than a raw OpenCode prompt on the same site
+- Fidelity score ≥ 55%
+- Human sees clean summary trace (not full step-by-step log)
+
+**Conductor Trace (MVP):** Clean, bullet-pointed summary. No verbose step-by-step logging. Example:
+```
+✓ Routing: Wix portfolio → [onboarding, scraper, codegen_lead, deploy]
+✓ Platform detected: Wix (confidence: 0.94)
+✓ Stack chosen: Next.js + Tailwind + Contentlayer
+✓ Security gate passed (npm audit, lighthouse ≥ 85)
+✓ Deployed to: https://staging--michael-portfolio.netlify.app
+→ Awaiting human approval
+```
+
 #### Deliverables
 
-**Core Infrastructure:**
-- [ ] New repo with clean directory structure
-- [ ] Git initialized, pushed to GitHub
-
-**Conductor:**
-- [ ] LangGraph state machine for Conductor
-- [ ] Basic routing with heuristic rules
-- [ ] LLM override on low confidence
-- [ ] Backward routing on failures
-
-**Registry:**
-- [ ] 8 core persona definitions (markdown)
-- [ ] Skill registry with 10 skills
-- [ ] Tool registry (MCP + executables)
-- [ ] Registry query interface
-
-**Memory:**
-- [ ] SQLite schema (migrations, debates, heuristics)
-- [ ] LanceDB vector store (stubbed)
-- [ ] Memory query interface
-
-**Tools Wired:**
-- [ ] Playwright MCP
-- [ ] Fetch MCP
-- [ ] GitHub MCP
-- [ ] Netlify MCP
-- [ ] Render MCP
-- [ ] npm_audit CLI
-
-**Personas Implemented:**
-- [ ] migration_orchestrator
-- [ ] onboarding_specialist
-- [ ] scraper_specialist
-- [ ] stack_intelligence
-- [ ] codegen_crew_lead
-- [ ] security_auditor
-- [ ] deploy_specialist
-
-**Skills Implemented:**
-- [ ] memory_query (stubbed, returns empty initially)
-- [ ] platform_detector
-- [ ] routing_heuristics
-- [ ] lighthouse
-- [ ] npm_audit
-- [ ] semgrep_scan (via GitHub Actions)
-- [ ] accessibility_auditor
-- [ ] seo_optimizer
-
-**Quality/Security (MVP-mandatory):**
-- [ ] SecurityQualityGate class
-- [ ] All security checks run before deploy
-- [ ] Fidelity scoring on verify
-
-**Onboarding:**
-- [ ] 5-10 adaptive questions
-- [ ] Structured context output
-- [ ] Platform detection from URL
-
-**CI/CD (from templates repo):**
-- [ ] GitHub Actions workflows wired
-- [ ] Semgrep, Trivy, Dependency Review
-- [ ] Lighthouse in CI
-
-**Human Gates:**
-- [ ] Start: Onboarding answers reviewed
-- [ ] End: Staging preview + approval
-
-**Test:**
-- [ ] One real Wix or Squarespace site migrated
-- [ ] Deployed to staging
-- [ ] Human approves → prod deploy
-- [ ] Fidelity ≥ 60%
+**Phase 0 Core (14 items):**
+- [ ] Conductor: LangGraph state machine + heuristic routing + LLM override + backward routing
+- [ ] 4 Personas: onboarding_specialist, scraper_specialist, codegen_crew_lead, deploy_specialist
+- [ ] Registry: persona definitions (markdown), skill registry (6 skills), tool registry
+- [ ] Memory: SQLite schema (migrations, debates, heuristics), memory_query interface (stubbed — returns "no prior lessons" initially)
+- [ ] 6 Skills: memory_query (stubbed), platform_detector, routing_heuristics, lighthouse, npm_audit, seo_optimizer
+- [ ] MCPs Wired: Playwright, Fetch, GitHub, Netlify
+- [ ] CLI Tools: lighthouse, npm_audit
+- [ ] SecurityQualityGate class (npm audit + lighthouse ≥ 85 required)
+- [ ] OpenCode invoke interface (tools/opencode.py)
+- [ ] Onboarding: adaptive questions (5 max), structured context output, platform detection
+- [ ] GitHub repo + GitHub Actions workflows (from templates repo)
+- [ ] Human gates: start (onboarding review) + end (staging preview approval)
+- [ ] One real site migrated end-to-end → staging deploy → human approves → prod
+- [ ] Fidelity score ≥ 55%
 
 ---
 
@@ -517,10 +485,38 @@ These are intentionally deferred to later phases:
 
 ## Open Questions
 
+- [x] What's the fidelity scoring algorithm? **Defined below (v0.1)**
 - [ ] How to handle Shopify sites with large product databases? (API access vs scraping)
 - [ ] Should we support more hosting platforms beyond Netlify/Render?
-- [ ] What's the fidelity scoring algorithm? (needs definition)
 - [ ] How to handle sites that require database migrations?
+
+---
+
+## Fidelity Scoring (v0.1)
+
+**Elyra Fidelity Score v0.1**
+
+| Component | Weight | Measurement |
+|-----------|--------|-------------|
+| Content Coverage | 40% | % of original text/images preserved or semantically matched |
+| Lighthouse Performance + Accessibility | 25% | Automated (performance ≥ 85, accessibility ≥ 90) |
+| Structural Correctness | 20% | Human spot-check: navigation, forms, CTAs work |
+| Visual/Brand Alignment | 15% | Human judgment: does it feel like the same brand? |
+
+**Total:** Weighted average. Human can override ±10 points.
+
+**Pass threshold:** ≥ 55% (Phase 0 target), ≥ 65% (Phase 1+)
+
+**Hard rule:** Fidelity < 70% after human review = automatic failure case → Debate Arena
+
+---
+
+## Anti-Fragility Safeguards (Phase 2+)
+
+- All auto-applied routing changes go through a canary period (tested on 2 synthetic sites first)
+- Human can roll back any change within 48 hours
+- Novelty detector prevents over-generalization from past patterns
+- Human veto for first 15 debate outputs
 
 ---
 
