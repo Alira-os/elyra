@@ -1,0 +1,34 @@
+{
+  "test_sites": [
+    {
+      "id": "wix-portfolio-001",
+      "url": "https://photographer-portfolio.wixsite.com",
+      "platform": "wix",
+      "task_type": "portfolio",
+      "expected_fidelity": 0.80,
+      "description": "Freelance photographer portfolio with gallery",
+      "pages": ["home", "about", "portfolio", "contact"],
+      "verified": false
+    },
+    {
+      "id": "squarespace-blog-001",
+      "url": "https://tech-blog.squarespace.com",
+      "platform": "squarespace",
+      "task_type": "blog",
+      "expected_fidelity": 0.75,
+      "description": "Technology blog with 20+ articles",
+      "pages": ["home", "blog", "about", "contact"],
+      "verified": false
+    },
+    {
+      "id": "wordpress-business-001",
+      "url": "https://consulting.wordpress.com",
+      "platform": "wordpress",
+      "task_type": "business",
+      "expected_fidelity": 0.78,
+      "description": "Business consulting services site",
+      "pages": ["home", "about", "services", "testimonials", "contact"],
+      "verified": false
+    }
+  ]
+}

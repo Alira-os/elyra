@@ -18,6 +18,39 @@ Elyra is an AI-native website creation and migration engine that takes a fundame
 
 ---
 
+## Platform Vision
+
+Elyra is currently focused on **site creation and modernization** — the "Site OS" layer. This is the foundation for a larger vision:
+
+### Short-term (Phase 0-2): Site OS
+- AI-native website migration and creation
+- Compounding memory that improves every migration
+- Unified Conductor + MCP layer for extensibility
+
+### Long-term (Phase 3+): Business OS Platform
+Elyra evolves into a family of specialized agents sharing:
+- **Unified memory layer** (SQLite + LanceDB across all agents)
+- **Shared MCP layer** (Playwright, Fetch, GitHub, Netlify, and more)
+- **Cross-domain intelligence** (marketing agent learns from sales agent's learnings)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Elyra Business OS                        │
+│                                                             │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│  │   Site      │  │  Marketing  │  │   Sales     │        │
+│  │   Agent     │  │   Agent     │  │   Agent     │        │
+│  └─────────────┘  └─────────────┘  └─────────────┘        │
+│         │                 │                 │              │
+│         └─────────────────┴─────────────────┘                │
+│                    Shared Memory + MCP Layer               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Note:** Phase 3+ remains aspirational. Phase 0-2 focus is fully on Site OS first.
+
+---
+
 ## Architecture Overview
 
 ```
@@ -50,7 +83,7 @@ Elyra is an AI-native website creation and migration engine that takes a fundame
 │ Specialist    │   │ Lead          │   │ Specialist    │
 │               │   │               │   │               │
 │ - Playwright │   │ - Frontend   │   │ - GitHub     │
-│ - Fetch      │   │ - Backend    │   │ - Netlify    │
+│ - Fetch      │   │ - Backend    │   │ - Fly.io     │
 │               │   │ - Content    │   │ - Render     │
 └───────────────┘   └───────────────┘   └───────────────┘
         │                   │                   │
@@ -82,83 +115,78 @@ Elyra is an AI-native website creation and migration engine that takes a fundame
 ```
 elyra/
 ├── conductor/              # Meta-agent, state machine, routing logic
-│   ├── state_machine.py    # LangGraph state machine for Conductor
-│   ├── routing.py         # Heuristic routing + LLM override
-│   ├── memory_client.py    # Memory layer interface
-│   └── orchestrator.py     # Main Conductor class
+│   ├── orchestrator.py     # Main Conductor class
+│   ├── state_machine.py    # LangGraph-ready state machine
+│   ├── routing.py          # Heuristic routing + LLM override
+│   ├── memory_client.py     # Memory layer interface
+│   ├── trace.py            # Clean bullet-pointed trace output
+│   └── security_gate.py    # Security + quality gate
 │
-├── registry/               # Persona, skill, tool registry
-│   ├── personas/           # Core persona definitions (markdown)
-│   ├── skills/            # Skill definitions (markdown + callable)
-│   ├── tools/             # Tool definitions
-│   └── registry.py        # Query and resolve registry
-│
-├── memory/                 # Persistent memory layer
-│   ├── sqlite/             # Structured metadata store
-│   │   ├── migrations.py  # Migration history
-│   │   ├── debates.py     # Debate outputs
-│   │   └── heuristics.py  # Routing rules
-│   ├── vector/            # LanceDB for semantic similarity
-│   │   └── lessons.py    # Lesson embeddings
-│   └── memory.py          # Unified memory interface
-│
-├── debate/                 # Debate Arena + Lamarckian loop
-│   ├── templates/         # Structured debate templates
-│   ├── arena.py           # Debate orchestration
-│   ├── lamarckian.py      # Evolution loop
-│   └── extractors.py      # Lesson extraction
-│
-├── tools/                  # MCP clients, executables
-│   ├── mcp/              # MCP server clients
-│   │   ├── playwright.py
-│   │   ├── fetch.py
-│   │   ├── github.py
-│   │   ├── netlify.py
-│   │   ├── render.py
-│   │   └── npm_audit.py
-│   ├── executables/       # CLI tools
-│   │   ├── lighthouse.py
-│   │   └── semgrep.py
-│   └── tools.py           # Unified tool interface
-│
-├── personas/               # Core persona implementations
-│   ├── core/              # 8 core personas (markdown)
-│   └── personas.py         # Persona loader
+├── registry/               # Single source of truth for personas, skills, tools
+│   ├── registry.py         # Loader: load_persona, load_skill, load_tool
+│   └── personas/           # Markdown persona definitions (only)
+│       ├── migration_orchestrator.md
+│       ├── onboarding_specialist.md
+│       ├── scraper_specialist.md
+│       └── deploy_specialist.md
 │
 ├── skills/                  # Skill definitions
-│   ├── executable/        # Python callables
-│   │   ├── memory_query.py
-│   │   ├── platform_detector.py
-│   │   ├── routing_heuristics.py
-│   │   ├── accessibility_audit.py
-│   │   ├── lighthouse.py
-│   │   └── seo_optimizer.py
-│   └── skills.md           # Skill registry markdown
+│   ├── memory_query.md      # Markdown guidance
+│   ├── platform_detector.md
+│   ├── routing_heuristics.md
+│   ├── lighthouse.md
+│   ├── npm_audit.md
+│   ├── seo_optimizer.md
+│   └── executable/          # Python callables
+│       ├── memory_query.py
+│       ├── platform_detector.py
+│       ├── routing_heuristics.py
+│       ├── lighthouse.py
+│       ├── npm_audit.py
+│       └── seo_optimizer.py
+│
+├── tools/                   # Tool interfaces
+│   ├── opencode.py         # OpenCode subprocess interface
+│   └── mcp/               # MCP client interfaces
+│       ├── playwright.py   # STUB: Phase 1+ real MCP client
+│       ├── fetch.py        # PARTIAL: urllib, Phase 1+ MCP
+│       ├── github.py       # STUB: Phase 1+ real MCP client
+│       └── netlify.py      # STUB: Phase 1+ real MCP client
+│
+├── memory/                 # Persistent memory layer
+│   ├── sqlite/             # Structured metadata (migrations, debates, heuristics)
+│   │   ├── schema.sql
+│   │   └── crud.py
+│   ├── vector/            # LanceDB for semantic similarity (stubbed Phase 0)
+│   └── memory.py          # Unified memory interface
 │
 ├── onboarding/              # Onboarding flows
-│   ├── flows/              # Onboarding question flows
-│   │   ├── adaptive.py    # Adaptive interview logic
-│   │   └── questions.py    # Question templates
-│   └── onboarding.py      # Onboarding persona
+│   └── flows/
+│       ├── adaptive.py    # AdaptiveOnboarding class
+│       └── questions.py    # Question templates
+│
+├── debate/                 # Debate Arena (Phase 1+)
+│   └── templates/         # Structured debate templates
 │
 ├── infra/                   # Infrastructure
-│   ├── github/            # GitHub Actions templates (pulled from merimeesoftware/templates)
-│   ├── docker/            # Docker configuration
-│   └── config.py         # Configuration management
+│   └── github/            # GitHub Actions templates
 │
-├── tests/                  # Test suite (empty, to be populated)
+├── .github/workflows/      # CI/CD
+│   ├── ci.yml
+│   ├── deploy-staging.yml
+│   └── semgrep.yml
 │
-├── examples/               # Example inputs and expected outputs
-│   └── test_sites/        # Real test site URLs + fidelity baselines
+├── examples/               # Examples
+│   └── test_sites/       # Test site configurations
 │
 └── docs/                   # Documentation
-    ├── NORTH_STAR.md       # This file
-    ├── ARCHITECTURE.md     # Detailed architecture
-    ├── PERSONAS.md        # Persona descriptions
-    ├── SKILLS.md          # Skill descriptions
-    ├── ROUTING.md         # Routing heuristics
-    └── MEMORY.md          # Memory layer design
+    ├── NORTH_STAR.md       # This file - vision + phasing
+    ├── ARCHITECTURE.md     # Detailed implementation guide
+    ├── RETROSPECTIVE_PHASE0.md
+    └── ...
 ```
+
+**Note:** `personas/` root directory has been removed. All persona definitions live exclusively in `registry/personas/` (markdown definitions) + `registry/registry.py` (loader).
 
 ---
 
@@ -172,7 +200,7 @@ elyra/
 | **stack_intelligence** | Chooses optimal modern stack | memory_query, context7 (Phase 2) | Context7 (Phase 2) |
 | **codegen_crew_lead** | Coordinates frontend/backend/content | frontend_dev, backend_dev, accessibility_auditor, ui_polish, seo_optimizer | OpenCode |
 | **security_auditor** | Security + quality gates (MVP-mandatory) | npm_audit, semgrep_scan, dependency_review, lighthouse | GitHub, npm_audit |
-| **deploy_specialist** | GitHub repo + CI/CD + hosting | github_actions_setup, netlify_deploy, render_deploy | GitHub, Netlify, Render |
+| **deploy_specialist** | GitHub repo + CI/CD + hosting | github_actions_setup, fly_deploy, render_deploy | GitHub, Fly.io, Render |
 | **ui_polish** (Phase 2) | Visual/UX quality pass | lighthouse, impeccable | Impeccable, Stitch |
 
 ---
@@ -461,10 +489,47 @@ Should I modify the routing? If so, what personas should I add/remove/reorder?
 | **Memory (Structured)** | SQLite | Zero-ops, fast, sufficient for metadata |
 | **Memory (Vector)** | LanceDB | Local-first, AI-native, minimal ops |
 | **Codegen Tool** | OpenCode | Already configured, handles heavy lifting |
-| **MCP Clients** | modelcontextprotocol Python SDK | Standard MCP integration |
+| **MCP Integration** | modelcontextprotocol Python SDK | Standard MCP client via unified gateway layer |
+| **MCP Gateway** | TrueFoundry / Speakeasy / self-hosted | Unified MCP gateway (similar to OpenRouter for models) |
+
+**MCP Integration Strategy:**
+Elyra connects to MCP servers through a unified MCP client/gateway layer (modeled after OpenRouter for LLMs). Phase 1 uses direct SDK connections to individual MCP sidecars. Phase 2+ introduces a lightweight gateway (TrueFoundry or self-hosted aggregator) for centralized auth, rate limiting, audit logging, and tool discovery — keeping Elyra clean and extensible.
+
 | **CLI Tools** | npx/npm | Playwright, axe-cli, semgrep |
 | **CI/CD** | GitHub Actions | Already configured in templates repo |
-| **Hosting** | Netlify + Render | Already have MCP access |
+| **Hosting** | Fly.io (primary), Render (alternative) | Elyra + client sites in unified platform |
+
+**Hosting Strategy:**
+- Elyra itself runs on **Fly.io** (primary) or **Render** (alternative)
+  - Why Fly.io: Machines (lightweight on-demand VMs) enable the future Business OS vision. Elyra or companion agents can dynamically spin up environments, cut branches, preview changes, run security/quality gates, and promote to production — all within the same unified platform.
+  - Why Render: Simpler DevOps, excellent secret management, generous free tier. Ideal if maximum VM flexibility is not immediately required.
+- Client sites deploy exclusively to **Fly.io** and **Render** (same ecosystem, unified management)
+
+---
+
+## Deployment Strategy
+
+### Unified Hosting Platform (2026 Recommendation)
+
+**Primary: Fly.io**
+- Chosen for its Machines (lightweight on-demand VMs), which enable the future Business OS vision
+- Spin up environments dynamically, cut branches, preview changes, run security/quality gates, promote to production
+- Global edge deployment + great secret management
+- Scales to zero, generous free tier
+
+**Strong Alternative: Render**
+- Excellent for simplicity and consistent DevOps
+- Secret management built-in
+- Ideal if maximum VM flexibility is not immediately required
+
+**Both support:** Static sites, dynamic backends, databases, background jobs — allowing Elyra + future agents + all client sites to live in one ecosystem.
+
+### Site Deployment (Client Sites)
+
+Generated sites deploy to the best-fit platform per site type:
+- **Netlify:** Fast CDN, instant previews, excellent for static/site generators
+- **Render:** Dynamic backends, serverless functions, databases
+- **Vercel:** Edge deployment, Next.js optimization
 
 ---
 
@@ -486,8 +551,9 @@ These are intentionally deferred to later phases:
 ## Open Questions
 
 - [x] What's the fidelity scoring algorithm? **Defined below (v0.1)**
+- [x] Hosting platforms? **Fly.io (primary) + Render (alternative), client sites → Netlify/Render/Vercel**
+- [x] MCP Gateway? **Phase 1: direct SDK, Phase 2+: TrueFoundry/self-hosted gateway**
 - [ ] How to handle Shopify sites with large product databases? (API access vs scraping)
-- [ ] Should we support more hosting platforms beyond Netlify/Render?
 - [ ] How to handle sites that require database migrations?
 
 ---
@@ -517,6 +583,59 @@ These are intentionally deferred to later phases:
 - Human can roll back any change within 48 hours
 - Novelty detector prevents over-generalization from past patterns
 - Human veto for first 15 debate outputs
+
+---
+
+## Phase Artifact Pattern
+
+Elyra's development follows the **Phase Artifact Pattern** — every phase produces exactly two living documents:
+
+### 1. NORTH_STAR.md (Updated Continuously)
+- Full architecture and phasing
+- Updated with phase learnings at end of each phase
+- Single source of truth for where the system is going
+
+### 2. PHASE_N_RETROSPECTIVE.md (End of Phase)
+- What we built in this phase
+- What we learned (real learnings, not theoretical)
+- What changed the architecture
+- Fidelity trends observed
+- Routing improvements discovered
+- What we'd do differently
+
+**Pattern:**
+```
+End of Phase N:
+1. Rename TASKS_PHASE_N.md → docs/RETROSPECTIVE_PHASE_N.md
+2. Fill in retrospective section with real learnings
+3. Move completed task table to appendix or delete
+4. Update NORTH_STAR.md with phase learnings
+5. Create TASKS_PHASE_N+1.md for next phase
+```
+
+**Benefits:**
+- Sprint backlog lives only inside retrospective (no process debt)
+- Long-term knowledge capture (every phase contributes to institutional memory)
+- Repo stays clean — no stale task lists
+- Meta powerful: Elyra demonstrates the compounding intelligence it promises to users
+
+**This is meta and powerful:** The project itself demonstrates the compounding intelligence it promises to deliver.
+
+---
+
+## Phase 0 Completion
+
+**Status:** ✅ Scaffolding Complete (2026-05-02)
+
+All Phase 0 tasks completed. See `docs/RETROSPECTIVE_PHASE0.md` for full retrospective.
+
+### GitHub Issues for Phase 1
+- #1: End-to-end migration test
+- #2: Platform detector real URL testing
+- #3: Wire Playwright MCP
+- #4: Wire GitHub + Netlify MCPs
+- #5: Implement Memory (SQLite working + LanceDB stubbed)
+- #6: Conductor LLM override + backward routing
 
 ---
 

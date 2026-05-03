@@ -1,0 +1,21 @@
+name: Semgrep Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  semgrep:
+    name: Semgrep Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: p/javascript  # Basic JavaScript/TypeScript rules
+          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
+          generateSummary: true

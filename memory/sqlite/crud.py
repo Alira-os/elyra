@@ -1,0 +1,342 @@
+import sqlite3
+import json
+import uuid
+from datetime import datetime
+from typing import Optional
+
+
+class Database:
+    def __init__(self, db_path: str = "elyra_memory.db"):
+        self.db_path = db_path
+        self._init_db()
+
+    def _get_connection(self):
+        return sqlite3.connect(self.db_path)
+
+    def _init_db(self):
+        with self._get_connection() as conn:
+            with open("memory/sqlite/schema.sql", "r") as f:
+                conn.executescript(f.read())
+            conn.commit()
+
+    def _row_to_dict(self, row: sqlite3.Row) -> dict:
+        return dict(row) if row else {}
+
+    def _json_field(self, value) -> str:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value
+        return json.dumps(value)
+
+
+class MigrationCRUD:
+    def __init__(self, db: Database):
+        self.db = db
+
+    def create_migration(self, data: dict) -> str:
+        migration_id = data.get("id") or str(uuid.uuid4())
+        conn = self.db._get_connection()
+        try:
+            conn.execute("""
+                INSERT INTO migrations (id, url, platform, task_type, stack_chosen,
+                                        fidelity_score, routing_used, outcome, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                migration_id,
+                data.get("url"),
+                data.get("platform"),
+                data.get("task_type"),
+                self.db._json_field(data.get("stack_chosen")),
+                data.get("fidelity_score"),
+                self.db._json_field(data.get("routing_used")),
+                data.get("outcome"),
+                datetime.now().isoformat()
+            ))
+            conn.commit()
+        finally:
+            conn.close()
+        return migration_id
+
+    def get_migration(self, migration_id: str) -> Optional[dict]:
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM migrations WHERE id = ?",
+                (migration_id,)
+            )
+            row = cursor.fetchone()
+            if row:
+                d = self.db._row_to_dict(row)
+                d["stack_chosen"] = json.loads(d["stack_chosen"]) if d.get("stack_chosen") else None
+                d["routing_used"] = json.loads(d["routing_used"]) if d.get("routing_used") else None
+                return d
+            return None
+        finally:
+            conn.close()
+
+    def update_fidelity(self, migration_id: str, fidelity_score: float) -> bool:
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "UPDATE migrations SET fidelity_score = ?, updated_at = ? WHERE id = ?",
+                (fidelity_score, datetime.now().isoformat(), migration_id)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        finally:
+            conn.close()
+
+    def update_outcome(self, migration_id: str, outcome: str) -> bool:
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "UPDATE migrations SET outcome = ?, updated_at = ? WHERE id = ?",
+                (outcome, datetime.now().isoformat(), migration_id)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        finally:
+            conn.close()
+
+    def list_migrations(self, platform: Optional[str] = None,
+                         task_type: Optional[str] = None,
+                         limit: int = 20) -> list[dict]:
+        conn = self.db._get_connection()
+        query = "SELECT * FROM migrations"
+        params = []
+        where_clauses = []
+
+        if platform:
+            where_clauses.append("platform = ?")
+            params.append(platform)
+        if task_type:
+            where_clauses.append("task_type = ?")
+            params.append(task_type)
+
+        if where_clauses:
+            query += " WHERE " + " AND ".join(where_clauses)
+        query += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
+
+        try:
+            cursor = conn.execute(query, params)
+            rows = cursor.fetchall()
+            results = []
+            for row in rows:
+                d = self.db._row_to_dict(row)
+                d["stack_chosen"] = json.loads(d["stack_chosen"]) if d.get("stack_chosen") else None
+                d["routing_used"] = json.loads(d["routing_used"]) if d.get("routing_used") else None
+                results.append(d)
+            return results
+        finally:
+            conn.close()
+
+
+class DebateCRUD:
+    def __init__(self, db: Database):
+        self.db = db
+
+    def create_debate(self, migration_id: str, result: dict) -> str:
+        debate_id = str(uuid.uuid4())
+        conn = self.db._get_connection()
+        try:
+            conn.execute("""
+                INSERT INTO debate_outputs (id, migration_id, debate_result, created_at)
+                VALUES (?, ?, ?, ?)
+            """, (
+                debate_id,
+                migration_id,
+                json.dumps(result),
+                datetime.now().isoformat()
+            ))
+            conn.commit()
+        finally:
+            conn.close()
+        return debate_id
+
+    def get_debate(self, debate_id: str) -> Optional[dict]:
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM debate_outputs WHERE id = ?",
+                (debate_id,)
+            )
+            row = cursor.fetchone()
+            if row:
+                d = self.db._row_to_dict(row)
+                d["debate_result"] = json.loads(d["debate_result"]) if d.get("debate_result") else None
+                d["changes_proposed"] = json.loads(d["changes_proposed"]) if d.get("changes_proposed") else None
+                return d
+            return None
+        finally:
+            conn.close()
+
+    def get_debates_for_migration(self, migration_id: str) -> list[dict]:
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM debate_outputs WHERE migration_id = ? ORDER BY created_at DESC",
+                (migration_id,)
+            )
+            rows = cursor.fetchall()
+            results = []
+            for row in rows:
+                d = self.db._row_to_dict(row)
+                d["debate_result"] = json.loads(d["debate_result"]) if d.get("debate_result") else None
+                d["changes_proposed"] = json.loads(d["changes_proposed"]) if d.get("changes_proposed") else None
+                results.append(d)
+            return results
+        finally:
+            conn.close()
+
+    def approve_debate(self, debate_id: str, approved: bool,
+                       changes_proposed: Optional[list] = None) -> bool:
+        conn = self.db._get_connection()
+        try:
+            conn.execute("""
+                UPDATE debate_outputs
+                SET human_approved = ?, changes_proposed = ?, updated_at = ?
+                WHERE id = ?
+            """, (
+                approved,
+                self.db._json_field(changes_proposed),
+                datetime.now().isoformat(),
+                debate_id
+            ))
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+    def mark_changes_applied(self, debate_id: str) -> bool:
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "UPDATE debate_outputs SET changes_applied = TRUE WHERE id = ?",
+                (debate_id,)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        finally:
+            conn.close()
+
+
+class HeuristicCRUD:
+    def __init__(self, db: Database):
+        self.db = db
+
+    def get_heuristic(self, platform: str, task_type: str) -> Optional[dict]:
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM routing_heuristics WHERE platform = ? AND task_type = ?",
+                (platform, task_type)
+            )
+            row = cursor.fetchone()
+            if row:
+                d = self.db._row_to_dict(row)
+                d["routing_sequence"] = json.loads(d["routing_sequence"]) if d.get("routing_sequence") else None
+                return d
+            return None
+        finally:
+            conn.close()
+
+    def upsert_heuristic(self, platform: str, task_type: str,
+                         routing_sequence: list, success: bool,
+                         fidelity_score: Optional[float] = None) -> None:
+        conn = self.db._get_connection()
+        try:
+            existing = self.get_heuristic(platform, task_type)
+            if existing:
+                success_count = existing["success_count"] + (1 if success else 0)
+                failure_count = existing["failure_count"] + (0 if success else 1)
+
+                if fidelity_score:
+                    old_count = success_count + failure_count - 1
+                    if old_count > 0:
+                        old_avg = existing["avg_fidelity"] or 0
+                        new_avg = (old_avg * old_count + fidelity_score) / (old_count + 1)
+                    else:
+                        new_avg = fidelity_score
+                else:
+                    new_avg = existing["avg_fidelity"]
+
+                conn.execute("""
+                    UPDATE routing_heuristics
+                    SET success_count = ?, failure_count = ?, avg_fidelity = ?,
+                        last_updated = ?
+                    WHERE platform = ? AND task_type = ?
+                """, (
+                    success_count, failure_count, new_avg,
+                    datetime.now().isoformat(), platform, task_type
+                ))
+            else:
+                conn.execute("""
+                    INSERT INTO routing_heuristics
+                    (platform, task_type, routing_sequence, success_count,
+                     failure_count, avg_fidelity, last_updated)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    platform, task_type, json.dumps(routing_sequence),
+                    1 if success else 0, 0 if success else 1,
+                    fidelity_score, datetime.now().isoformat()
+                ))
+            conn.commit()
+        finally:
+            conn.close()
+
+
+class SessionStateCRUD:
+    def __init__(self, db: Database):
+        self.db = db
+
+    def save_session(self, session_id: str, state_data: dict,
+                     current_phase: str, completed_steps: list) -> None:
+        conn = self.db._get_connection()
+        try:
+            conn.execute("""
+                INSERT OR REPLACE INTO session_state
+                (session_id, state_data, current_phase, completed_steps,
+                 created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                session_id,
+                json.dumps(state_data),
+                current_phase,
+                json.dumps(completed_steps),
+                datetime.now().isoformat(),
+                datetime.now().isoformat()
+            ))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def load_session(self, session_id: str) -> Optional[dict]:
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM session_state WHERE session_id = ?",
+                (session_id,)
+            )
+            row = cursor.fetchone()
+            if row:
+                d = self.db._row_to_dict(row)
+                d["state_data"] = json.loads(d["state_data"]) if d.get("state_data") else {}
+                d["completed_steps"] = json.loads(d["completed_steps"]) if d.get("completed_steps") else []
+                return d
+            return None
+        finally:
+            conn.close()
+
+    def delete_session(self, session_id: str) -> bool:
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "DELETE FROM session_state WHERE session_id = ?",
+                (session_id,)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        finally:
+            conn.close()
