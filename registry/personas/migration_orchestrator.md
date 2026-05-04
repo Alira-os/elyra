@@ -95,7 +95,7 @@ The Conductor produces a clean, bullet-pointed trace summary (not verbose step-b
 ✓ Platform detected: Wix (confidence: 0.94)
 ✓ Stack chosen: Next.js + Tailwind + Contentlayer
 ✓ Security gate passed (npm audit: 0 critical, lighthouse: 92)
-✓ Deployed to: https://staging--michael-portfolio.netlify.app
+✓ Deployed to: https://michael-portfolio.fly.dev
 → Awaiting human approval
 ```
 
@@ -122,7 +122,8 @@ The Conductor produces a clean, bullet-pointed trace summary (not verbose step-b
 | **Playwright MCP** | Site structure extraction | `mcp/playwright.py` |
 | **Fetch MCP** | Clean content extraction | `mcp/fetch.py` |
 | **GitHub MCP** | Repo creation, CI/CD | `mcp/github.py` |
-| **Netlify MCP** | Deployment | `mcp/netlify.py` |
+| **Fly.io MCP** | Deployment (primary) | `mcp/fly.py` |
+| **Render MCP** | Deployment (alternative) | `mcp/render.py` (future) |
 
 ---
 

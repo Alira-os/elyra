@@ -23,6 +23,8 @@ Only the implementation (subprocess vs MCP vs SDK) may change.
 
 import subprocess
 import json
+import shutil
+import sys
 from typing import Optional
 
 
@@ -57,8 +59,7 @@ def invoke_opencode(
     """
     context_summary = json.dumps(context, indent=2)
 
-    full_prompt = f"""
-{prompt}
+    full_prompt = f"""{prompt}
 
 ## Context
 {context_summary}
@@ -79,13 +80,32 @@ Return your response as JSON:
 }}
 """
 
+    # Resolve the command path to handle PowerShell scripts (common on Windows)
+    opencode_cmd = shutil.which("opencode")
+    if not opencode_cmd:
+        return json.dumps({
+            "success": False,
+            "errors": ["OpenCode not found in PATH. Install from https://opencode.ai"],
+            "summary": "OpenCode not available"
+        })
+
+    # If it's a PowerShell script (.ps1), wrap it with powershell.exe
+    if opencode_cmd.lower().endswith(".ps1"):
+        # Use powershell.exe to execute the script
+        # -ExecutionPolicy Bypass is required to run local scripts
+        cmd_list = ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", opencode_cmd, "run", "--", full_prompt]
+    else:
+        cmd_list = [opencode_cmd, "run", "--", full_prompt]
+
     try:
         result = subprocess.run(
-            ["opencode", "--prompt", full_prompt],
+            cmd_list,
             capture_output=True,
             text=True,
             cwd=working_dir,
-            timeout=timeout
+            timeout=timeout,
+            encoding='utf-8',
+            errors='replace'
         )
 
         if result.returncode == 0:

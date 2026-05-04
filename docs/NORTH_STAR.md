@@ -30,7 +30,7 @@ Elyra is currently focused on **site creation and modernization** — the "Site 
 ### Long-term (Phase 3+): Business OS Platform
 Elyra evolves into a family of specialized agents sharing:
 - **Unified memory layer** (SQLite + LanceDB across all agents)
-- **Shared MCP layer** (Playwright, Fetch, GitHub, Netlify, and more)
+- **Shared MCP layer** (Playwright, Fetch, GitHub, fly.io, and more)
 - **Cross-domain intelligence** (marketing agent learns from sales agent's learnings)
 
 ```
@@ -151,7 +151,7 @@ elyra/
 │       ├── playwright.py   # STUB: Phase 1+ real MCP client
 │       ├── fetch.py        # PARTIAL: urllib, Phase 1+ MCP
 │       ├── github.py       # STUB: Phase 1+ real MCP client
-│       └── netlify.py      # STUB: Phase 1+ real MCP client
+│       └── fly.io.py      # STUB: Phase 1+ real MCP client
 │
 ├── memory/                 # Persistent memory layer
 │   ├── sqlite/             # Structured metadata (migrations, debates, heuristics)
@@ -230,7 +230,7 @@ Skills are pairs of **markdown guidance** + **executable code**.
 | **Playwright** | Site structure extraction | ✅ Yes |
 | **Fetch** | Clean content extraction | ✅ Yes |
 | **GitHub** | Repo creation, CI/CD | ✅ Yes |
-| **Netlify** | Deploy hosting | ✅ Yes |
+| **fly.io** | Deploy hosting | ✅ Yes |
 | **Render** | Deploy hosting | ✅ Yes |
 | **npm_audit** | Dependency scanning | ✅ Yes |
 | **Context7** | Self-healing code gen | Phase 2 |
@@ -370,7 +370,7 @@ Should I modify the routing? If so, what personas should I add/remove/reorder?
 ✓ Platform detected: Wix (confidence: 0.94)
 ✓ Stack chosen: Next.js + Tailwind + Contentlayer
 ✓ Security gate passed (npm audit, lighthouse ≥ 85)
-✓ Deployed to: https://staging--michael-portfolio.netlify.app
+✓ Deployed to: https://staging--michael-portfolio.fly.dev
 → Awaiting human approval
 ```
 
@@ -382,7 +382,7 @@ Should I modify the routing? If so, what personas should I add/remove/reorder?
 - [ ] Registry: persona definitions (markdown), skill registry (6 skills), tool registry
 - [ ] Memory: SQLite schema (migrations, debates, heuristics), memory_query interface (stubbed — returns "no prior lessons" initially)
 - [ ] 6 Skills: memory_query (stubbed), platform_detector, routing_heuristics, lighthouse, npm_audit, seo_optimizer
-- [ ] MCPs Wired: Playwright, Fetch, GitHub, Netlify
+- [ ] MCPs Wired: Playwright, Fetch, GitHub, fly.io
 - [ ] CLI Tools: lighthouse, npm_audit
 - [ ] SecurityQualityGate class (npm audit + lighthouse ≥ 85 required)
 - [ ] OpenCode invoke interface (tools/opencode.py)
@@ -527,9 +527,8 @@ Elyra connects to MCP servers through a unified MCP client/gateway layer (modele
 ### Site Deployment (Client Sites)
 
 Generated sites deploy to the best-fit platform per site type:
-- **Netlify:** Fast CDN, instant previews, excellent for static/site generators
+- **fly.io:** Fast CDN, instant previews, excellent for static/site generators
 - **Render:** Dynamic backends, serverless functions, databases
-- **Vercel:** Edge deployment, Next.js optimization
 
 ---
 
@@ -551,7 +550,7 @@ These are intentionally deferred to later phases:
 ## Open Questions
 
 - [x] What's the fidelity scoring algorithm? **Defined below (v0.1)**
-- [x] Hosting platforms? **Fly.io (primary) + Render (alternative), client sites → Netlify/Render/Vercel**
+- [x] Hosting platforms? **Fly.io (primary) + Render (alternative), client sites → fly.io/Render**
 - [x] MCP Gateway? **Phase 1: direct SDK, Phase 2+: TrueFoundry/self-hosted gateway**
 - [ ] How to handle Shopify sites with large product databases? (API access vs scraping)
 - [ ] How to handle sites that require database migrations?
@@ -633,7 +632,7 @@ All Phase 0 tasks completed. See `docs/RETROSPECTIVE_PHASE0.md` for full retrosp
 - #1: End-to-end migration test
 - #2: Platform detector real URL testing
 - #3: Wire Playwright MCP
-- #4: Wire GitHub + Netlify MCPs
+- #4: Wire GitHub + fly.io MCPs
 - #5: Implement Memory (SQLite working + LanceDB stubbed)
 - #6: Conductor LLM override + backward routing
 

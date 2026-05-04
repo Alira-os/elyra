@@ -36,7 +36,7 @@ elyra/
 ├── skills/            # Skill definitions
 │   └── executable/    # 6 Phase 0 skill callables
 ├── tools/             # OpenCode interface + MCP clients
-│   └── mcp/           # Playwright, Fetch, GitHub, Netlify stubs
+│   └── mcp/           # Playwright, Fetch, GitHub, Fly.io stubs (Netlify legacy)
 ├── onboarding/        # Adaptive onboarding flows
 ├── .github/workflows/  # CI/CD with GitHub Actions
 ├── examples/test_sites/ # Test site configurations
@@ -50,7 +50,7 @@ elyra/
 - [x] Conductor with LangGraph state machine + heuristic routing
 - [x] SQLite memory layer (vector stubbed until Phase 1)
 - [x] OpenCode tool interface for heavy codegen
-- [x] MCP client stubs: Playwright, Fetch, GitHub, Netlify
+- [x] MCP client stubs: Playwright, Fetch, GitHub, Fly.io (Netlify optional/legacy)
 - [x] SecurityQualityGate (npm audit + lighthouse)
 - [x] GitHub Actions CI/CD workflows
 - [x] Adaptive onboarding (5 questions max)

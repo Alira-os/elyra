@@ -137,7 +137,7 @@ These are known and documented. They don't block Phase 1 since we have clear upg
 | Gap | Impact | Resolution |
 |-----|--------|------------|
 | Platform detector lower confidence on custom domains | May route to generic | Add HTML detection in Phase 1 |
-| OpenCode invoke is subprocess, not tool-bound | Can't participate in state machine | Wire as LangGraph tool in Phase 1 |
+| OpenCode subprocess invocation | ~~Can't participate in state machine~~ | **FIXED** — Now fully functional with UTF-8 encoding and correct positional args |
 | Memory returns empty (LanceDB stubbed) | No routing improvement yet | Populate SQLite + wire LanceDB in Phase 1.5 |
 | No Debate Arena | Can't learn from failures | Phase 1 feature |
 | Playwright stubbed | Can't scrape real JS sites | Wire MCP in Phase 1 |
@@ -179,7 +179,7 @@ Playwright MCP Client Stub
 - `tools/mcp/playwright.py` — STUB
 - `tools/mcp/fetch.py` — PARTIAL (urllib works, not MCP)
 - `tools/mcp/github.py` — STUB
-- `tools/mcp/netlify.py` — STUB
+- `tools/mcp/netlify.py` — STUB (legacy, Fly.io primary)
 
 ### 3. ARCHITECTURE.md Created
 
@@ -247,7 +247,7 @@ Phase 1 is already scoped in NORTH_STAR.md. Top priorities:
 
 1. **End-to-end test** — Run demo.py on a real Wix/Squarespace site, verify clean trace
 2. **Wire Playwright MCP** — Real scraping for JS-heavy sites
-3. **Wire GitHub + Netlify MCPs** — Real deploy pipeline
+3. **Wire GitHub + Fly.io MCPs** — Real deploy pipeline (Render alternative)
 4. **Implement memory queries** — Populate SQLite, verify routing uses memory
 
 See GitHub Issues (when created) for detailed task breakdown.

@@ -63,7 +63,7 @@ Elyra runs in a containerized environment alongside MCP servers and OpenCode.
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │                    MCP Servers (Sidecars)                 │  │
 │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │  │
-│  │  │Playwright│ │  Fetch   │ │  GitHub  │ │  Netlify │    │  │
+│  │  │Playwright│ │  Fetch   │ │  GitHub  │ │  fly.io │    │  │
 │  │  │   MCP    │ │   MCP    │ │   MCP    │ │   MCP    │    │  │
 │  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘    │  │
 │  └──────────────────────────────────────────────────────────┘  │
@@ -100,12 +100,12 @@ Elyra is a **client** — it never implements MCP servers. MCP servers run exter
 Phase 1 (Individual Sidecars):
 Elyra ◄──stdio──► Playwright MCP
 Elyra ◄──stdio──► GitHub MCP
-Elyra ◄──stdio──► Netlify MCP
+Elyra ◄──stdio──► Fly.io MCP
 
 Phase 2+ (With Gateway):
 Elyra ◄──HTTP──► MCP Gateway ◄──stdio──► Playwright MCP
                               ◄──stdio──► GitHub MCP
-                              ◄──stdio──► Netlify MCP
+                              ◄──stdio──► fly.io MCP
 ```
 
 **Why:** Individual sidecars are simpler for Phase 1. Gateway is future evolution if complexity grows.
@@ -188,7 +188,7 @@ User Input
          │     ├──→ Playwright MCP ──► Site Scrape
          │     ├──→ OpenCode ──► Codegen
          │     ├──→ GitHub MCP ──► Repo Creation
-         │     ├──→ Netlify MCP ──► Deploy
+         │     ├──→ fly.io MCP ──► Deploy
          │     └──→ Security Gate ──► npm audit + Lighthouse
          │
          ▼
@@ -278,7 +278,7 @@ Full LangGraph with conditional edges + subgraph composition.
 **Subgraphs (complex workflows):**
 - `scraper_subgraph` — Playwright + Fetch + content processing
 - `codegen_subgraph` — OpenCode + code validation + refinement
-- `deploy_subgraph` — GitHub + Netlify + CI/CD
+- `deploy_subgraph` — GitHub + fly.io + CI/CD
 
 **Conditional routing:**
 ```python
@@ -326,7 +326,7 @@ graph.add_conditional_edges(
 ### Phase 1+ Concrete Security Measures
 
 **Secrets Management:**
-- Docker secrets for sensitive tokens (NETLIFY_AUTH_TOKEN, GITHUB_TOKEN)
+- Docker secrets for sensitive tokens (FLY_AUTH_TOKEN, GITHUB_TOKEN)
 - Or use Doppler/Vault for external secret management
 - Never commit secrets to git (add to .gitignore)
 
@@ -348,7 +348,7 @@ graph.add_conditional_edges(
 
 **Rate Limiting:**
 - Max 10 GitHub API calls per minute (respect GitHub rate limits)
-- Max 5 Netlify API calls per minute
+- Max 5 fly.io API calls per minute
 - Queue excess requests with exponential backoff
 
 ### Observability & Resilience
@@ -417,7 +417,7 @@ elyra/
 │       ├── playwright.py  # STUB: Replace in Phase 1
 │       ├── fetch.py        # STUB: Replace in Phase 1
 │       ├── github.py       # STUB: Replace in Phase 1
-│       └── netlify.py      # STUB: Replace in Phase 1
+│       └── fly.io.py      # STUB: Replace in Phase 1
 │
 ├── memory/                 # Memory layer
 │   ├── sqlite/            # Structured metadata
@@ -518,11 +518,14 @@ services:
       fly-mcp:
         condition: service_healthy
     environment:
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - FLY_API_TOKEN=${FLY_API_TOKEN}
+      - GITHUB_TOKEN_FILE=/run/secrets/github_token
+      - FLY_API_TOKEN_FILE=/run/secrets/fly_token
     volumes:
       - elyra_output:/app/output
       - elyra_memory:/app/memory
+    secrets:
+      - github_token
+      - fly_token
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -543,7 +546,7 @@ services:
   github-mcp:
     image: ghcr.io/modelcontextprotocol/github-mcp:latest
     environment:
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_TOKEN_FILE=/run/secrets/github_token
     healthcheck:
       test: ["CMD", "npx", "-y", "@github/mcp-server", "--version"]
       interval: 30s
@@ -554,7 +557,7 @@ services:
   fly-mcp:
     image: ghcr.io/modelcontextprotocol/fly-mcp:latest
     environment:
-      - FLY_API_TOKEN=${FLY_API_TOKEN}
+      - FLY_API_TOKEN_FILE=/run/secrets/fly_token
     healthcheck:
       test: ["CMD", "npx", "-y", "@flyio/mcp-server", "--version"]
       interval: 30s
@@ -565,6 +568,12 @@ services:
 volumes:
   elyra_output:
   elyra_memory:
+
+secrets:
+  github_token:
+    file: ./secrets/github_token.txt
+  fly_token:
+    file: ./secrets/fly_token.txt
 ```
 
 **Note:** MCP server images (`ghcr.io/modelcontextprotocol/*`) are illustrative. Verify actual image paths before deployment. Individual sidecars (not gateway) for Phase 1. Client sites deploy to Fly.io + Render.
