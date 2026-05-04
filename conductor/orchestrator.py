@@ -185,9 +185,9 @@ Generate the complete project structure and code.
             working_dir="."
         )
 
-        state["codegen_output"] = {"result": result, "stack": stack}
+        state["codegen_output"] = {"result": result.to_json() if hasattr(result, 'to_json') else str(result), "stack": stack}
 
-        if "success" in result.lower() and "false" not in result.lower():
+        if result.success:
             trace.add("Codegen", "Complete")
         else:
             trace.add_warning("Codegen", "Partial - may need review")
