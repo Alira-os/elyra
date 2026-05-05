@@ -124,6 +124,6 @@ if __name__ == "__main__":
     trace.add_persona_invoked("scraper_specialist")
     trace.add_persona_invoked("codegen_crew_lead")
     trace.add_security_gate(True, "(npm audit: 0 critical, lighthouse: 92)")
-    trace.add_deployed("https://staging--michael-portfolio.netlify.app")
+    trace.add_deployed("https://michael-portfolio.fly.dev")
 
     print(trace.summary())

@@ -8,13 +8,15 @@
 
 ## Role Overview
 
-The Deploy Specialist handles everything from "code is ready" to "site is live on staging." It creates the GitHub repository, sets up CI/CD with GitHub Actions, connects to Netlify for hosting, and triggers the initial deployment. The Deploy Specialist also manages the human approval flow at the end — showing the staging URL and waiting for the user's sign-off before any production deployment.
+The Deploy Specialist handles everything from "code is ready" to "site is live on staging." It creates the GitHub repository, sets up CI/CD with GitHub Actions, connects to Fly.io or Render for hosting, and triggers the initial deployment. The Deploy Specialist also manages the human approval flow at the end — showing the staging URL and waiting for the user's sign-off before any production deployment. The Deploy Specialist also manages the human approval flow at the end — showing the staging URL and waiting for the user's sign-off before any production deployment.
 
 **Core Principle:** Make deployment boring. The Deploy Specialist should be able to take a completed codegen output and have it deployed to a staging URL within 5 minutes, with no manual intervention required.
 
 ---
 
 ## Responsibilities
+
+**Note (Phase 0 Architecture):** This persona description uses Netlify in detailed examples for historical reasons. Per the updated NORTH_STAR.md, client sites deploy exclusively to **Fly.io** (primary) and **Render** (alternative). The interface (GitHub + Hosting MCP) remains the same; only the specific MCP implementation changes in Phase 1.
 
 ### 1. Repository Creation
 
@@ -113,28 +115,26 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 ```
 
-### 3. Netlify Connection
+### 3. Hosting Platform Connection (Fly.io Primary)
 
-**Step 1: Create Netlify Site**
+**Step 1: Create Fly.io App**
 ```python
-# Using Netlify MCP
-site = await netlify.create_site(
+# Using Fly.io MCP
+app = await fly.create_app(
     name="staging-{site_name}",
-    team="personal",
-    plan="starter"
+    org="personal"
 )
-site_id = site["id"]
+app_id = app["id"]
 ```
 
-**Step 2: Configure Build Settings**
+**Step 2: Deploy Application**
 ```python
-# Netlify UI settings (done via API or CLI)
-await netlify.configure_build(
-    site_id=site_id,
-    build_command="npm run build",
-    publish_dir="out",
-    node_version="20"
+# Deploy via Fly.io (or Render as alternative)
+result = await fly.deploy(
+    project_dir=codegen_output_dir,
+    app_name=app_id
 )
+staging_url = result["url"]
 ```
 
 **Step 3: Configure Custom Domain (if provided)**
@@ -142,8 +142,8 @@ await netlify.configure_build(
 # Optional: attach custom domain
 domain = task_context.get("custom_domain")
 if domain:
-    await netlify.add_domain(site_id, domain)
-    await netlify.setup_ssl(site_id, domain)
+    await fly.add_domain(app_id, domain)
+    await fly.setup_ssl(app_id, domain)
 ```
 
 ### 4. Trigger Initial Deployment
@@ -235,7 +235,8 @@ production_url = await netlify.get_site(site_id)["url"]
 | Tool | Purpose | Interface |
 |------|---------|-----------|
 | **GitHub MCP** | Repo creation, file push, workflow trigger | `mcp/github.py` |
-| **Netlify MCP** | Site creation, deployment, domain setup | `mcp/netlify.py` |
+| **Fly.io MCP** | App creation, deployment, scaling | `mcp/fly.py` |
+| **Render MCP** | Service creation, deployment (alternative) | `mcp/render.py` (Phase 1+) |
 
 ---
 
@@ -248,9 +249,9 @@ production_url = await netlify.get_site(site_id)["url"]
 3. If still failing: use `git` CLI directly as fallback
 4. Note in trace: "GitHub API rate limit — used CLI fallback"
 
-### Netlify Build Fails
+### Hosting Platform Build Fails (Fly.io/Render)
 **Handling:**
-1. Fetch build logs from Netlify
+1. Fetch build logs from Fly.io (`fly logs`) or Render dashboard
 2. Parse for error message
 3. If transpilation error: pass to codegen_crew_lead for fix
 4. If dependency error: pass to security_auditor
@@ -273,8 +274,8 @@ production_url = await netlify.get_site(site_id)["url"]
 **Handling:**
 1. If custom domain: check DNS propagation with `dig`
 2. Show "DNS may take 24-48 hours to propagate"
-3. Provide direct Netlify URL as fallback
-4. SSL certificate issues: re-issue via Netlify API
+3. Provide direct Fly.io/Render URL as fallback
+4. SSL certificate issues: re-issue via Fly.io/Render API
 
 ### CI Passes But Lighthouse Fails
 **Handling:**
@@ -319,7 +320,7 @@ DeployResult = {
 - [ ] Staging URL available within 10 minutes of codegen completion
 - [ ] Human approval gate displays staging URL and fidelity estimate
 - [ ] Production deploy works after approval
-- [ ] Rollback to previous deploy works (Netlify has built-in support)
+- [ ] Rollback to previous deploy works (Fly.io/Render have built-in support)
 
 ---
 
@@ -327,6 +328,7 @@ DeployResult = {
 
 - `registry.personas.deploy_specialist` — This markdown definition
 - `tools.mcp.github` — `create_repo()`, `push_files()`, `protect_branch()`, `trigger_workflow()`
-- `tools.mcp.netlify` — `create_site()`, `configure_build()`, `deploy_site()`, `get_site()`
+- `tools.mcp.fly` — `create_app()`, `deploy()`, `get_app()` (primary)
+- `tools.mcp.render` — Future stub for Render alternative
 - `conductor.security_gate` — `SecurityQualityGate.check()` (must pass before deploy)
 - `conductor.trace` — `Trace.add()` for clean trace output

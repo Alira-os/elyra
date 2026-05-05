@@ -42,12 +42,17 @@ class Router:
         """
         platform = task_context.get("platform", "generic")
         task_type = task_context.get("task_type", "generic")
+        detection_confidence = task_context.get("platform_confidence", 1.0)
 
         heuristic_result = get_heuristic_routing(platform, task_type)
 
         routing_sequence = heuristic_result["routing_sequence"]
         confidence = heuristic_result["confidence"]
         requires_override = heuristic_result["requires_override"]
+
+        if platform == "generic" and detection_confidence < 0.5:
+            requires_override = True
+            confidence = min(confidence, 0.4)
 
         if requires_override and confidence < self.confidence_threshold:
             routing_sequence, confidence = self._apply_llm_override(

@@ -27,7 +27,7 @@ Runs Lighthouse CI to audit a deployed site for performance, accessibility, best
 
 ```bash
 npx @lhci/cli autorun \
-  --collect.url=https://staging-url.netlify.app \
+  --collect.url=https://staging.fly.dev \
   --collect.numberOfRuns=3 \
   --assert.preset=desktop \
   --assert.assertions.performance=["error",{"minScore": 0.85}] \
@@ -129,7 +129,7 @@ Lighthouse outputs JSON. Key fields:
 
 ```python
 {
-    "url": "https://staging--mysite.netlify.app",
+    "url": "https://mysite.fly.dev",
     "scores": {
         "performance": 0.92,
         "accessibility": 0.88,
