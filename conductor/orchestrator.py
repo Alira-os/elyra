@@ -234,9 +234,9 @@ Generate the complete project structure and code.
 
     def _invoke_opencode_for_test(self, prompt: str, context: dict) -> str:
         """Helper for smoke tests to invoke OpenCode without full pipeline."""
-from tools.opencode import invoke_opencode
-from tools.kilo import invoke_kilo
-invoke_opencode = invoke_kilo
+        from tools.opencode import invoke_opencode
+        from tools.kilo import invoke_kilo
+        invoke_opencode = invoke_kilo
         return invoke_opencode(prompt, context, ".")
 
     def _create_result(self, state: ConductorState, trace: Trace, session_id: str) -> MigrationResult:

@@ -61,6 +61,10 @@ class MemoryClient:
         """Get migration history, optionally filtered."""
         return self.memory.list_recent_migrations(platform, task_type, limit)
 
+    def get_mutation_seed(self, task_context: dict):
+        """Get memory-derived mutation seed for biasing codegen."""
+        return self.memory.get_mutation_seed(task_context)
+
 
 if __name__ == "__main__":
     mc = MemoryClient()
