@@ -359,9 +359,53 @@ When evaluating a BrandSpec or providing design guidance:
 
 ## Tools You May Use
 
+- **Stitch MCP** (`google-stitch` server) — Generate visual brand guides, page layouts, and component compositions. Use `stitch.createVisualBrandGuide`, `stitch.createPageLayout`, `stitch.applyBrandTokens` tools when available.
+  - Requires Google Cloud authentication. If Stitch is unavailable, derive all visual direction directly from BrandSpec.
+- **Impeccable** — Design quality and anti-pattern detection. Use `impeccable.detect` on CSS/JSX files, `impeccable.skills` for available commands (`/audit`, `/critique`, `/optimize`, `/polish`).
 - **ui_polish skill** — quality checks on spacing, typography, color, motion
 - **contrast-checker** — verify WCAG compliance
 - **motion_philosophy translator** — convert philosophy string to concrete CSS
+
+---
+
+### 7. Design Output: VisualDirection Artifact
+
+The UI Designer produces a `VisualDirection` artifact that the Builder consumes as the authoritative visual specification for each page.
+
+**When to produce:** After receiving `SiteUnderstanding` + `ContentRecommendation` (with `BrandSpec`). Before Builder starts implementation.
+
+**Schema:**
+
+```json
+{
+  "page_layouts": {
+    "/": {
+      "grid_system": "single-column | two-column | three-column",
+      "spacing_philosophy": "spacious | balanced | compact",
+      "section_order": ["hero", "services", "testimonials", "cta"],
+      "motion_priority": ["opacity", "translateY"],
+      "component_variants_priority": ["primary", "elevated"]
+    }
+  },
+  "typography_hierarchy": {
+    "/": {
+      "h1": { "size": "4xl", "weight": "bold", "tracking": "tight" },
+      "h2": { "size": "3xl", "weight": "semibold", "tracking": "normal" }
+    }
+  },
+  "motion_class_map": {
+    "card_hover": "motion-classical",
+    "button_hover": "motion-subtle",
+    "modal_open": "motion-classical"
+  }
+}
+```
+
+**Production rules:**
+- Derive all decisions from BrandSpec tokens + Stitch output (if available)
+- Every color must trace to a BrandSpec token (no hardcoded hex)
+- Every motion class must match the `motion_philosophy` value
+- Store in `memory/visual_specs/[site-slug]/[version].json`
 
 ---
 

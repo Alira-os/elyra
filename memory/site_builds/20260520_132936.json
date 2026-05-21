@@ -5,6 +5,7 @@
   "source_architecture_id": "20260520_132936",
   "source_recommendation_id": "20260520_132936",
   "chosen_variant": "A",
+  "output_dir": "sites/merimee-solutions/",
   "brand_spec": {
     "primary_color": "#1E3A5F",
     "secondary_color": "#475569",

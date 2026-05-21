@@ -294,6 +294,26 @@ class SelfCritique(BaseModel):
     recommended_action: str = "None - acceptable trade-off"
 
 
+class VisualDirection(BaseModel):
+    """Lightweight delta on BrandSpec — captures design evolution decisions.
+    
+    Used by UI Designer persona to record direction changes, reasoning, and impact.
+    NOT a replacement for BrandSpec — composes on top of it.
+    """
+    delta_id: str = ""
+    parent_brand_spec_version: str = ""
+    primary_change: str  # "Shift from minimalist to bold editorial"
+    rationale: str  # "Source site uses heavy typography to convey authority"
+    impacted_components: List[str] = Field(default_factory=list)  # component_ids affected
+    impacted_pages: List[str] = Field(default_factory=list)  # route paths affected
+    color_delta: Optional[Dict[str, str]] = None  # {primary_color: "#E63946"} delta
+    typography_delta: Optional[Dict[str, str]] = None  # {font_family_heading: "Playfair Display"} delta
+    motion_delta: Optional[Dict[str, str]] = None  # {motion_philosophy: "energetic"} delta
+    designer_notes: List[str] = Field(default_factory=list)
+    created_by: str = "ui_designer"
+    created_at: str = ""
+
+
 class BuildManifest(BaseModel):
     migration_id: str = ""
     source_url: str = ""
@@ -302,6 +322,8 @@ class BuildManifest(BaseModel):
     source_recommendation_id: Optional[str] = None
     chosen_variant: Optional[str] = None
     brand_spec: Optional[BrandSpec] = None
+    visual_direction: Optional[VisualDirection] = None
+    output_dir: str = ""  # e.g., "sites/merimee-solutions/"
     ui_polish_version: str = "v1"
     ui_polish_changes: List[PolishChange] = Field(default_factory=list)
     self_critique: SelfCritique = Field(default_factory=SelfCritique)

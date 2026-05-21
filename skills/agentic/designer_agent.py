@@ -1,67 +1,59 @@
 """
-builder_agent.py — Phase 3/4 Agentic Builder (Kilo CLI as execution engine)
+designer_agent.py — UI Designer Agent (Kilo CLI as execution engine)
 
 Architecture:
-- Python: thin glue — loads SiteUnderstanding + SiteArchitecture + ContentRecommendation,
-           builds prompt, calls kilo run, parses JSON + writes code files
-- Kilo CLI: handles all agentic logic (persona + LLM reasoning + code generation)
+- Python: thin glue — loads SiteUnderstanding + ContentRecommendation,
+          builds prompt, calls kilo run, parses VisualDirection JSON
+- Kilo CLI: handles all agentic logic (persona + LLM reasoning)
 - No LangGraph, no LangChain, no custom agent loops
 
 Kilo CLI handles:
   - Loading the persona (embedded in prompt)
-  - LLM reasoning over all three input artifacts + brand_spec
-  - Generating production-grade code files
-  - Producing BuildManifest JSON
+  - LLM reasoning over SiteUnderstanding + BrandSpec + Stitch output
+  - Producing VisualDirection JSON
 
 Usage:
-    from skills.agentic.builder_agent import build
-    result = build("20260520_132936", "20260520_132936", "20260520_142439")
+    from skills.agentic.designer_agent import design
+    result = design("20260520_132936", "20260520_142439")
 """
 
-import subprocess
 import json
+import os
+import re
+import subprocess
 import sys
 import tempfile
-import os
-import shutil
-from pathlib import Path
-from typing import Optional, List
 from datetime import datetime
+from pathlib import Path
+from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from memory.gap_ledger import log_gap
 
 from models.site_schemas import (
     SiteUnderstanding,
-    SiteArchitecture,
     ContentRecommendation,
-    BuildManifest,
-    PolishChange,
-    SelfCritique,
+    VisualDirection,
 )
 
 
 MEMORY_DIR = Path("memory/site_understandings")
-ARCHITECTURE_DIR = Path("memory/site_architectures")
 RECOMMENDATION_DIR = Path("memory/site_recommendations")
-OUTPUT_DIR = Path("memory/site_builds")
-SITES_DIR = Path("sites")
-PERSONA_PATH = Path("registry/personas/builder_specialist.md")
+VISUAL_SPEC_DIR = Path("memory/visual_specs")
+PERSONA_PATH = Path("registry/personas/ui_designer.md")
 
 
 def get_site_slug(site_name: str) -> str:
     """Derive a kebab-case site slug from a site name."""
-    import re
     slug = site_name.lower().strip()
-    slug = re.sub(r'[^\w\s-]', '', slug)
-    slug = re.sub(r'[-\s]+', '-', slug)
-    slug = slug.strip('-')
+    slug = re.sub(r"[^\w\s-]", "", slug)
+    slug = re.sub(r"[-\s]+", "-", slug)
+    slug = slug.strip("-")
     return slug or "unnamed-site"
 
 
-def build_builder_prompt(
+def build_designer_prompt(
     site: SiteUnderstanding,
-    architecture: SiteArchitecture,
     recommendation: ContentRecommendation,
     site_slug: str,
 ) -> str:
@@ -69,48 +61,40 @@ def build_builder_prompt(
     persona = PERSONA_PATH.read_text() if PERSONA_PATH.exists() else ""
 
     site_json = site.model_dump_json(indent=2)
-    arch_json = architecture.model_dump_json(indent=2)
     rec_json = recommendation.model_dump_json(indent=2)
 
     return f"""{persona}
 
 ## Task
-Build a complete, production-ready site implementation from the following three artifacts.
+Produce a VisualDirection artifact that the Builder will use as the authoritative visual specification.
 
 ## Input SiteUnderstanding
 {site_json}
 
-## Input SiteArchitecture
-{arch_json}
-
-## Input ContentRecommendation (with chosen variant + brand_spec)
+## Input ContentRecommendation (with BrandSpec)
 {rec_json}
-
-The chosen variant is already decided. Apply it fully. Apply the brand_spec as the design system contract.
-Run the polish pass after initial generation. Log every polish change with reason + brand_spec_reference.
-Run a structured self-critique after polish.
 
 ## Output
 Your final response must include:
-1. A complete BuildManifest JSON (use the exact schema below)
-2. All generated code files written to the output directory
+1. A complete VisualDirection JSON
+2. Design reasoning traceable to BrandSpec tokens
 
-## BuildManifest Schema
-Use this exact schema for the BuildManifest:
-{json.dumps(BuildManifest.model_json_schema(), indent=2)}
+## VisualDirection Schema
+Use this exact schema for the VisualDirection:
+{json.dumps(VisualDirection.model_json_schema(), indent=2)}
 
-## Code Output
-Write all generated files to the directory: sites/{site_slug}/
-Key files to generate:
-- sites/{site_slug}/app/page.tsx (or appropriate page file for the target framework)
-- sites/{site_slug}/app/globals.css (with full BrandSpec tokens as CSS custom properties)
-- sites/{site_slug}/tailwind.config.js (with BrandSpec color/typography tokens)
-- sites/{site_slug}/components/ (one file per component from SiteArchitecture.components)
-- sites/{site_slug}/package.json
-- sites/{site_slug}/next.config.js (or appropriate config for target framework)
-- sites/{site_slug}/README.md
+## BrandSpec for this Site
+{recommendation.brand_spec.model_dump_json(indent=2) if recommendation.brand_spec else '{}'}
 
-Begin building now."""
+## Guidance
+- Derive all decisions from BrandSpec tokens + Stitch output (if available)
+- Every color must trace to a BrandSpec token (no hardcoded hex)
+- Every motion class must match the motion_philosophy value
+- For each page route, specify grid_system, spacing_philosophy, section_order
+- Map all component interactions to motion classes matching the motion_philosophy
+- Store output in: memory/visual_specs/{site_slug}/[timestamp].json
+
+Begin design now."""
 
 
 def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]:
@@ -170,17 +154,17 @@ def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]
         return None, None
 
 
-def parse_build_manifest(raw_json: str) -> Optional[BuildManifest]:
-    """Parse and validate JSON against BuildManifest schema."""
+def parse_visual_direction(raw_json: str) -> Optional[VisualDirection]:
+    """Parse and validate JSON against VisualDirection schema."""
     try:
         data = json.loads(raw_json)
-        return BuildManifest(**data)
+        return VisualDirection(**data)
     except Exception as e:
         print(f"[WARN] Validation error: {e}")
         try:
             data = json.loads(raw_json)
-            allowed = {k: v for k, v in data.items() if k in BuildManifest.model_fields}
-            return BuildManifest(**allowed)
+            allowed = {k: v for k, v in data.items() if k in VisualDirection.model_fields}
+            return VisualDirection(**allowed)
         except Exception:
             return None
 
@@ -201,22 +185,6 @@ def load_site_understanding(site_id: str) -> Optional[SiteUnderstanding]:
         return None
 
 
-def load_site_architecture(arch_id: str) -> Optional[SiteArchitecture]:
-    """Load a saved SiteArchitecture from memory directory."""
-    if not arch_id:
-        return None
-    arch_path = ARCHITECTURE_DIR / f"{arch_id}.json"
-    if not arch_path.exists():
-        arch_path = Path(arch_id)
-    try:
-        with open(arch_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return SiteArchitecture(**data)
-    except Exception as e:
-        print(f"[ERROR] Failed to load SiteArchitecture: {e}")
-        return None
-
-
 def load_content_recommendation(rec_id: str) -> Optional[ContentRecommendation]:
     """Load a saved ContentRecommendation from memory directory."""
     if not rec_id:
@@ -233,58 +201,37 @@ def load_content_recommendation(rec_id: str) -> Optional[ContentRecommendation]:
         return None
 
 
-def save_build_manifest(manifest: BuildManifest, output_id: str) -> Path:
-    """Save BuildManifest to JSON file in memory directory."""
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    filename = f"{output_id}.json"
-    filepath = OUTPUT_DIR / filename
+def save_visual_direction(
+    visual_direction: VisualDirection,
+    site_slug: str,
+    version: Optional[str] = None,
+) -> Path:
+    """Save VisualDirection to memory/visual_specs directory."""
+    version = version or datetime.now().strftime("%Y%m%d_%H%M%S")
+    VISUAL_SPEC_DIR.mkdir(parents=True, exist_ok=True)
+    site_dir = VISUAL_SPEC_DIR / site_slug
+    site_dir.mkdir(parents=True, exist_ok=True)
+    filepath = site_dir / f"{version}.json"
     with open(filepath, "w", encoding="utf-8") as f:
-        f.write(manifest.model_dump_json(indent=2))
+        f.write(visual_direction.model_dump_json(indent=2))
     return filepath
 
 
-def list_recommendations() -> list[Path]:
-    """List all saved ContentRecommendation files."""
-    if not RECOMMENDATION_DIR.exists():
-        return []
-    return sorted(RECOMMENDATION_DIR.glob("*.json"), reverse=True)
-
-
-def list_architectures() -> list[Path]:
-    """List all saved SiteArchitecture files."""
-    if not ARCHITECTURE_DIR.exists():
-        return []
-    return sorted(ARCHITECTURE_DIR.glob("*.json"), reverse=True)
-
-
-def list_site_understandings() -> list[Path]:
-    """List all saved SiteUnderstanding files."""
-    if not MEMORY_DIR.exists():
-        return []
-    return sorted(MEMORY_DIR.glob("*.json"), reverse=True)
-
-
-def build(site_id: str, arch_id: str, rec_id: str) -> Optional[BuildManifest]:
+def design(site_id: str, rec_id: str) -> Optional[VisualDirection]:
     """
-    Main entry point: load all three artifacts -> build prompt -> call kilo run ->
-    parse manifest + write code files.
+    Main entry point: load artifacts -> build prompt -> call kilo run ->
+    parse VisualDirection JSON.
 
     Args:
         site_id: timestamp ID of the SiteUnderstanding
-        arch_id: timestamp ID of the SiteArchitecture
         rec_id: timestamp ID of the ContentRecommendation
 
     Returns:
-        BuildManifest or None on failure
+        VisualDirection or None on failure
     """
     site = load_site_understanding(site_id)
     if not site:
         print(f"[ERROR] Could not load SiteUnderstanding for: {site_id}")
-        return None
-
-    architecture = load_site_architecture(arch_id)
-    if not architecture:
-        print(f"[ERROR] Could not load SiteArchitecture for: {arch_id}")
         return None
 
     recommendation = load_content_recommendation(rec_id)
@@ -295,16 +242,14 @@ def build(site_id: str, arch_id: str, rec_id: str) -> Optional[BuildManifest]:
     site_name = recommendation.site_name or site.name or "unnamed"
     site_slug = get_site_slug(site_name)
 
-    prompt = build_builder_prompt(site, architecture, recommendation, site_slug)
+    prompt = build_designer_prompt(site, recommendation, site_slug)
 
-    print(f"\n[BUILDER] Building {site.url} via Kilo CLI")
+    print(f"\n[DESIGNER] Designing {site.url} via Kilo CLI")
     print("=" * 60)
-    print(f"[INPUT] Site: {site_id}, Architecture: {arch_id}, Recommendation: {rec_id}")
-    print(f"[OUTPUT] sites/{site_slug}/")
+    print(f"[INPUT] Site: {site_id}, Recommendation: {rec_id}")
     if recommendation.brand_spec:
         print(f"[BRAND] Motion: {recommendation.brand_spec.motion_philosophy}")
         print(f"[BRAND] Primary: {recommendation.brand_spec.primary_color}")
-    print(f"[VARIANT] Chosen: {recommendation.chosen_variant}")
 
     try:
         import platform
@@ -313,14 +258,6 @@ def build(site_id: str, arch_id: str, rec_id: str) -> Optional[BuildManifest]:
                 "C:\\Program Files\\nodejs\\node.exe"
                 if Path("C:\\Program Files\\nodejs\\node.exe").exists()
                 else "node"
-            )
-            kilo_bin_local = (
-                Path(__file__).resolve().parents[2]
-                / "node_modules"
-                / "@kilocode"
-                / "cli"
-                / "bin"
-                / "kilo"
             )
             kilo_bin_fallback = Path(
                 "C:\\Users\\micha\\AppData\\Roaming\\npm\\node_modules\\@kilocode\\cli\\bin\\kilo"
@@ -359,10 +296,10 @@ def build(site_id: str, arch_id: str, rec_id: str) -> Optional[BuildManifest]:
         log_gap(
             migration_id=site_id,
             gap_type="gate_failure",
-            source_persona="builder",
-            description="Kilo CLI timed out after 10 minutes",
-            suggested_fix="Increase timeout or simplify build scope",
-            severity="high",
+            source_persona="ui_designer",
+            description="Kilo CLI timed out after 10 minutes during design phase",
+            suggested_fix="Increase timeout or simplify design scope",
+            severity="medium",
         )
         return None
     except FileNotFoundError:
@@ -370,7 +307,7 @@ def build(site_id: str, arch_id: str, rec_id: str) -> Optional[BuildManifest]:
         log_gap(
             migration_id=site_id,
             gap_type="gate_failure",
-            source_persona="builder",
+            source_persona="ui_designer",
             description="'kilo' command not found in PATH",
             suggested_fix="Ensure Kilo CLI is installed and in system PATH",
             severity="high",
@@ -383,7 +320,7 @@ def build(site_id: str, arch_id: str, rec_id: str) -> Optional[BuildManifest]:
         log_gap(
             migration_id=site_id,
             gap_type="gate_failure",
-            source_persona="builder",
+            source_persona="ui_designer",
             description=f"Kilo CLI exited with code {result.returncode}: {result.stderr[:200] if result.stderr else 'no stderr'}",
             suggested_fix="Check Kilo CLI configuration and prompt syntax",
             severity="high",
@@ -404,74 +341,54 @@ def build(site_id: str, arch_id: str, rec_id: str) -> Optional[BuildManifest]:
         log_gap(
             migration_id=site_id,
             gap_type="gate_failure",
-            source_persona="builder",
-            description="Could not extract BuildManifest JSON from Kilo output",
+            source_persona="ui_designer",
+            description="Could not extract VisualDirection JSON from Kilo output",
             suggested_fix="Check Kilo output format and prompt instructions",
-            severity="high",
+            severity="medium",
         )
-        for i, line in enumerate(lines):
-            try:
-                event = json.loads(line.strip())
-                if event.get("type") == "text":
-                    text = event.get("part", {}).get("text", "")
-                    print(f"  [TEXT_EVENT {i}] len={len(text)} start={text[:100]}")
-            except:
-                pass
         return None
 
-    manifest = parse_build_manifest(json_str)
-    if manifest:
-        manifest.output_dir = f"sites/{site_slug}/"
-        print(f"  [OK] Build complete")
-        print(f"  [OUTPUT] sites/{site_slug}/")
-        print(f"  [QUALITY] Score: {manifest.overall_quality_score:.0f}/100")
-        print(f"  [POLISH] {len(manifest.ui_polish_changes)} changes logged")
-        if manifest.self_critique:
-            print(f"  [CRITIQUE] Severity: {manifest.self_critique.severity}")
-            if manifest.self_critique.severity == "high":
-                for issue in manifest.self_critique.brand_token_violations:
-                    log_gap(
-                        migration_id=site_id,
-                        gap_type="visual_mismatch",
-                        source_persona="builder",
-                        description=f"Brand token violation: {issue}",
-                        suggested_fix=manifest.self_critique.recommended_action,
-                        severity="high",
-                    )
-        save_build_manifest(manifest, site_id)
+    visual_direction = parse_visual_direction(json_str)
+    if visual_direction:
+        filepath = save_visual_direction(visual_direction, site_slug)
+        print(f"  [OK] VisualDirection created")
+        print(f"  [OUTPUT] {filepath}")
+        print(f"  [PRIMARY CHANGE] {visual_direction.primary_change}")
     else:
         print("[ERROR] JSON parsed but failed schema validation")
         log_gap(
             migration_id=site_id,
             gap_type="gate_failure",
-            source_persona="builder",
-            description="BuildManifest JSON parsed but failed Pydantic schema validation",
-            suggested_fix="Check that Kilo produces valid BuildManifest JSON per schema",
-            severity="high",
+            source_persona="ui_designer",
+            description="VisualDirection JSON parsed but failed Pydantic schema validation",
+            suggested_fix="Check that Kilo produces valid VisualDirection JSON per schema",
+            severity="medium",
         )
 
-    return manifest
+    return visual_direction
 
 
 if __name__ == "__main__":
     import sys
+
     site_id = sys.argv[1] if len(sys.argv) > 1 else "--latest"
-    arch_id = sys.argv[2] if len(sys.argv) > 2 else site_id
-    rec_id = sys.argv[3] if len(sys.argv) > 3 else site_id
+    rec_id = sys.argv[2] if len(sys.argv) > 2 else site_id
 
     if site_id == "--latest":
+        from skills.agentic.builder_agent import (
+            list_site_understandings,
+            list_recommendations,
+        )
         sites = list_site_understandings()
-        archs = list_architectures()
         recs = list_recommendations()
         if sites:
             site_id = sites[0].stem
-            arch_id = archs[0].stem if archs else site_id
             rec_id = recs[0].stem if recs else site_id
-            print(f"[LATEST] Using site: {site_id}, arch: {arch_id}, rec: {rec_id}")
+            print(f"[LATEST] Using site: {site_id}, rec: {rec_id}")
 
-    result = build(site_id, arch_id, rec_id)
+    result = design(site_id, rec_id)
     if result:
         print(result.model_dump_json(indent=2))
     else:
-        print("Build failed.")
+        print("Design failed.")
         sys.exit(1)

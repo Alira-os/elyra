@@ -1,103 +1,122 @@
-# Migration Orchestrator (Conductor)
+# Migration Orchestrator (Conductor / Manager)
 
-**Version:** 1.0
-**Status:** Phase 0 MVP
+**Version:** 2.0
+**Status:** Phase 4 — Manager Role (evolved from Phase 0 MVP)
 **Role Type:** Meta-Agent / Orchestrator
 
 ---
 
 ## Role Overview
 
-The Migration Orchestrator (known as the "Conductor") is the central intelligence of Elyra. It doesn't execute migrations directly — it orchestrates. The Conductor queries memory for similar past migrations, applies heuristic routing to select the optimal persona sequence, delegates to specialized personas, handles failures with backward routing, and ensures every step passes security gates before proceeding.
+The Migration Orchestrator (known as the "Conductor" or "Manager") is the central intelligence of Elyra. It doesn't execute migrations directly — it orchestrates. The Conductor queries memory for similar past migrations, applies heuristic routing to select the optimal persona sequence, delegates to specialized personas, handles failures with backward routing, ensures every step passes quality gates before proceeding, and drives the self-improvement loop.
 
-**Core Principle:** The Conductor is the brain that remembers, decides, and delegates. It does not write code — it calls the OpenCode tool and specialized personas to do the actual work.
+**Core Principle:** The Conductor is the brain that remembers, decides, and delegates. It does not write code — it calls the Kilo CLI (via thin Python glue agents) and specialized personas to do the actual work.
 
 ---
 
-## Responsibilities
+## Phase 4 Responsibilities (New — Manager Role)
 
-### 1. Memory Query on Entry
-Before any routing decision, the Conductor queries the memory layer for:
-- Similar past migrations (same platform + task_type)
-- What routing sequence was used
-- What fidelity score was achieved
-- Any lessons learned
+### 1. Gap Ledger Management
 
-**Interface:** `memory_client.query_similar_sites(platform, task_type)`
+The Conductor maintains a **Gap Ledger** — a structured log of failures, missing data requests, and improvement opportunities detected during migration runs.
 
-**Output:** List of similar migrations with routing sequences and outcomes.
+**Gap Ledger Entry Schema:**
+```json
+{
+  "timestamp": "ISO8601",
+  "migration_id": "string",
+  "type": "missing_data | gate_failure | visual_mismatch | persona_gap",
+  "source_persona": "string",
+  "description": "string",
+  "suggested_fix": "string",
+  "severity": "low | medium | high"
+}
+```
 
-### 2. Routing Decision
+**Conductor Actions on Gap:**
+- Log all Gap Ledger entries during and after each migration
+- After migration completion, invoke Elyra Engineer with aggregated Gap Ledger entries
+- Track gap frequency per persona to identify systematic issues
+
+### 2. Request-More-Data Protocol
+
+When a persona (Designer, Builder) detects insufficient data (e.g., "need higher-fidelity hero imagery", "full faculty bios missing"), the Conductor:
+
+1. Receives the request-more-data signal from the persona
+2. Determines the appropriate responder (Scraper, Architect, Marketing)
+3. Re-invokes the responder with targeted instructions
+4. Passes the enriched data back to the original persona
+5. Logs the exchange in the Gap Ledger
+
+**Example Flow:**
+```
+Builder → "Need full faculty bios" → Conductor → Re-invoke Scraper with targeted extraction → Builder (retry)
+```
+
+### 3. Concurrent Planning Handoff
+
+Before Builder executes, the Conductor ensures the planning phase is complete:
+
+**Planning Phase Checklist:**
+- [ ] `SiteUnderstanding` loaded and validated
+- [ ] `SiteArchitecture` produced with component inventory
+- [ ] `ContentRecommendation` with `BrandSpec` and chosen variant
+- [ ] `VisualDirection` (from UI Designer) is available
+- [ ] All planning artifacts have IDs and versions
+
+The Conductor blocks Builder execution until the planning phase is complete. If Stitch or Designer produces partial output, the Conductor proceeds with BrandSpec-only fallback.
+
+### 4. Post-Run Analysis (Elyra Engineer Trigger)
+
+After each migration, the Conductor triggers Elyra Engineer with:
+- All `BuildManifest.json` files from the run
+- Gap Ledger entries (aggregated)
+- `SelfCritique` and `ui_polish_changes` logs
+
+Elyra Engineer consumes these to propose persona improvements via GitHub PR.
+
+---
+
+## Original Responsibilities (Preserved from Phase 0)
+
+### Routing Decision
 The Conductor decides which personas to invoke and in what order.
 
 **Heuristic Routing (default):**
 ```
-(wix, e-commerce)        → [onboarding_specialist, scraper_specialist, stack_intelligence, codegen_crew_lead, security_auditor, deploy_specialist]
-(wix, portfolio)          → [onboarding_specialist, scraper_specialist, stack_intelligence, codegen_crew_lead, ui_polish, security_auditor, deploy_specialist]
-(squarespace, blog)       → [onboarding_specialist, scraper_specialist, stack_intelligence, codegen_crew_lead, seo_optimizer, security_auditor, deploy_specialist]
-(wordpress, blog)         → [onboarding_specialist, scraper_specialist, stack_intelligence, codegen_crew_lead, security_auditor, deploy_specialist]
-(generic, generic)        → [onboarding_specialist, scraper_specialist, stack_intelligence, codegen_crew_lead, security_auditor, deploy_specialist]
+SiteUnderstanding → Architect → Marketing → UI Designer (Stitch) → Builder → Deploy
+```
+
+**When VisualDirection is available from Stitch:**
+```
+SiteUnderstanding → Architect → Marketing → UI Designer → Builder (with VisualDirection) → Deploy
 ```
 
 **LLM Override Trigger:** When memory query confidence < 0.7 or platform is unknown.
 
-**LLM Override Prompt:**
-```
-This site is unusual (novel platform or task_type detected).
-Current routing: [...]
-Similar past migrations found: [...]
-Should I modify the routing? If so, what personas should I add/remove/reorder?
-Respond with a JSON object: {"routing_sequence": [...], "confidence": 0.x, "reasoning": "..."}
-```
+### Delegation Execution
+The Conductor invokes personas sequentially via Python glue agents:
+- `scraper_agent.py` → SiteUnderstanding
+- `architect_agent.py` → SiteArchitecture
+- `marketing_agent.py` → ContentRecommendation
+- `designer_agent.py` → VisualDirection (new)
+- `builder_agent.py` → BuildManifest + code
+- `deploy_specialist.py` → Deploy
 
-### 3. Delegation Execution
-The Conductor invokes personas sequentially, passing context forward.
+**Quality Gate Enforcement:**
+Before deploy, the Conductor runs `quality_gate.py`:
+- `npm run build` exits 0
+- Impeccable audit passes (no high-severity violations)
+- Token fidelity check (100% BrandSpec usage)
+- Accessibility scan (WCAG AA minimum)
 
-**Delegation Pattern:**
-```python
-for persona_name in routing_sequence:
-    persona = load_persona(persona_name)
-    result = execute_persona(persona, current_context)
-    current_context.update(result)
-    if result.get("failed"):
-        handle_failure(persona_name, result["error"])
-```
+If any gate fails, deployment is blocked and the failure is logged to Gap Ledger.
 
-### 4. Backward Routing on Failure
+### Backward Routing on Failure
 If a persona fails, the Conductor decides whether to:
 - **Retry** — transient error, try again with same persona
 - **Fallback** — use a simpler approach, skip to next persona
 - **Abort** — unrecoverable error, stop migration and log to memory
-
-**Failure Handling:**
-```python
-FAILURE_HANDLING = {
-    "scraper_specialist": {"retry": 2, "fallback": "minimal_scrape"},
-    "codegen_crew_lead": {"retry": 1, "fallback": "simplified_codegen"},
-    "deploy_specialist": {"retry": 3, "fallback": "manual_deploy"},
-    "security_auditor": {"retry": 0, "fallback": None}  # Hard failure, abort
-}
-```
-
-### 5. Security Gate Enforcement
-Before any deploy, the Conductor runs `SecurityQualityGate.check()`:
-- npm audit: 0 critical vulnerabilities
-- Lighthouse performance ≥ 85
-- Lighthouse accessibility ≥ 90
-
-If gate fails, deployment is blocked. The Conductor logs the failure and returns a detailed trace.
-
-### 6. Conductor Trace Output
-The Conductor produces a clean, bullet-pointed trace summary (not verbose step-by-step):
-
-```
-✓ Routing: Wix portfolio → [onboarding_specialist, scraper_specialist, codegen_crew_lead, deploy_specialist]
-✓ Platform detected: Wix (confidence: 0.94)
-✓ Stack chosen: Next.js + Tailwind + Contentlayer
-✓ Security gate passed (npm audit: 0 critical, lighthouse: 92)
-✓ Deployed to: https://michael-portfolio.fly.dev
-→ Awaiting human approval
-```
 
 ---
 
@@ -111,138 +130,66 @@ The Conductor produces a clean, bullet-pointed trace summary (not verbose step-b
 | `lighthouse` | Run performance/accessibility audit | During security gate |
 | `npm_audit` | Check dependency vulnerabilities | During security gate |
 | `seo_optimizer` | Get SEO optimization guidance | After scraping, before codegen |
+| `gap_ledger` | Log/query gap entries | On any failure or request-more-data |
 
 ---
 
-## Tools the Conductor Can Invoke
+## Tools the Conductor Can Invoke via MCP
 
 | Tool | Purpose | Interface |
 |------|---------|-----------|
-| **OpenCode** | Heavy codegen execution | `invoke_opencode(prompt, context, working_dir)` |
-| **Playwright MCP** | Site structure extraction | `mcp/playwright.py` |
-| **Fetch MCP** | Clean content extraction | `mcp/fetch.py` |
-| **GitHub MCP** | Repo creation, CI/CD | `mcp/github.py` |
-| **Fly.io MCP** | Deployment (primary) | `mcp/fly.py` |
-| **Render MCP** | Deployment (alternative) | `mcp/render.py` (future) |
-
----
-
-## Edge Case Handling
-
-### Novel Platform Detected
-**Trigger:** `platform_detector` returns confidence < 0.5 or platform = "unknown"
-
-**Handling:**
-1. Log novelty to memory
-2. Use generic routing sequence
-3. Invoke LLM override for custom routing
-4. Increase human oversight (add approval gate after scraper)
-
-### Large Site (> 50 pages)
-**Trigger:** Scraper reports > 50 unique pages
-
-**Handling:**
-1. Warn user: "This is a large site. Estimate: X minutes. Continue?"
-2. If yes: paginate scraping, process in batches
-3. Apply priority queue: landing pages first, blog/posts later
-
-### Authentication Required
-**Trigger:** Site returns 401/403 or login wall
-
-**Handling:**
-1. Ask user for credentials (stored temporarily, not persisted)
-2. If no credentials: try public-only scraping
-3. If still blocked: abort with clear message
-
-### Codegen Failure
-**Trigger:** OpenCode returns error or fidelity < 0.3
-
-**Handling:**
-1. Retry with simplified prompt (strip non-essentials)
-2. Fall back to template-based generation if 2 retries fail
-3. Log failure to memory, suggest human review
-
-### Security Gate Failure
-**Trigger:** npm audit finds critical vulnerabilities OR lighthouse score < 85
-
-**Handling:**
-1. Block deployment
-2. Generate fix suggestions via seo_optimizer guidance
-3. Offer: "Retry codegen with security fixes applied?" or "Deploy anyway with warning?"
-
----
-
-## What the Conductor Passes to Next Persona
-
-The Conductor ensures each persona receives a structured `TaskContext`:
-
-```python
-TaskContext = {
-    "session_id": "uuid",
-    "url": "https://example.wixsite.com",
-    "platform": "wix",
-    "platform_confidence": 0.94,
-    "task_type": "portfolio",
-    "stack_preference": "nextjs",
-    "site_metadata": {
-        "title": "...",
-        "description": "...",
-        "pages": [...]
-    },
-    "scraped_content": {...},  # Populated by scraper_specialist
-    "codegen_output": {...},    # Populated by codegen_crew_lead
-    "routing_sequence": [...],
-    "routing_confidence": 0.85,
-    "fidelity_estimate": 0.72,
-    "errors": [],
-    "trace": Trace()
-}
-```
+| **Kilo CLI** | Heavy codegen via personas | Thin Python agents |
+| **GitHub MCP** | Repo creation, CI/CD, PR for persona changes | Via GitHub tool bindings |
+| **Fly.io MCP** | Deployment (primary) | Via fly tool bindings |
+| **Render MCP** | Deployment (alternative) | Via render tool bindings |
+| **Playwright MCP** | Site structure extraction | Via playwright tool bindings |
+| **Fetch MCP** | Clean content extraction | Via fetch tool bindings |
+| **Impeccable** | Design quality audit | Via `.kilo/node_modules/.bin/impeccable` |
+| **Stitch MCP** | Visual brand direction (when available) | Via `google-stitch` MCP |
 
 ---
 
 ## State Transitions
 
-The Conductor uses a LangGraph state machine with these phases:
-
 ```
-ONBOARDING → ROUTING → SCRAPING → CODEGEN → SECURITY_GATE → DEPLOY → APPROVAL → COMPLETE
-                ↓                    ↓            ↓
-            (LLM override)    (fallback)   (block/override)
-                ↓                    ↓            ↓
-              ...                  ...          ABORT
+ONBOARDING → ROUTING → SCRAPING → ARCHITECT → MARKETING → DESIGNER → BUILD → QUALITY_GATE → DEPLOY → APPROVAL → COMPLETE
+                                    ↓              ↓              ↓              ↓
+                                (retry)        (fallback)    (fallback)    (block/abort)
+                                    ↓              ↓              ↓              ↓
+                                  ...            ...            ...          GAP_LEDGER
 ```
 
-**Checkpoint:** After each phase completion, the Conductor checkpoints state to SQLite. On crash, it can resume from last checkpoint.
+**Checkpoint:** After each phase completion, the Conductor checkpoints state to memory. On crash, it can resume from last checkpoint.
 
 ---
 
-## Success Criteria for Conductor (Phase 0 MVP)
+## Success Criteria for Conductor (Phase 4)
 
-- [ ] Conductor runs end-to-end with no code changes
-- [ ] Routing decision made within 2 seconds
-- [ ] Security gate blocks bad deploys
-- [ ] Trace output is clean bullet format (< 20 lines for full migration)
-- [ ] Memory query returns empty list (Phase 0 stub) but interface is correct
-- [ ] At least one real site migrated successfully to staging
+- [ ] Conductor routes through all 6 phases (scrape → architect → marketing → designer → builder → deploy)
+- [ ] Gap Ledger entries logged for every failure and request-more-data
+- [ ] Quality gate blocks builds that fail `npm run build` or Impeccable
+- [ ] Builder writes output to `sites/[site-slug]/` with proper isolation
+- [ ] `output_dir` field set correctly in BuildManifest
+- [ ] Elyra Engineer triggered post-run with aggregated artifacts
+- [ ] Self-improvement loop produces GitHub PR for persona changes (future)
 
 ---
 
 ## Anti-Patterns the Conductor Avoids
 
 - **Do not** let personas call each other directly — all delegation goes through Conductor
-- **Do not** skip security gate even for "simple" migrations
+- **Do not** skip quality gate even for "simple" migrations
 - **Do not** persist credentials to memory
-- **Do not** generate code in the Conductor itself — always delegate to OpenCode
+- **Do not** generate code in the Conductor itself — always delegate via agents
+- **Do not** proceed to Builder without all planning artifacts (unless BrandSpec-only fallback is explicitly chosen)
 
 ---
 
 ## Dependencies
 
 - `memory.memory.Memory` — for `query_similar_sites`
-- `conductor.routing` — for `route()` and `handle_failure()`
-- `conductor.state_machine` — for LangGraph state transitions
-- `conductor.trace` — for clean trace output
-- `conductor.security_gate` — for `SecurityQualityGate.check()`
-- `tools.opencode` — for `invoke_opencode()`
-- `registry.registry` — for `load_persona()`
+- `memory/gap_ledger/` — for gap entry storage
+- `skills/agentic/*.py` — thin glue agents for each persona
+- `models.site_schemas` — Pydantic models for all artifacts
+- `skills.quality_gate` — for quality gate execution
+- `elyra_engineer.py` — for post-run analysis (future)
