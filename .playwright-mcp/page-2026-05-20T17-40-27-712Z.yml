@@ -1,0 +1,96 @@
+- generic [ref=e3]:
+  - region "top of page"
+  - generic [ref=e9]:
+    - group:
+      - banner:
+        - generic [ref=e10]:
+          - img "SJWA Smallest" [ref=e18]
+          - heading "St. Joseph the Worker Academy" [level=1] [ref=e20]
+          - navigation "Site" [ref=e23]:
+            - list [ref=e24]:
+              - listitem [ref=e25]:
+                - generic [ref=e27]:
+                  - generic [ref=e29]: Academics
+                  - button "More Academics pages" [ref=e30] [cursor=pointer]:
+                    - img [ref=e31]
+              - listitem [ref=e33]:
+                - generic [ref=e35]:
+                  - generic [ref=e37]: Administration
+                  - button "More Administration pages" [ref=e38] [cursor=pointer]:
+                    - img [ref=e39]
+              - listitem [ref=e41]:
+                - link "Events" [ref=e44] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/event-list
+                  - generic [ref=e45]: Events
+              - listitem [ref=e46]:
+                - link "FAQ" [ref=e49] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/blank-2
+                  - generic [ref=e50]: FAQ
+              - listitem [ref=e51]:
+                - link "Donate" [ref=e54] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/donate
+                  - generic [ref=e55]: Donate
+      - main:
+        - generic [ref=e60]:
+          - generic [ref=e64]:
+            - generic [ref=e66]:
+              - heading "Inshal Chenet, M.A." [level=4] [ref=e69]
+              - heading "Headmaster" [level=5] [ref=e71]
+            - paragraph [ref=e73]: "Mr. Chenet has lived in 18 different places around the globe since he was born in Bedford, Texas. He comes from a family of seven and his father served in the United States Air Force. After serving a year in NET ministries, Mr. Chenet went on to attend Wyoming Catholic College and received his B.A. in Liberal Arts, and then received an M.A. in Moral Theology from Christendom College. He teaches Science, Theology, History, and a variety of other subjects for Homeschool Connections and other local groups, and is currently writing his first book: Astronomy and Wonder. On the side, Mr. Chenet runs a hobby farm that includes a milk cow, meat rabbits, maple-tapping, bees, sheep and chickens. He is a certified COR backpacking instructor and enjoys canyoneering, caving, and camping when he can find the time for it. But most of all, Mr. Chenet loves spending time with his wife and four children and the vibrant community that they live in."
+            - generic [ref=e74]:
+              - paragraph [ref=e77]:
+                - link "headmaster@saintjosephtheworkeracademy.org" [ref=e78] [cursor=pointer]:
+                  - /url: mailto:headmaster@saintjosephtheworkeracademy.org
+              - paragraph [ref=e80]: 410-330-9090
+          - img "Inshal Chenet, M.A." [ref=e87]
+        - generic [ref=e88]:
+          - button "Previous" [disabled] [ref=e93]:
+            - generic [ref=e94]: Previous
+          - link [ref=e96] [cursor=pointer]:
+            - /url: https://www.saintjosephtheworkeracademy.org/faculty
+            - img [ref=e98]
+          - button "Next" [ref=e110] [cursor=pointer]:
+            - generic [ref=e111]: Next
+      - contentinfo:
+        - generic [ref=e112]:
+          - group:
+            - generic [ref=e116]:
+              - group:
+                - generic [ref=e118]:
+                  - img "SJWA.png" [ref=e124]
+                  - heading "St. Joseph the Worker Academy" [level=5] [ref=e126]:
+                    - link "St. Joseph the Worker Academy" [ref=e128] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org
+            - generic [ref=e129]:
+              - group:
+                - generic [ref=e131]:
+                  - paragraph [ref=e134]: © 2024 St. Joseph the Worker Academy, Ann Arbor
+                  - generic [ref=e135]:
+                    - paragraph [ref=e136]: Website Crafted by
+                    - paragraph [ref=e137]:
+                      - link "Merimee Solutions" [ref=e139] [cursor=pointer]:
+                        - /url: https://www.merimeesolutions.com/
+            - generic [ref=e140]:
+              - group
+            - generic [ref=e143]:
+              - group:
+                - form "Newsletter Signup" [ref=e151]:
+                  - group [ref=e152]:
+                    - generic [ref=e153]:
+                      - generic [ref=e154]:
+                        - heading "Sign up for Opifex, the academy's monthly newsletter" [level=1] [ref=e162]:
+                          - generic [ref=e163]:
+                            - text: Sign up for
+                            - emphasis [ref=e164]: Opifex
+                            - text: ","
+                            - emphasis [ref=e165]
+                            - text: the academy's monthly newsletter
+                        - generic [ref=e167]:
+                          - generic [ref=e169]:
+                            - generic [ref=e170]: "*"
+                            - text: Email
+                          - textbox "Email" [ref=e175]
+                        - button "Yes, please subscribe me!" [ref=e180] [cursor=pointer]:
+                          - generic [ref=e181]: Yes, please subscribe me!
+                      - region
+  - region "bottom of page"

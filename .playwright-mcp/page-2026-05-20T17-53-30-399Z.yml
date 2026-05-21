@@ -1,0 +1,32 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - link "Wix Studio" [ref=e5] [cursor=pointer]:
+      - /url: https://www.wix.com/studio
+      - img [ref=e8]
+    - navigation [ref=e13]:
+      - link "Design" [ref=e14] [cursor=pointer]:
+        - /url: https://www.wix.com/studio/design
+      - link "Development" [ref=e15] [cursor=pointer]:
+        - /url: https://www.wix.com/studio/development
+      - link "Business solutions" [ref=e16] [cursor=pointer]:
+        - /url: https://www.wix.com/studio/business-solutions
+      - link "Enterprise" [ref=e17] [cursor=pointer]:
+        - /url: https://www.wix.com/studio/enterprise
+    - generic [ref=e18]:
+      - link "Log In" [ref=e20] [cursor=pointer]:
+        - /url: https://users.wix.com/signin?studio=true&loginDialogContext=login&postLogin=https:%2F%2Fwww.wix.com%2Fintro%2Fstudio%3Fref%3Dstudio_login&postSignUp=https:%2F%2Fwww.wix.com%2Fintro%2Fstudio%3Fref%3Dstudio_signup
+      - link "Start Creating" [ref=e21] [cursor=pointer]:
+        - /url: https://users.wix.com/signin?studio=true&loginDialogContext=signup&postLogin=https:%2F%2Fwww.wix.com%2Fintro%2Fstudio%3Fref%3Dstudio_login&postSignUp=https:%2F%2Fwww.wix.com%2Fintro%2Fstudio%3Fref%3Dstudio_signup&overrideLocale=en
+        - generic [ref=e22]: Start Creating
+  - generic [ref=e24]:
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - 'heading "Error: page not found" [level=2] [ref=e28]'
+        - heading "404" [level=1] [ref=e29]
+      - generic [ref=e30]:
+        - paragraph [ref=e31]: We can't find the page you're looking for.
+        - paragraph
+    - generic [ref=e32]:
+      - heading "Go to the Wix Studio homepage →" [level=3]:
+        - link "Go to the Wix Studio homepage →" [ref=e33] [cursor=pointer]:
+          - /url: https://www.wix.com/studio

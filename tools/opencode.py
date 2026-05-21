@@ -138,7 +138,8 @@ def invoke_opencode(
     context: dict,
     working_dir: str,
     timeout: int = 300,
-    max_retries: int = 2
+    max_retries: int = 2,
+    mutation_seed: Optional[str] = None
 ) -> ToolResult:
     """
     Invoke OpenCode as a tool for heavy codegen execution.
@@ -149,6 +150,7 @@ def invoke_opencode(
         working_dir: Directory where OpenCode should operate
         timeout: Timeout in seconds (default: 300 = 5 minutes)
         max_retries: Number of retries on partial failure (default: 2)
+        mutation_seed: Optional memory-derived guidance string to inject
 
     Returns:
         ToolResult with structured output
@@ -168,10 +170,12 @@ def invoke_opencode(
     """
     context_summary = json.dumps(context, indent=2)
 
+    mutation_section = f"\n\n{mutation_seed}" if mutation_seed else ""
+
     full_prompt = f"""{prompt}
 
 ## Context
-{context_summary}
+{context_summary}{mutation_section}
 
 ## Instructions
 Execute the task as specified. Return a summary of what was done, including:

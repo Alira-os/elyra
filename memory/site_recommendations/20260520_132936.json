@@ -1,0 +1,182 @@
+{
+  "source_url": "https://merimeesolutions.wixstudio.com/my-site-2",
+  "source_understanding_id": "20260520_132936",
+  "source_architecture_id": "20260520_132936",
+  "site_name": "Merimee Digital Solutions",
+  "overall_content_strategy": "preserve-and-modernize",
+  "tone_of_voice": {
+    "voice": "professional",
+    "pitch": "Warm, mission-driven voice rooted in classical liberal arts and Catholic values, emphasizing beautifully simple presentation of good purposes.",
+    "example_phrases": [
+      "Showcase Your Mission",
+      "Clarify Your Cause",
+      "Don't resign yourself to mediocrity. Let's be great together."
+    ]
+  },
+  "brand_spec": {
+    "primary_color": "#1E3A5F",
+    "secondary_color": "#475569",
+    "accent_color": "#6366F1",
+    "background_color": "#F8FAFC",
+    "text_color": "#1E293B",
+    "semantic_tokens": {
+      "surface": "#FFFFFF",
+      "on-surface": "#1E293B",
+      "primary-container": "#EEF2FF"
+    },
+    "font_family_heading": "Merriweather, serif",
+    "font_family_body": "Source Sans Pro, sans-serif",
+    "font_size_base": "16px",
+    "type_scale": {
+      "xs": "12px",
+      "sm": "14px",
+      "base": "16px",
+      "lg": "18px",
+      "xl": "20px",
+      "2xl": "24px",
+      "3xl": "30px",
+      "4xl": "36px",
+      "5xl": "48px"
+    },
+    "spacing_scale": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px",
+      "2xl": "48px"
+    },
+    "border_radius": "0.375rem",
+    "shadow_scale": {
+      "sm": "0 1px 2px rgba(0,0,0,0.05)",
+      "md": "0 4px 6px rgba(0,0,0,0.1)",
+      "lg": "0 10px 15px rgba(0,0,0,0.1)"
+    },
+    "motion_philosophy": "classical",
+    "motion_duration": "200ms",
+    "motion_easing": "ease-out",
+    "component_variants": {
+      "button": [
+        "primary",
+        "secondary",
+        "ghost"
+      ],
+      "card": [
+        "default",
+        "elevated",
+        "outlined"
+      ]
+    },
+    "dark_mode_strategy": "full_tokens",
+    "notes": "Brand derived from classical liberal arts educational context and mission-focused Catholic values"
+  },
+  "page_strategies": [
+    {
+      "route": "/",
+      "page_type": "home",
+      "content_approach": "preserve",
+      "headline_recommendation": "Showcase Your Mission",
+      "body_recommendation": "Preserve the classical liberal arts voice and mission-driven narrative while modernizing layout and interactions for clarity.",
+      "cta_recommendation": "Let's Talk",
+      "seo_enhancement": "Add structured data for services and portfolio; optimize meta for 'mission-driven web design' and 'Catholic values branding'",
+      "notes": "Single-page anchor navigation; expand process section into reusable stepper"
+    }
+  ],
+  "variants": [
+    {
+      "variant_id": "A",
+      "tone_of_voice": {
+        "voice": "professional",
+        "pitch": "Warm, mission-driven voice rooted in classical liberal arts and Catholic values, emphasizing beautifully simple presentation of good purposes.",
+        "example_phrases": [
+          "Showcase Your Mission",
+          "Clarify Your Cause",
+          "Don't resign yourself to mediocrity. Let's be great together."
+        ]
+      },
+      "content_approaches": [
+        "preserve original voice",
+        "gradual modernization"
+      ],
+      "recommended_pages": [
+        "/"
+      ],
+      "headline_templates": [
+        "Showcase Your Mission",
+        "Clarify Your Cause"
+      ],
+      "body_templates": [
+        "Preserve the classical liberal arts narrative and personal bio",
+        "Keep mission-focused language for services and process"
+      ],
+      "cta_variations": [
+        "Let's Talk → Start the Conversation",
+        "Schedule a Call → Begin Your Mission"
+      ],
+      "competitive_positioning": "Positions brand as thoughtful, values-driven partner for mission-oriented organizations vs generic agencies",
+      "differentiation_points": [
+        "Classical liberal arts foundation",
+        "Catholic publishing background",
+        "Focus on 'good purposes' and beautiful simplicity"
+      ],
+      "rationale": "Directly mirrors the founder's bio and client portfolio signals for authenticity and brand equity preservation"
+    },
+    {
+      "variant_id": "B",
+      "tone_of_voice": {
+        "voice": "inspirational",
+        "pitch": "Bold, modern digital strategist voice that repositions classical values as competitive advantage in fast-moving markets.",
+        "example_phrases": [
+          "Transform Your Mission into Digital Reality",
+          "Elevate Your Cause with Clarity and Impact",
+          "Build Beautifully. Lead Boldly."
+        ]
+      },
+      "content_approaches": [
+        "bold refresh",
+        "repositioning opportunity"
+      ],
+      "recommended_pages": [
+        "/"
+      ],
+      "headline_templates": [
+        "Transform Your Mission",
+        "Lead with Clarity"
+      ],
+      "body_templates": [
+        "Modern, energetic language highlighting digital transformation",
+        "Emphasize speed, impact, and modern tools for mission-driven work"
+      ],
+      "cta_variations": [
+        "Start Your Transformation → Book a Strategy Call",
+        "Let's Build Boldly → Get Started"
+      ],
+      "competitive_positioning": "Differentiates as premium digital transformation partner for purpose-driven brands ready to scale",
+      "differentiation_points": [
+        "Classical roots meet modern execution",
+        "Values-based branding as market advantage",
+        "End-to-end mission realization"
+      ],
+      "rationale": "Tests bolder positioning to attract growth-stage clients while still nodding to heritage"
+    }
+  ],
+  "chosen_variant": "A",
+  "final_rationale": "Variant A best preserves the authentic classical liberal arts voice, personal bio, and mission-driven signals evident in the scraped content and client portfolio. It maintains brand equity with faith-aligned and educational organizations while allowing gradual modernization of UX and components.",
+  "brand_preservation_notes": [
+    "Protect the founder's personal mission narrative and classical education references",
+    "Retain warm, values-driven language around 'good purposes' and 'beautifully simple'",
+    "Keep client portfolio focus on mission-oriented organizations"
+  ],
+  "seo_content_opportunities": [
+    "Target long-tail keywords: 'mission-driven web design', 'Catholic values branding', 'classical liberal arts websites'",
+    "Expand services page content for SEO around web design for nonprofits and educational institutions",
+    "Add case study depth to portfolio entries with mission impact metrics"
+  ],
+  "reasoning_trace": [
+    "Analyzed text_content and headings for classical liberal arts, Catholic publishing, and mission-focused signals",
+    "Cross-referenced single-page architecture and portfolio clients (Holy Rollers, Chesterton Academy) confirming values-aligned audience",
+    "Developed Variant A as direct preservation of voice and bio; Variant B as modern repositioning test",
+    "Selected A for superior brand equity fit and authenticity with current client base",
+    "Derived BrandSpec motion as 'classical' and fonts from educational/heritage cues"
+  ]
+}

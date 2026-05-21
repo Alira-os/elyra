@@ -1,0 +1,138 @@
+- generic [ref=e3]:
+  - region "top of page"
+  - generic [ref=e10]:
+    - group:
+      - banner:
+        - generic [ref=e11]:
+          - img "SJWA Smallest" [ref=e19]
+          - heading "St. Joseph the Worker Academy" [level=1] [ref=e21]
+          - navigation "Site" [ref=e24]:
+            - list [ref=e25]:
+              - listitem [ref=e26]:
+                - generic [ref=e28]:
+                  - generic [ref=e30]: Academics
+                  - button "More Academics pages" [ref=e31] [cursor=pointer]:
+                    - img [ref=e32]
+              - listitem [ref=e34]:
+                - generic [ref=e36]:
+                  - generic [ref=e38]: Administration
+                  - button "More Administration pages" [ref=e39] [cursor=pointer]:
+                    - img [ref=e40]
+              - listitem [ref=e42]:
+                - link "Events" [ref=e45] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/event-list
+                  - generic [ref=e46]: Events
+              - listitem [ref=e47]:
+                - link "FAQ" [ref=e50] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/blank-2
+                  - generic [ref=e51]: FAQ
+              - listitem [ref=e52]:
+                - link "Donate" [ref=e55] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/donate
+                  - generic [ref=e56]: Donate
+      - main:
+        - generic [ref=e67]:
+          - navigation "Blog" [ref=e70]:
+            - list [ref=e71] [cursor=pointer]:
+              - listitem [ref=e72]:
+                - link "All Posts" [ref=e73]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/ideas
+          - region "Blog feed" [ref=e81]:
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - generic [ref=e87] [cursor=pointer]:
+                  - img "Why Agriculture?" [ref=e88]
+                  - img "Why Agriculture?" [ref=e89]
+                - generic [ref=e94]:
+                  - generic [ref=e95]:
+                    - link "Why Agriculture?" [ref=e96] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/post/why-agriculture
+                      - heading "Why Agriculture?" [level=2] [ref=e99]
+                    - generic [ref=e103] [cursor=pointer]: At the start, God entrusted all living things to man's care, to name and rule. We are by nature ordered to living things– to know, care...
+                  - generic [ref=e104]:
+                    - generic [ref=e111]:
+                      - generic "Dominic Perrotta" [ref=e113]
+                      - generic [ref=e114]:
+                        - generic [ref=e115]: May 24, 2024
+                        - generic [ref=e118]: 2 min read
+                    - button "More actions" [ref=e121] [cursor=pointer]:
+                      - img [ref=e123]
+              - generic [ref=e135]:
+                - generic [ref=e138] [cursor=pointer]:
+                  - img "A Useless Education" [ref=e139]
+                  - img "A Useless Education" [ref=e140]
+                - generic [ref=e145]:
+                  - generic [ref=e146]:
+                    - link "A Useless Education" [ref=e147] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/post/a-useless-education
+                      - heading "A Useless Education" [level=2] [ref=e150]
+                    - generic [ref=e154] [cursor=pointer]: Man's final end is to know God face to face. Every part of his life ought to be ordered to this end. The purpose of education, then, is...
+                  - generic [ref=e155]:
+                    - generic [ref=e162]:
+                      - generic "Dominic Perrotta" [ref=e164]
+                      - generic [ref=e165]:
+                        - generic [ref=e166]: Jan 4, 2024
+                        - generic [ref=e169]: 2 min read
+                    - button "More actions" [ref=e172] [cursor=pointer]:
+                      - img [ref=e174]
+              - generic [ref=e186]:
+                - generic [ref=e189] [cursor=pointer]:
+                  - img "Why a Boys School?" [ref=e190]
+                  - img "Why a Boys School?" [ref=e191]
+                - generic [ref=e196]:
+                  - generic [ref=e197]:
+                    - link "Why a Boys School?" [ref=e198] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school
+                      - heading "Why a Boys School?" [level=2] [ref=e201]
+                    - generic [ref=e205] [cursor=pointer]: Boys lag behind in the American education system. The modern school system is designed by women, and works well for girls. Boys need...
+                  - generic [ref=e206]:
+                    - generic [ref=e213]:
+                      - generic "Dominic Perrotta" [ref=e215]
+                      - generic [ref=e216]:
+                        - generic [ref=e217]: Jan 4, 2024
+                        - generic [ref=e220]: 2 min read
+                    - button "More actions" [ref=e223] [cursor=pointer]:
+                      - img [ref=e225]
+      - contentinfo:
+        - generic [ref=e238]:
+          - group:
+            - generic [ref=e242]:
+              - group:
+                - generic [ref=e244]:
+                  - img "SJWA.png" [ref=e250]
+                  - heading "St. Joseph the Worker Academy" [level=5] [ref=e252]:
+                    - link "St. Joseph the Worker Academy" [ref=e254] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org
+            - generic [ref=e255]:
+              - group:
+                - generic [ref=e257]:
+                  - paragraph [ref=e260]: © 2024 St. Joseph the Worker Academy, Ann Arbor
+                  - generic [ref=e261]:
+                    - paragraph [ref=e262]: Website Crafted by
+                    - paragraph [ref=e263]:
+                      - link "Merimee Solutions" [ref=e265] [cursor=pointer]:
+                        - /url: https://www.merimeesolutions.com/
+            - generic [ref=e266]:
+              - group
+            - generic [ref=e269]:
+              - group:
+                - form "Newsletter Signup" [ref=e277]:
+                  - group [ref=e278]:
+                    - generic [ref=e279]:
+                      - generic [ref=e280]:
+                        - heading "Sign up for Opifex, the academy's monthly newsletter" [level=1] [ref=e288]:
+                          - generic [ref=e289]:
+                            - text: Sign up for
+                            - emphasis [ref=e290]: Opifex
+                            - text: ","
+                            - emphasis [ref=e291]
+                            - text: the academy's monthly newsletter
+                        - generic [ref=e293]:
+                          - generic [ref=e295]:
+                            - generic [ref=e296]: "*"
+                            - text: Email
+                          - textbox "Email" [ref=e301]
+                        - button "Yes, please subscribe me!" [ref=e306] [cursor=pointer]:
+                          - generic [ref=e307]: Yes, please subscribe me!
+                      - region
+  - region "bottom of page"

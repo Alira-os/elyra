@@ -19,8 +19,27 @@ class Database:
                 conn.executescript(f.read())
             conn.commit()
 
-    def _row_to_dict(self, row: sqlite3.Row) -> dict:
+    def _row_to_dict(self, row, columns: list[str] = None) -> dict:
+        if not row:
+            return {}
+        if hasattr(row, 'keys'):
+            return {key: row[key] for key in row.keys()}
+        if isinstance(row, tuple) and columns:
+            return dict(zip(columns, row))
+        if isinstance(row, tuple):
+            return dict(row) if len(row) == 2 and isinstance(row[0], str) else list(row)
         return dict(row) if row else {}
+
+    def _get_columns(self, cursor) -> list[str]:
+        return [desc[0] for desc in cursor.description] if cursor.description else []
+
+    def _safe_json_loads(self, value):
+        if not value:
+            return None
+        try:
+            return json.loads(value)
+        except (json.JSONDecodeError, TypeError):
+            return None
 
     def _json_field(self, value) -> str:
         if value is None:
@@ -40,8 +59,12 @@ class MigrationCRUD:
         try:
             conn.execute("""
                 INSERT INTO migrations (id, url, platform, task_type, stack_chosen,
-                                        fidelity_score, routing_used, outcome, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                        fidelity_score, routing_used, outcome,
+                                        stage_history, fidelity_history, persona_versions,
+                                        decisions, site_architecture_id, content_recommendation_id,
+                                        production_url, github_repo, preview_url, preview_expires_at,
+                                        created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 migration_id,
                 data.get("url"),
@@ -51,6 +74,16 @@ class MigrationCRUD:
                 data.get("fidelity_score"),
                 self.db._json_field(data.get("routing_used")),
                 data.get("outcome"),
+                self.db._json_field(data.get("stage_history")),
+                self.db._json_field(data.get("fidelity_history")),
+                self.db._json_field(data.get("persona_versions")),
+                self.db._json_field(data.get("decisions")),
+                data.get("site_architecture_id"),
+                data.get("content_recommendation_id"),
+                data.get("production_url"),
+                data.get("github_repo"),
+                data.get("preview_url"),
+                data.get("preview_expires_at"),
                 datetime.now().isoformat()
             ))
             conn.commit()
@@ -67,9 +100,14 @@ class MigrationCRUD:
             )
             row = cursor.fetchone()
             if row:
-                d = self.db._row_to_dict(row)
-                d["stack_chosen"] = json.loads(d["stack_chosen"]) if d.get("stack_chosen") else None
-                d["routing_used"] = json.loads(d["routing_used"]) if d.get("routing_used") else None
+                columns = self.db._get_columns(cursor)
+                d = self.db._row_to_dict(row, columns)
+                d["stack_chosen"] = self.db._safe_json_loads(d.get("stack_chosen"))
+                d["routing_used"] = self.db._safe_json_loads(d.get("routing_used"))
+                d["stage_history"] = self.db._safe_json_loads(d.get("stage_history"))
+                d["fidelity_history"] = self.db._safe_json_loads(d.get("fidelity_history"))
+                d["persona_versions"] = self.db._safe_json_loads(d.get("persona_versions"))
+                d["decisions"] = self.db._safe_json_loads(d.get("decisions"))
                 return d
             return None
         finally:
@@ -99,9 +137,59 @@ class MigrationCRUD:
         finally:
             conn.close()
 
+    def update_stage_history(self, migration_id: str, stage: str, metadata: Optional[dict] = None) -> bool:
+        """Append a stage transition to the migration's stage_history."""
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute("SELECT stage_history FROM migrations WHERE id = ?", (migration_id,))
+            row = cursor.fetchone()
+            if not row:
+                return False
+            history = self.db._safe_json_loads(row[0]) or []
+            stage_entry = {"stage": stage, "timestamp": datetime.now().isoformat()}
+            if metadata:
+                stage_entry["metadata"] = metadata
+            history.append(stage_entry)
+            cursor = conn.execute(
+                "UPDATE migrations SET stage_history = ?, updated_at = ? WHERE id = ?",
+                (self.db._json_field(history), datetime.now().isoformat(), migration_id)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        finally:
+            conn.close()
+
+    def update_production(self, migration_id: str, production_url: str, github_repo: str) -> bool:
+        """Mark migration as production live."""
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                """UPDATE migrations SET outcome = 'success', production_url = ?,
+                   github_repo = ?, updated_at = ? WHERE id = ?""",
+                (production_url, github_repo, datetime.now().isoformat(), migration_id)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        finally:
+            conn.close()
+
+    def update_preview(self, migration_id: str, preview_url: str, expires_at: datetime) -> bool:
+        """Set preview URL with expiration."""
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                """UPDATE migrations SET preview_url = ?, preview_expires_at = ?,
+                   updated_at = ? WHERE id = ?""",
+                (preview_url, expires_at.isoformat(), datetime.now().isoformat(), migration_id)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        finally:
+            conn.close()
+
     def list_migrations(self, platform: Optional[str] = None,
-                         task_type: Optional[str] = None,
-                         limit: int = 20) -> list[dict]:
+                       task_type: Optional[str] = None,
+                       limit: int = 20) -> list[dict]:
         conn = self.db._get_connection()
         query = "SELECT * FROM migrations"
         params = []
@@ -121,12 +209,17 @@ class MigrationCRUD:
 
         try:
             cursor = conn.execute(query, params)
+            columns = self.db._get_columns(cursor)
             rows = cursor.fetchall()
             results = []
             for row in rows:
-                d = self.db._row_to_dict(row)
-                d["stack_chosen"] = json.loads(d["stack_chosen"]) if d.get("stack_chosen") else None
-                d["routing_used"] = json.loads(d["routing_used"]) if d.get("routing_used") else None
+                d = self.db._row_to_dict(row, columns)
+                d["stack_chosen"] = self.db._safe_json_loads(d.get("stack_chosen"))
+                d["routing_used"] = self.db._safe_json_loads(d.get("routing_used"))
+                d["stage_history"] = self.db._safe_json_loads(d.get("stage_history"))
+                d["fidelity_history"] = self.db._safe_json_loads(d.get("fidelity_history"))
+                d["persona_versions"] = self.db._safe_json_loads(d.get("persona_versions"))
+                d["decisions"] = self.db._safe_json_loads(d.get("decisions"))
                 results.append(d)
             return results
         finally:
@@ -164,9 +257,10 @@ class DebateCRUD:
             )
             row = cursor.fetchone()
             if row:
-                d = self.db._row_to_dict(row)
-                d["debate_result"] = json.loads(d["debate_result"]) if d.get("debate_result") else None
-                d["changes_proposed"] = json.loads(d["changes_proposed"]) if d.get("changes_proposed") else None
+                columns = self.db._get_columns(cursor)
+                d = self.db._row_to_dict(row, columns)
+                d["debate_result"] = self.db._safe_json_loads(d.get("debate_result"))
+                d["changes_proposed"] = self.db._safe_json_loads(d.get("changes_proposed"))
                 return d
             return None
         finally:
@@ -179,19 +273,20 @@ class DebateCRUD:
                 "SELECT * FROM debate_outputs WHERE migration_id = ? ORDER BY created_at DESC",
                 (migration_id,)
             )
+            columns = self.db._get_columns(cursor)
             rows = cursor.fetchall()
             results = []
             for row in rows:
-                d = self.db._row_to_dict(row)
-                d["debate_result"] = json.loads(d["debate_result"]) if d.get("debate_result") else None
-                d["changes_proposed"] = json.loads(d["changes_proposed"]) if d.get("changes_proposed") else None
+                d = self.db._row_to_dict(row, columns)
+                d["debate_result"] = self.db._safe_json_loads(d.get("debate_result"))
+                d["changes_proposed"] = self.db._safe_json_loads(d.get("changes_proposed"))
                 results.append(d)
             return results
         finally:
             conn.close()
 
     def approve_debate(self, debate_id: str, approved: bool,
-                       changes_proposed: Optional[list] = None) -> bool:
+                        changes_proposed: Optional[list] = None) -> bool:
         conn = self.db._get_connection()
         try:
             conn.execute("""
@@ -235,8 +330,9 @@ class HeuristicCRUD:
             )
             row = cursor.fetchone()
             if row:
-                d = self.db._row_to_dict(row)
-                d["routing_sequence"] = json.loads(d["routing_sequence"]) if d.get("routing_sequence") else None
+                columns = self.db._get_columns(cursor)
+                d = self.db._row_to_dict(row, columns)
+                d["routing_sequence"] = self.db._safe_json_loads(d.get("routing_sequence"))
                 return d
             return None
         finally:
@@ -321,9 +417,10 @@ class SessionStateCRUD:
             )
             row = cursor.fetchone()
             if row:
-                d = self.db._row_to_dict(row)
-                d["state_data"] = json.loads(d["state_data"]) if d.get("state_data") else {}
-                d["completed_steps"] = json.loads(d["completed_steps"]) if d.get("completed_steps") else []
+                columns = self.db._get_columns(cursor)
+                d = self.db._row_to_dict(row, columns)
+                d["state_data"] = self.db._safe_json_loads(d.get("state_data")) or {}
+                d["completed_steps"] = self.db._safe_json_loads(d.get("completed_steps")) or []
                 return d
             return None
         finally:

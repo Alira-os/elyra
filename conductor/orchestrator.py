@@ -164,6 +164,12 @@ class Conductor:
         platform = state["task_context"].get("platform", "generic")
         stack = state["stack_chosen"]
 
+        mutation_seed = None
+        seed = self.memory_client.get_mutation_seed(state["task_context"])
+        if seed:
+            mutation_seed = seed.to_prompt_section()
+            trace.add("Mutation Seed", f"Injected from {seed.similar_sites_count} similar migrations")
+
         codegen_prompt = f"""
 Build a {platform} migration site using {stack}.
 
@@ -182,7 +188,8 @@ Generate the complete project structure and code.
         result = invoke_opencode(
             prompt=codegen_prompt,
             context=state["task_context"],
-            working_dir="."
+            working_dir=".",
+            mutation_seed=mutation_seed
         )
 
         state["codegen_output"] = {"result": result.to_json() if hasattr(result, 'to_json') else str(result), "stack": stack}
@@ -227,7 +234,9 @@ Generate the complete project structure and code.
 
     def _invoke_opencode_for_test(self, prompt: str, context: dict) -> str:
         """Helper for smoke tests to invoke OpenCode without full pipeline."""
-        from tools.opencode import invoke_opencode
+from tools.opencode import invoke_opencode
+from tools.kilo import invoke_kilo
+invoke_opencode = invoke_kilo
         return invoke_opencode(prompt, context, ".")
 
     def _create_result(self, state: ConductorState, trace: Trace, session_id: str) -> MigrationResult:

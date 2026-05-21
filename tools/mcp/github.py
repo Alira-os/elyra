@@ -1,205 +1,73 @@
 """
-GitHub MCP Client Stub
+GitHub MCP Tool Interface — Documentation Only
 
-**Phase 0 Status:** STUB — Interface only, returns mock data.
-**Phase 1+ Target:** Replace with official MCP client using mcp Python SDK.
+**DEPRECATED:** This module is kept for reference only.
 
-Purpose:
-    GitHub repository creation, file push, Actions workflow trigger.
+As of Phase 1, GitHub operations go through Kilo with deploy_specialist persona.
+Kilo has GitHub MCP connected natively — no direct `gh` CLI wrapper needed.
 
-Phase 0 Behavior:
-    All functions return mock RepoInfo/WorkflowRun objects.
-    Functions print "[GitHub MCP Stub]" to show what would be called.
+The Python orchestration layer (github_strategy_agent.py, promotion_pipeline.py)
+builds prompts for Kilo and parses JSON output. Kilo handles the MCP tool
+invocations internally.
 
-Phase 1+ Behavior:
-    Connect to GitHub MCP server via mcp.ClientSession.
-    Real operations: create_repo, push_files, trigger_workflow, etc.
+If you need to call GitHub tools directly, use Kilo:
 
-Example (Phase 1+):
-    from mcp import ClientSession, StdioServerParameters
+    from tools.kilo import invoke_kilo
 
-    async def create_repo(name: str) -> RepoInfo:
-        async with ClientSession(StdioServerParameters(
-            command="npx",
-            args=["-y", "@github/mcp-server"]
-        )) as session:
-            result = await session.call_tool("create_repo", {"name": name})
-            return RepoInfo(**result)
+    result = invoke_kilo(
+        prompt="Create a GitHub repo 'my-org/my-repo' under Alira-os org",
+        context={},
+        working_dir="."
+    )
+
+For the GitHub MCP tool interface documentation, see the MCP server configuration
+in kilo.json or the GitHub MCP provider docs.
+
+---
+
+Historical Interface (deprecated):
+
+    from tools.mcp.github import create_repo, push_files
+
+    # DO NOT USE — goes through Kilo now
+    result = create_repo(name="my-repo", org="Alira-os", description="My site")
+    success = push_files(repo_full_name="Alira-os/my-repo", files={...})
+
+---
+
+Tool Interface (for Kilo MCP documentation):
+
+    GitHub MCP Tools:
+    - github_search_repositories: Search GitHub repos
+    - github_list_issues: List repository issues
+    - github_create_issue: Create an issue
+    - github_update_issue: Update an issue
+    - github_add_issue_comment: Add comment to issue
+    - github_search_issues: Search issues and PRs
+    - github_get_issue: Get specific issue
+    - github_create_repository: Create a new repository
+    - github_fork_repository: Fork a repository
+    - github_list_commits: List commits on a branch
+    - github_push_files: Push files to a repo
+    - github_create_branch: Create a branch
+    - github_create_pull_request: Create a PR
+    - github_get_pull_request: Get PR details
+    - github_list_pull_requests: List PRs
+    - github_merge_pull_request: Merge a PR
+    - github_get_pull_request_files: Get files changed in PR
+    - github_get_pull_request_status: Get PR status checks
+    - github_create_pull_request_review: Create a PR review
+    - github_search_code: Search code across repos
+    - github_search_users: Search users
+    - github_get_file_contents: Get repo file contents
+    - github_create_or_update_file: Create or update file
+    - github_official_push_files: Push multiple files
+    - github_list_pull_request_comments: List PR review comments
+    - github_get_pull_request_reviews: Get PR reviews
+
+    All GitHub operations are invoked via Kilo's MCP integration.
+    Direct gh CLI usage is deprecated in favor of Kilo + MCP.
 """
 
-import json
-from typing import Optional
-from dataclasses import dataclass
-
-
-@dataclass
-class RepoInfo:
-    url: str
-    name: str
-    owner: str
-    private: bool
-
-
-@dataclass
-class WorkflowRun:
-    id: int
-    status: str
-    conclusion: Optional[str]
-    url: str
-
-
-class GitHubMCP:
-    """
-    GitHub MCP client stub.
-
-    Phase 0: Stub implementation. Full MCP integration comes Phase 1.
-    """
-
-    def __init__(self, token: Optional[str] = None):
-        self.token = token
-        self.base_url = "https://api.github.com"
-
-    async def create_repo(
-        self,
-        name: str,
-        description: str = "",
-        private: bool = True,
-        auto_init: bool = False
-    ) -> RepoInfo:
-        """
-        Create a GitHub repository.
-
-        Args:
-            name: Repository name
-            description: Repository description
-            private: Whether repo should be private
-            auto_init: Whether to initialize with README
-
-        Returns:
-            RepoInfo with repository details
-
-        Stub returns mock data.
-        """
-        return RepoInfo(
-            url=f"https://github.com/merimeesoftware/{name}",
-            name=name,
-            owner="merimeesoftware",
-            private=private
-        )
-
-    async def push_files(
-        self,
-        repo_url: str,
-        files: dict,
-        branch: str = "main",
-        message: str = "Initial commit via Elyra"
-    ) -> bool:
-        """
-        Push files to a GitHub repository.
-
-        Args:
-            repo_url: Full repository URL
-            files: Dict of {filename: content}
-            branch: Branch to push to
-            message: Commit message
-
-        Returns:
-            True if successful
-
-        Stub always returns True.
-        """
-        print(f"[GitHub MCP Stub] Would push {len(files)} files to {repo_url}")
-        return True
-
-    async def protect_branch(
-        self,
-        repo_url: str,
-        branch: str = "main",
-        require_reviews: bool = True
-    ) -> bool:
-        """
-        Enable branch protection.
-
-        Args:
-            repo_url: Repository URL
-            branch: Branch name
-            require_reviews: Require PR reviews
-
-        Returns:
-            True if successful
-        """
-        return True
-
-    async def trigger_workflow(
-        self,
-        repo_url: str,
-        workflow_name: str
-    ) -> WorkflowRun:
-        """
-        Trigger a GitHub Actions workflow.
-
-        Args:
-            repo_url: Repository URL
-            workflow_name: Name of workflow file (without .yml)
-
-        Returns:
-            WorkflowRun object
-        """
-        return WorkflowRun(
-            id=12345,
-            status="queued",
-            conclusion=None,
-            url=f"{repo_url}/actions/runs/12345"
-        )
-
-    async def wait_for_workflow(
-        self,
-        run_id: int,
-        timeout: int = 600
-    ) -> WorkflowRun:
-        """
-        Wait for workflow to complete.
-
-        Args:
-            run_id: Workflow run ID
-            timeout: Timeout in seconds
-
-        Returns:
-            WorkflowRun with final status
-        """
-        return WorkflowRun(
-            id=run_id,
-            status="completed",
-            conclusion="success",
-            url=f"https://github.com/actions/runs/{run_id}"
-        )
-
-    async def get_workflow_status(self, repo_url: str, run_id: int) -> WorkflowRun:
-        """Get workflow run status."""
-        return WorkflowRun(
-            id=run_id,
-            status="completed",
-            conclusion="success",
-            url=f"{repo_url}/actions/runs/{run_id}"
-        )
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def test():
-        gh = GitHubMCP()
-
-        print("Creating repo...")
-        repo = await gh.create_repo("test-site", "Test migration")
-        print(f"Repo: {repo.url}")
-
-        print("\nPushing files...")
-        result = await gh.push_files(repo.url, {"index.html": "<html></html>"})
-        print(f"Push result: {result}")
-
-        print("\nTriggering workflow...")
-        wf = await gh.trigger_workflow(repo.url, "deploy")
-        print(f"Workflow: {wf.url}")
-
-    asyncio.run(test())
+# No implementation — Kilo handles GitHub MCP internally
+# Kept as documentation reference only

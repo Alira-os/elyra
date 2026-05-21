@@ -1,0 +1,796 @@
+{
+  "url": "https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school",
+  "platform": "wix",
+  "platform_confidence": 0.98,
+  "site_name": "St. Joseph the Worker Academy",
+  "total_pages_discovered": 5,
+  "pages": [
+    {
+      "url": "https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school",
+      "canonical_url": "https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school",
+      "title": "Why a Boys School?",
+      "page_type": [
+        "blog_post"
+      ],
+      "template_id": "wix-blog-post",
+      "meta_description": "Boys lag behind in the American education system. The modern school system is designed by women, and works well for girls. Boys need something further, something more tactile.",
+      "headings": {
+        "h1": [
+          "Why a Boys School?"
+        ],
+        "h2": [
+          "Recent Posts"
+        ],
+        "h3": []
+      },
+      "components": [
+        {
+          "type": "text_block",
+          "order": 0,
+          "content": {
+            "headline": "Why a Boys School?",
+            "subheadline": "By Dominic Perrotta · Jan 4, 2024 · 2 min read"
+          },
+          "assets": [
+            {
+              "src": "https://static.wixstatic.com/media/21d94f_f6506cca93854203a91cca1cd7bada44%7Emv2.jpg/v1/fill/w_45,h_45,al_c,lg_1,q_80,enc_avif,quality_auto/21d94f_f6506cca93854203a91cca1cd7bada44%7Emv2.jpg",
+              "alt": "Writer: Dominic Perrotta",
+              "width": 45,
+              "height": 45,
+              "role": "avatar"
+            }
+          ],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "Why a Boys School? Dominic Perrotta Jan 4, 2024 2 min read Updated: May 24, 2024"
+        },
+        {
+          "type": "text_block",
+          "order": 1,
+          "content": {},
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "Boys lag behind in the American education system. The modern school system is designed by women, and works well for girls. Boys need something further, something more tactile. Looking at John Bosco and John Senior we want to have a school that focuses on the whole person of the boy. As creatures made for union with God, we can only find true fulfillment through an ever-deepening relationship with Jesus Christ. And that relationship demands engagement from the whole person: body, mind and soul. In all that we do at this school – trades, study and prayer – we seek to create a rich and fertile soil for God to do His work in cultivating Saints. A boy coming out of our program needs to be an ideal candidate for anything, whether it is seminary, college, or working a trade."
+        },
+        {
+          "type": "text_block",
+          "order": 2,
+          "content": {},
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "In a world that is constantly disparaging \"toxic\" masculinity and effeminating boys, we want to focus on nurturing authentic masculinity. (Not superficial bravado, but the true masculinity that comes from striving towards aurduis goods and seeing the fruits of one's labor.) Our culture wants to make us soft, but by regular contact with the animals, with the trades, with the Usus Antiquior, and with the Classics we will counteract this softness."
+        },
+        {
+          "type": "text_block",
+          "order": 3,
+          "content": {},
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "All of this amounts to an education that relies heavily on first-hand experience of the world, and formation of the intellect through images over abstractions. This approach may be summarized as \"gymnopoetic,\" from the Greek \"gymnos\" for bare and \"poeisis\" for making, from which the word poetry is derived. These two concepts summarize the distinctive aspects of this approach to forming men. It is a method that relies on forming a true image of the world and the self by work, by a first-hand \"naked\" encounter with creation through making beautiful things, and by beauty distilled in poetry and the other imaginative arts."
+        },
+        {
+          "type": "text_block",
+          "order": 4,
+          "content": {},
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "This is why starting freshman year every student spends time daily working with their hands. This is most easily seen with the Wednesday trades day. Every Wednesday will be a focus on the trades. As Freshmen it will start with shop class, learning the various tools and how to do simple work. By the time they reach their Junior year they will be joining local tradesmen on jobsites, getting a real taste of the work and a sense of community."
+        },
+        {
+          "type": "text_block",
+          "order": 5,
+          "content": {},
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "This school is also connected to the community; we are not a boarding school. To help engage the students with the life of their own families, we will emphasize family time. This means we want to be a school without homework. Readings are done in class as a group, and when they get home at the end of the day they can rest with their families. Furthermore the shop class will have a focus in building things to take home and learning skills that are applicable in the home."
+        },
+        {
+          "type": "cta",
+          "order": 6,
+          "content": {},
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "Share via Facebook | Share via X (Twitter) | Share via LinkedIn | Share via link | Like post | 734 views | 0 comments"
+        },
+        {
+          "type": "cards",
+          "order": 7,
+          "content": {
+            "headline": "Recent Posts"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 3,
+            "gap": "24px"
+          },
+          "text_content": "Why Agriculture? | A Useless Education | See All"
+        }
+      ],
+      "images": [
+        {
+          "src": "https://static.wixstatic.com/media/21d94f_e9b1c547297a4792a26b9d4bff53d321~mv2.png/v1/crop/x_357,y_273,w_1537,h_2207/fill/w_176,h_254,fp_0.50_0.50,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/SJWA%20Smallest.png",
+          "alt": "SJWA Smallest",
+          "width": 176,
+          "height": 254,
+          "role": "logo"
+        },
+        {
+          "src": "https://static.wixstatic.com/media/b2a22f_0d05a1f9710a403095369e1bc7e51a93~mv2.png/v1/fill/w_1000,h_750,al_c,q_90,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/b2a22f_0d05a1f9710a403095369e1bc7e51a93~mv2.png",
+          "alt": "Blog post header image",
+          "width": 1000,
+          "height": 750,
+          "role": "hero"
+        }
+      ],
+      "links": [
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/ideas",
+          "text": "All Posts",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/post/why-agriculture",
+          "text": "Why Agriculture?",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/post/a-useless-education",
+          "text": "A Useless Education",
+          "is_internal": true,
+          "is_external": false
+        }
+      ],
+      "forms": [],
+      "text_content": "Why a Boys School?\nDominic Perrotta\nJan 4, 2024\n2 min read\n\nUpdated: May 24, 2024\n\nBoys lag behind in the American education system. The modern school system is designed by women, and works well for girls. Boys need something further, something more tactile.  Looking at John Bosco and John Senior we want to have a school that focuses on the whole person of the boy. As creatures made for union with God, we can only find true fulfillment through an ever-deepening relationship with Jesus Christ. And that relationship demands engagement from the whole person: body, mind and soul. In all that we do at this school  – trades, study and prayer – we seek to create a rich and fertile soil for God to do His work in cultivating Saints. A boy coming out of our program needs to be an ideal candidate for anything, whether it is seminary, college, or working a trade. \n\n\n\nIn a world that is constantly disparaging \"toxic\" masculinity and effeminating boys, we want to focus on nurturing authentic masculinity. (Not superficial bravado, but the true masculinity that comes from striving towards aurduis goods and seeing the fruits of one's labor.) Our culture wants to make us soft, but by regular contact with the animals, with the trades, with the Usus Antiquior, and with the Classics we will counteract this softness. \n\n\n\nAll of this amounts to an education that relies heavily on first-hand experience of the world, and formation of the intellect through images over abstractions. This approach may be summarized as \"gymnopoetic,\" from the Greek \"gymnos\" for bare and \"poeisis\" for making, from which the word poetry is derived. These two concepts summarize the distinctive aspects of this approach to forming men.  It is a method that relies on forming a true image of the world and the self by work, by a first-hand \"naked\" encounter with creation through making beautiful things, and by beauty distilled in poetry and the other imaginative arts. \n\n\n\nThis is why starting freshman year every student spends time daily working with their hands. This is most easily seen with the Wednesday trades day. Every Wednesday will be a focus on the trades. As Freshmen it will start with shop class, learning the various tools and how to do simple work. By the time they reach their Junior year they will be joining local tradesmen on jobsites, getting a real taste of the work and a sense of community. \n\n\n\nThis school is also connected to the community; we are not a boarding school. To help engage the students with the life of their own families, we will emphasize family time. This means we want to be a school without homework. Readings are done in class as a group, and when they get home at the end of the day they can rest with their families. Furthermore the shop class will have a focus in building things to take home and learning skills that are applicable in the home.\n734 views\n0 comments",
+      "text_word_count": 407,
+      "seo": {
+        "og_title": "Why a Boys School? | St. Joseph the Worker Academy",
+        "og_description": "Boys lag behind in the American education system. The modern school system is designed by women, and works well for girls. Boys need something further, something more tactile.",
+        "og_image": "https://static.wixstatic.com/media/b2a22f_0d05a1f9710a403095369e1bc7e51a93~mv2.png/v1/fill/w_1000,h_750,al_c,q_90,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/b2a22f_0d05a1f9710a403095369e1bc7e51a93~mv2.png",
+        "twitter_card": "summary_large_image"
+      },
+      "json_ld": [
+        {
+          "schema_type": "BlogPosting",
+          "raw": {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "author": {
+              "@type": "Person",
+              "name": "Dominic Perrotta"
+            },
+            "dateModified": "2024-05-24T14:02:40.672Z",
+            "datePublished": "2024-01-04T22:22:11.027Z",
+            "headline": "Why a Boys School?",
+            "mainEntityOfPage": {
+              "@id": "https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school",
+              "@type": "itemPage",
+              "url": "https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school"
+            },
+            "description": "Boys lag behind in the American education system...",
+            "url": "https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school",
+            "image": {
+              "@type": "ImageObject",
+              "url": "https://static.wixstatic.com/media/b2a22f_0d05a1f9710a403095369e1bc7e51a93~mv2.png/v1/fill/w_1000,h_750,al_c,q_90,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/b2a22f_0d05a1f9710a403095369e1bc7e51a93~mv2.png",
+              "width": "4032",
+              "height": "3024"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "St. Joseph the Worker Academy",
+              "url": "https://www.saintjosephtheworkeracademy.org"
+            }
+          }
+        }
+      ],
+      "breadcrumb_path": [
+        "Home",
+        "Ideas",
+        "Why a Boys School?"
+      ],
+      "cta_text": [
+        "Share via Facebook",
+        "Share via X (Twitter)",
+        "Share via LinkedIn",
+        "Share via link",
+        "Like post",
+        "See All"
+      ],
+      "notes": [
+        "Wix platform confirmed via meta generator tag and static.wixstatic.com CDN URLs"
+      ],
+      "navigation_from_page": []
+    },
+    {
+      "url": "https://www.saintjosephtheworkeracademy.org/",
+      "canonical_url": "https://www.saintjosephtheworkeracademy.org/",
+      "title": "St. Joseph the Worker Academy | Classical School | Ann Arbor, MI, USA",
+      "page_type": [
+        "home"
+      ],
+      "template_id": "wix-home",
+      "meta_description": "Discover how St. Joseph's Academy transforms boys into virtuous men through a classical Gymnopoetic education. Join us in fostering integrity, wisdom, and faith in Ann Arbor. At this Boy's school, we focus on trades, wonder, and the classics.",
+      "headings": {
+        "h1": [
+          "St. Joseph the Worker Academy"
+        ],
+        "h2": [],
+        "h3": []
+      },
+      "components": [
+        {
+          "type": "hero",
+          "order": 0,
+          "content": {
+            "headline": "St. Joseph the Worker Academy"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": null
+        },
+        {
+          "type": "cards",
+          "order": 1,
+          "content": {
+            "headline": "Curriculum"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 8,
+            "gap": "16px"
+          },
+          "text_content": "Theology | Literature | History | Science | Mathematics | Fine Arts | Latin | Cross-curriculars"
+        },
+        {
+          "type": "text_block",
+          "order": 2,
+          "content": {
+            "headline": "The Bosco Trades Program"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "Learn More"
+        },
+        {
+          "type": "cards",
+          "order": 3,
+          "content": {
+            "headline": "Recent Ideas"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 3,
+            "gap": "24px"
+          },
+          "text_content": "Why Agriculture? | A Useless Education | Why a Boys School?"
+        },
+        {
+          "type": "form",
+          "order": 4,
+          "content": {
+            "headline": "Sign up for Opifex, the academy's monthly newsletter"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "Email | Yes, please subscribe me!"
+        }
+      ],
+      "images": [
+        {
+          "src": "https://static.wixstatic.com/media/21d94f_e9b1c547297a4792a26b9d4bff53d321~mv2.png/v1/crop/x_357,y_273,w_1537,h_2207/fill/w_176,h_254,fp_0.50_0.50,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/SJWA%20Smallest.png",
+          "alt": "SJWA Smallest",
+          "width": 176,
+          "height": 254,
+          "role": "logo"
+        },
+        {
+          "src": "https://static.wixstatic.com/media/21d94f_8189ce4d9ce6428aa39aa37790606815~mv2.png/v1/crop/x_0,y_2,w_1339,h_1834/fill/w_49,h_67,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/SJWA.png",
+          "alt": "SJWA.png",
+          "width": 49,
+          "height": 67,
+          "role": "logo"
+        },
+        {
+          "src": "https://static.wixstatic.com/media/21d94f_706e2e7a68b54f929f10362026355dc7~mv2.png/v1/fill/w_2044,h_1240,fp_0.50_0.50,q_95,usm_0.66_1.00_0.01,enc_avif,quality_auto/21d94f_706e2e7a68b54f929f10362026355dc7~mv2.png",
+          "alt": "Draft (29 of 30)_edited_edited.png",
+          "width": 2044,
+          "height": 1240,
+          "role": "hero"
+        }
+      ],
+      "links": [
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/mission",
+          "text": "Vision and Mission",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/academic-vision",
+          "text": "Curriculum",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/the-bosco-program",
+          "text": "The Bosco Trades Program",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/admissions",
+          "text": "Admissions",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/faculty",
+          "text": "Faculty",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/board-of-directors",
+          "text": "Board of Directors",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/event-list",
+          "text": "Events",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/blank-2",
+          "text": "FAQ",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/donate",
+          "text": "Donate",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://faithmag.com/forming-boys-virtuous-men",
+          "text": "Faith Magazine Article",
+          "is_internal": false,
+          "is_external": true
+        }
+      ],
+      "forms": [
+        [
+          {
+            "name": "Email",
+            "label": "Email",
+            "type": "text",
+            "required": false,
+            "placeholder": "",
+            "options": []
+          }
+        ]
+      ],
+      "text_content": "St. Joseph the Worker Academy | Classical School | Ann Arbor, MI, USA. Curriculum: Theology, Literature, History, Science, Mathematics, Fine Arts, Latin, Cross-curriculars. The Bosco Trades Program. Recent Ideas: Why Agriculture?, A Useless Education, Why a Boys School?. Sign up for Opifex, the academy's monthly newsletter. Email. Yes, please subscribe me!",
+      "text_word_count": 85,
+      "seo": {
+        "og_title": "St. Joseph the Worker Academy | Classical School | Ann Arbor, MI, USA",
+        "og_description": "Discover how St. Joseph's Academy transforms boys into virtuous men through a classical Gymnopoetic education. Join us in fostering integrity, wisdom, and faith in Ann Arbor.",
+        "og_image": "https://static.wixstatic.com/media/21d94f_120597cc57764c5b8f4441034da4b7c9~mv2.jpg/v1/fill/w_1224,h_918,al_c/21d94f_120597cc57764c5b8f4441034da4b7c9~mv2.jpg",
+        "twitter_card": "summary_large_image"
+      },
+      "json_ld": [],
+      "breadcrumb_path": [
+        "Home"
+      ],
+      "cta_text": [
+        "Learn More",
+        "Yes, please subscribe me!",
+        "Donate",
+        "Bosco Program Signup"
+      ],
+      "notes": [
+        "Home page uses Wix platform with multiple component sections"
+      ],
+      "navigation_from_page": []
+    },
+    {
+      "url": "https://www.saintjosephtheworkeracademy.org/ideas",
+      "canonical_url": "https://www.saintjosephtheworkeracademy.org/ideas",
+      "title": "Ideas | St. Joseph's Academy",
+      "page_type": [
+        "blog"
+      ],
+      "template_id": "wix-blog",
+      "meta_description": null,
+      "headings": {
+        "h1": [],
+        "h2": [],
+        "h3": []
+      },
+      "components": [
+        {
+          "type": "nav",
+          "order": 0,
+          "content": {
+            "headline": "Blog"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "All Posts"
+        },
+        {
+          "type": "cards",
+          "order": 1,
+          "content": {
+            "headline": "Blog feed"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 3,
+            "gap": "24px"
+          },
+          "text_content": "Why Agriculture? | A Useless Education | Why a Boys School?"
+        },
+        {
+          "type": "form",
+          "order": 2,
+          "content": {
+            "headline": "Sign up for Opifex, the academy's monthly newsletter"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "Email | Yes, please subscribe me!"
+        }
+      ],
+      "images": [
+        {
+          "src": "https://static.wixstatic.com/media/b2a22f_63af7cb6f5b34ef585a487d9254fabf0~mv2.png/v1/fill/w_474,h_473,fp_0.50_0.50,q_95,enc_avif,quality_auto/b2a22f_63af7cb6f5b34ef585a487d9254fabf0~mv2.webp",
+          "alt": "Why Agriculture? ",
+          "width": 474,
+          "height": 473,
+          "role": "thumbnail"
+        },
+        {
+          "src": "https://static.wixstatic.com/media/11062b_6e952c66f7ff4a188c3b95ee8e52fa63~mv2.jpg/v1/fill/w_473,h_473,fp_0.50_0.50,q_90,enc_avif,quality_auto/11062b_6e952c66f7ff4a188c3b95ee8e52fa63~mv2.webp",
+          "alt": "A Useless Education",
+          "width": 473,
+          "height": 473,
+          "role": "thumbnail"
+        }
+      ],
+      "links": [
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/post/why-agriculture",
+          "text": "Why Agriculture?",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/post/a-useless-education",
+          "text": "A Useless Education",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school",
+          "text": "Why a Boys School?",
+          "is_internal": true,
+          "is_external": false
+        }
+      ],
+      "forms": [
+        [
+          {
+            "name": "Email",
+            "label": "Email",
+            "type": "text",
+            "required": false,
+            "placeholder": "",
+            "options": []
+          }
+        ]
+      ],
+      "text_content": "Ideas | St. Joseph's Academy. Blog feed: Why Agriculture? (Dominic Perrotta, May 24, 2024, 2 min read, 264 views), A Useless Education (Dominic Perrotta, Jan 4, 2024, 2 min read, 342 views), Why a Boys School? (Dominic Perrotta, Jan 4, 2024, 2 min read, 734 views). Sign up for Opifex, the academy's monthly newsletter. Email. Yes, please subscribe me!",
+      "text_word_count": 78,
+      "seo": {},
+      "json_ld": [],
+      "breadcrumb_path": [
+        "Home",
+        "Ideas"
+      ],
+      "cta_text": [
+        "See All",
+        "Yes, please subscribe me!"
+      ],
+      "notes": [],
+      "navigation_from_page": []
+    },
+    {
+      "url": "https://www.saintjosephtheworkeracademy.org/mission",
+      "canonical_url": "https://www.saintjosephtheworkeracademy.org/mission",
+      "title": "Our Mission | St. Joseph's Academy | Ann Arbor",
+      "page_type": [
+        "about"
+      ],
+      "template_id": "wix-page",
+      "meta_description": null,
+      "headings": {
+        "h1": [
+          "St. Joseph the Worker Academy"
+        ],
+        "h2": [
+          "Our Mission",
+          "Our Educational Philosophy",
+          "Phases of Development"
+        ],
+        "h3": []
+      },
+      "components": [
+        {
+          "type": "text_block",
+          "order": 0,
+          "content": {
+            "headline": "Our Mission"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 2
+          },
+          "text_content": "As parents, our purpose is to raise sons in the image of our Heavenly Father. Raising sons to be good fathers means teaching them to love beauty through poetry, literature, and the first hand experience of the grandeur of creation. It means forming goodness and virtue by imitating Our Lord and his foster father St. Joseph in physical labor with other men. By learning about created things in the natural sciences, philosophy, the study of Scripture, and most of all by meeting Him in the Sacrifice of the Mass, it means coming to know the Truth, Who is Christ the Son. View the Arms of the Academy"
+        },
+        {
+          "type": "cards",
+          "order": 1,
+          "content": {
+            "headline": "Our Educational Philosophy"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 3,
+            "gap": "24px"
+          },
+          "text_content": "Why Agriculture? | A Useless Education | Why a Boys School?"
+        },
+        {
+          "type": "text_block",
+          "order": 2,
+          "content": {
+            "headline": "Phases of Development"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "Phase I: The Nascent Bosco Program (2022-2024). Phase II: The First St. Joseph's Summer Camp. Phase III: Expanding the Bosco Program. Phase IV: Opening the Academy (Fall 2025). Phase V: Acquiring a Permanent Location."
+        },
+        {
+          "type": "form",
+          "order": 3,
+          "content": {
+            "headline": "Sign up for Opifex, the academy's monthly newsletter"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1
+          },
+          "text_content": "Email | Yes, please subscribe me!"
+        }
+      ],
+      "images": [
+        {
+          "src": "https://static.wixstatic.com/media/21d94f_706e2e7a68b54f929f10362026355dc7~mv2.png/v1/fill/w_2044,h_1240,fp_0.50_0.50,q_95,usm_0.66_1.00_0.01,enc_avif,quality_auto/21d94f_706e2e7a68b54f929f10362026355dc7~mv2.png",
+          "alt": "Draft (1 of 30).jpg",
+          "width": 2044,
+          "height": 1240,
+          "role": "hero"
+        }
+      ],
+      "links": [
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/mission-1",
+          "text": "View the Arms of the Academy",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/post/why-agriculture",
+          "text": "Why Agriculture?",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/post/a-useless-education",
+          "text": "A Useless Education",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school",
+          "text": "Why a Boys School?",
+          "is_internal": true,
+          "is_external": false
+        }
+      ],
+      "forms": [
+        [
+          {
+            "name": "Email",
+            "label": "Email",
+            "type": "text",
+            "required": false,
+            "placeholder": "",
+            "options": []
+          }
+        ]
+      ],
+      "text_content": "Our Mission. As parents, our purpose is to raise sons in the image of our Heavenly Father. Raising sons to be good fathers means teaching them to love beauty through poetry, literature, and the first hand experience of the grandeur of creation. It means forming goodness and virtue by imitating Our Lord and his foster father St. Joseph in physical labor with other men. By learning about created things in the natural sciences, philosophy, the study of Scripture, and most of all by meeting Him in the Sacrifice of the Mass, it means coming to know the Truth, Who is Christ the Son. View the Arms of the Academy. Our Educational Philosophy. Phases of Development: Phase I The Nascent Bosco Program From 2022 to 2024, the founders ran the Bosco Program as a stand-alone course. In addition to a single academic class, boys started with tool benches and worked up to both a two-story addition and a barn raising. The course culminated in a communal dinner. During those two years, the Bosco Program showcased just how capable High School boys can be. Phase II The First St. Joseph's Summer Camp To expand on the initial offering of the Bosco Program, the founders started a two-week summer camp where boys received a greater portion of the intended St. Joseph the Worker Academy experience. Learning Latin, poetry, and history while also felling trees and laying foundations, the participants utilized their summers well. Phase III Expanding the Bosco Program As more families expressed interest, the founders began putting on the Bosco Program at four different times so that the trades experience was available for even more people. The program also began taking on greater projects, such as building two houses. Phase IV Opening the Academy In Fall 2025, the St. Joseph the Worker Academy opened its doors to three classes: Freshmen, Sophomores, and a combined class of Juniors and Seniors. Although the academy is currently at a temporary location, the enrolled boys have five days a week in which they can develop each aspect of man (i.e., his body, mind, and spirit). Phase V Acquiring a Permanent Location With either an endowment of a property or from the profits coming from our construction jobs, SJWA will work towards aquiring a permanent location for its school. The Bosco Program will spend the year before building the students' future classrooms giving them a sense of ownership of the place itself.",
+      "text_word_count": 352,
+      "seo": {},
+      "json_ld": [],
+      "breadcrumb_path": [
+        "Home",
+        "Academics",
+        "Vision and Mission"
+      ],
+      "cta_text": [
+        "View the Arms of the Academy",
+        "Yes, please subscribe me!"
+      ],
+      "notes": [],
+      "navigation_from_page": []
+    }
+  ],
+  "global_assets": {
+    "logo": "https://static.wixstatic.com/media/21d94f_8189ce4d9ce6428aa39aa37790606815~mv2.png/v1/crop/x_0,y_2,w_1339,h_1834/fill/w_49,h_67,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/SJWA.png",
+    "favicon": null,
+    "social": {
+      "facebook": null,
+      "twitter": "https://www.saintjosephtheworkeracademy.org"
+    }
+  },
+  "contact_info": {
+    "address": "Ann Arbor"
+  },
+  "navigation_structure": [
+    {
+      "label": "Academics",
+      "url": null,
+      "page_url": null,
+      "children": [
+        {
+          "label": "Vision and Mission",
+          "url": "/mission",
+          "page_url": "https://www.saintjosephtheworkeracademy.org/mission",
+          "children": [],
+          "is_dropdown": false,
+          "is_cta_button": false
+        },
+        {
+          "label": "Curriculum",
+          "url": "/academic-vision",
+          "page_url": "https://www.saintjosephtheworkeracademy.org/academic-vision",
+          "children": [],
+          "is_dropdown": false,
+          "is_cta_button": false
+        },
+        {
+          "label": "The Bosco Trades Program",
+          "url": "/the-bosco-program",
+          "page_url": "https://www.saintjosephtheworkeracademy.org/the-bosco-program",
+          "children": [],
+          "is_dropdown": false,
+          "is_cta_button": false
+        },
+        {
+          "label": "Admissions",
+          "url": "/admissions",
+          "page_url": "https://www.saintjosephtheworkeracademy.org/admissions",
+          "children": [],
+          "is_dropdown": false,
+          "is_cta_button": false
+        }
+      ],
+      "is_dropdown": true,
+      "is_cta_button": false
+    },
+    {
+      "label": "Administration",
+      "url": null,
+      "page_url": null,
+      "children": [
+        {
+          "label": "Faculty",
+          "url": "/faculty",
+          "page_url": "https://www.saintjosephtheworkeracademy.org/faculty",
+          "children": [],
+          "is_dropdown": false,
+          "is_cta_button": false
+        },
+        {
+          "label": "Board of Directors",
+          "url": "/board-of-directors",
+          "page_url": "https://www.saintjosephtheworkeracademy.org/board-of-directors",
+          "children": [],
+          "is_dropdown": false,
+          "is_cta_button": false
+        }
+      ],
+      "is_dropdown": true,
+      "is_cta_button": false
+    },
+    {
+      "label": "Events",
+      "url": "/event-list",
+      "page_url": "https://www.saintjosephtheworkeracademy.org/event-list",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "FAQ",
+      "url": "/blank-2",
+      "page_url": "https://www.saintjosephtheworkeracademy.org/blank-2",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "Donate",
+      "url": "/donate",
+      "page_url": "https://www.saintjosephtheworkeracademy.org/donate",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": true
+    }
+  ],
+  "estimated_fidelity": 0.85,
+  "warnings": [
+    "Blog post page is the primary target; limited exploration of other sub-pages due to scope"
+  ],
+  "recommendations": [
+    "This is a Wix site - rebuild would work well with Wix Headless or a Next.js + Tailwind alternative",
+    "Newsletter signup form uses WixForms - preserve in migration",
+    "Blog posts use Wix Blog platform - consider migration to headless CMS like Contentful or Sanity",
+    "Image CDN is Wix static media - URLs should be preserved or migrated to alternative CDN"
+  ],
+  "reasoning_trace": [
+    "Navigated to blog post page via browser_navigate",
+    "Extracted full article text via browser_evaluate with document.querySelector('article').innerText",
+    "Captured JSON-LD schema via browser_evaluate for BlogPosting structured data",
+    "Extracted all images via browser_evaluate showing Wix CDN URLs",
+    "Navigated to home page to discover navigation structure",
+    "Extracted navigation links via browser_evaluate showing dropdown menus",
+    "Navigated to Ideas blog index page",
+    "Extracted meta tags confirming Wix platform via generator meta tag",
+    "Navigated to Mission page to understand about page structure",
+    "Completed site mapping with 4 distinct page types observed"
+  ],
+  "raw_artifacts": {}
+}

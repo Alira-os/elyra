@@ -239,12 +239,14 @@ Skills are pairs of **markdown guidance** + **executable code**.
 
 ---
 
-## Memory Layer
+## Memory Layer (Hybrid - Phase 1+)
 
-### SQLite Schema
+Production-grade hybrid memory supporting 50-100+ migrations with semantic search.
+
+### SQLite Schema (Extended)
 
 ```sql
--- Migration history
+-- Migration history (extended)
 CREATE TABLE migrations (
     id TEXT PRIMARY KEY,
     url TEXT,
@@ -254,29 +256,51 @@ CREATE TABLE migrations (
     fidelity_score REAL,
     routing_used TEXT,  -- JSON array of personas invoked
     outcome TEXT,  -- success, partial, failed
+    -- New Phase 1+ columns:
+    stage_history TEXT,  -- JSON array of stage transitions
+    fidelity_history TEXT,  -- JSON array of fidelity scores per stage
+    persona_versions TEXT,  -- JSON map of persona → version used
+    decisions TEXT,  -- JSON array of architectural decisions
+    site_architecture_id TEXT,  -- FK to site_architectures
+    content_recommendation_id TEXT,  -- FK to content_recommendations
+    production_url TEXT,  -- set after production deploy
+    github_repo TEXT,  -- e.g. "Alira-os/saint-joseph-the-worker-academy"
+    preview_url TEXT,  -- temporary preview URL
+    preview_expires_at DATETIME,
     created_at DATETIME
 );
 
--- Debate outputs
-CREATE TABLE debate_outputs (
+-- Site architectures
+CREATE TABLE site_architectures (
     id TEXT PRIMARY KEY,
     migration_id TEXT,
-    debate_result TEXT,  -- JSON
-    human_approved BOOLEAN,
-    changes_proposed TEXT,  -- JSON
-    changes_applied BOOLEAN,
-    created_at DATETIME
+    source_url TEXT,
+    target_stack TEXT,  -- JSON
+    deployment_spec TEXT,  -- JSON of DeploymentSpec
+    pages_spec TEXT,  -- JSON array of PageSpec
+    components_spec TEXT,  -- JSON array of ComponentSpec
+    ...
 );
 
--- Routing heuristics
-CREATE TABLE routing_heuristics (
-    platform TEXT,
-    task_type TEXT,
-    routing_sequence TEXT,  -- JSON array
-    success_count INTEGER,
-    failure_count INTEGER,
-    last_updated DATETIME,
-    PRIMARY KEY (platform, task_type)
+-- Content recommendations
+CREATE TABLE content_recommendations (
+    id TEXT PRIMARY KEY,
+    migration_id TEXT,
+    site_name TEXT,
+    tone_of_voice TEXT,  -- JSON of ToneOfVoice
+    page_strategies TEXT,  -- JSON array
+    ...
+);
+
+-- Structured artifacts (lessons, anti-patterns)
+CREATE TABLE artifacts (
+    id TEXT PRIMARY KEY,
+    migration_id TEXT,
+    artifact_type TEXT,  -- lesson, anti_pattern, routing_insight, deploy_result
+    content TEXT,  -- JSON
+    embedding_vector_id TEXT,  -- reference to LanceDB
+    tags TEXT,  -- JSON array for filtering
+    ...
 );
 ```
 
@@ -286,6 +310,99 @@ Stores lesson embeddings for semantic similarity search:
 - Lesson summaries
 - What worked for specific platform/task combinations
 - Anti-patterns
+- Site summaries for recall ("what worked for classical schools?")
+
+```python
+# Example queries:
+memory.query_lessons("trades gallery wix", tags=["gallery", "wix"])
+# Returns: semantically similar lessons across all past migrations
+
+lessons.log_lesson(
+    migration_id="abc-123",
+    lesson={"description": "Trades gallery component works well for wix portfolios"},
+    tags=["wix", "portfolio", "trades", "gallery"]
+)
+```
+
+### Hybrid Storage Layers
+
+| Layer | Purpose | Technology | Retention |
+|-------|---------|------------|-----------|
+| Metadata + Provenance | Migration IDs, stage history, fidelity, decisions | SQLite | Permanent |
+| Structured Artifacts | SiteUnderstanding, SiteArchitecture, ContentRecommendations | JSON files (git-tracked) | Permanent |
+| Code Artifacts | Generated site + CI/CD workflows | Per-site Git repos (Alira-os org) | Permanent |
+| Semantic Search | "Find all trades gallery migrations" | LanceDB | Permanent |
+| Large Media | Original images, videos, PDFs | Fly.io Volumes or R2 (URLs in metadata) | As needed |
+
+---
+
+## Promotion Pipeline (Phase 1+)
+
+Hardened flow from local build to production live:
+
+```
+Builder + SEO Specialist finish → Code pushed to Alira-os per-site repo
+        │
+        ▼
+┌─────────────────────────────────────────────────────┐
+│  Kilo Code Reviewer + Security Agent               │
+│  (GitHub Action on PR)                            │
+└────────────────────┬────────────────────────────────┘
+                    │ FAIL → Block + report
+                    │ PASS
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│  Elyra SecurityQualityGate (REQUIRED status check) │
+│  • Lighthouse performance ≥ 95 (raised from 85)     │
+│  • Lighthouse accessibility ≥ 90                   │
+│  • Lighthouse best-practices ≥ 90                   │
+│  • Lighthouse SEO ≥ 90                             │
+│  • npm audit: 0 critical                           │
+└────────────────────┬────────────────────────────────┘
+                    │ FAIL → Block + fix instructions
+                    │ PASS
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│  Preview Deployment (7-day TTL)                    │
+│  Temporary public URL + banner                      │
+│  "This is a preview of the new {site} website"     │
+└────────────────────┬────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│  Human Approval Gate (ONLY mandatory touchpoint)    │
+│  "Good to go?" — PR comment / CLI / Slack          │
+└────────────────────┬────────────────────────────────┘
+                    │ REJECT → Return to Builder
+                    │ APPROVE
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│  Production Deploy (Deploy Specialist)              │
+│  • Creates/updates Fly app (org/region)            │
+│  • Custom domain + SSL                              │
+│  • Env vars + secrets                              │
+│  • DNS update                                      │
+│  • Mark "Production Live" in SQLite ledger         │
+└─────────────────────────────────────────────────────┘
+```
+
+### GitHub Strategy
+
+```
+Alira OS (GitHub Organization) ← https://github.com/Alira-os
+├── elyra                          ← Elyra project itself
+├── saint-joseph-the-worker-academy  ← Per-site repos (created post-local-build)
+├── merimee-solutions
+├── chesterton-academy-akron
+└── ... (one repo per migration/client)
+```
+
+**Repo creation timing:** Per-site repos created ONLY after local build succeeds (not pre-provisioned).
+
+**Kilo tie-in:**
+- Auto-trigger Kilo Code Reviewer on every PR
+- Client portal via GitHub Discussions
+- Branch protection + required status checks
 
 ---
 
@@ -619,6 +736,75 @@ End of Phase N:
 - Meta powerful: Elyra demonstrates the compounding intelligence it promises to users
 
 **This is meta and powerful:** The project itself demonstrates the compounding intelligence it promises to deliver.
+
+---
+
+## Agentic Specialist Pattern (Validated in Phase 1)
+
+**Status:** ✅ Validated — Phase 1 scraper successfully proved this pattern works.
+
+### The Pattern
+
+Every specialist in Elyra is implemented as:
+
+```
+Python thin glue + Kilo CLI + Persona Charter + Strict Pydantic Schema
+```
+
+**Components:**
+1. **Python glue** (`*_agent.py`) — Only orchestration: builds prompt, calls Kilo, parses JSON, validates Pydantic. ~50-100 lines. No business logic.
+2. **Kilo CLI** — The reasoning engine. Loads the persona charter + schema + task prompt, runs a ReAct loop using available MCP tools, returns structured JSON.
+3. **Persona charter** (`registry/personas/*.md`) — Defines what the specialist does, what tools it uses, anti-patterns to avoid, and output schema. Pure declarative — no imperative code.
+4. **Pydantic schema** (`models/site_schemas.py`) — Strict validation. Catches LLM hallucinations early, filters bad output.
+
+**Why this pattern:**
+- Kilo handles all agentic complexity (ReAct loop, tool selection, reasoning, tool execution)
+- Python stays clean — just glue, never becomes an implicit agent
+- Personas are declarative — easy to audit, modify, or replace without touching code
+- Pydantic schemas catch output quality issues before they propagate
+- Elyra inherits Kilo's full tooling (MCP servers, personas, skills) without extra configuration
+
+### Kilo as ReAct Agent vs Python as MCP Client
+
+This is the critical architectural trade-off that must not regress in future phases:
+
+| | **Kilo as ReAct Agent** ✅ | **Python as MCP Client** ❌ |
+|--|--|--|
+| **Who reasons?** | Kilo (LLM-powered ReAct loop) | Python code (imperative, brittle) |
+| **Tool calls** | Kilo decides dynamically based on context | Python hard-codes the sequence |
+| **Adaptability** | Handles unexpected site structures, can explore and backtrack | Breaks on anything not explicitly coded |
+| **Complexity** | Kilo hides all complexity — prompt + schema | Python grows complexity with every edge case |
+| **Reliability** | Schema validation catches bad output | No reasoning layer to catch subtle errors |
+| **Code size** | ~50-100 lines per specialist | ~500+ lines for equivalent capability |
+
+**The anti-pattern to avoid:** Python calling MCP tools directly in an imperative loop. This is how you build a fragile, 500-line scraper that breaks on the first unusual site. The Python-as-MCP-client approach was the original plan for Phase 0/1 — it was explicitly rejected after attempting it.
+
+**The validated approach:** Python calls `kilo run --format json --auto -- <prompt>`. Kilo loads the persona, binds the MCP tools, runs its ReAct loop, returns structured JSON. Python parses and validates. That's it.
+
+**Why Kilo as ReAct Agent wins for Elyra's domain:**
+- Websites are wildly heterogeneous. An agentic approach handles novel structures without code changes.
+- The LLM (Kilo) can discover pages, follow nav, extract content, and iterate until it has high confidence.
+- The persona charter encodes domain expertise (anti-patterns, success criteria) without Python code.
+- The Pydantic schema ensures output quality without Python validation logic.
+
+### Pattern for New Specialists
+
+To add a new specialist (Architect, Marketing, Builder, etc.):
+
+1. **Create persona charter** (`registry/personas/<name>_specialist.md`) — defines role, tools, anti-patterns, output schema
+2. **Add Pydantic schema** (`models/site_schemas.py`) — structured output type
+3. **Create agent** (`skills/agentic/<name>_agent.py`) — thin Python glue (build prompt → kilo run → parse → validate)
+4. **Create CLI entrypoint** (`<name>.py`) — `python <name>.py <input>` runs the agent
+
+No new agent frameworks, no LangGraph, no LangChain. Kilo CLI is the execution engine for all agentic work.
+
+### Phase 1 Validation
+
+The scraper specialist validated this pattern end-to-end:
+- `scrape.py` (40 lines) + `scraper_agent.py` (170 lines) + `scraper_specialist.md` persona + `SiteUnderstanding` Pydantic schema
+- Successfully scraped: example.com (single-page), merimeesolutions.wixstudio.com (Wix single-page), saintjosephtheworkeracademy.org (Wix multi-page with blog posts)
+- Key fixes discovered: NDJSON parsing, UTF-8 encoding, null image filtering, blog post innerText extraction
+- Total Python: ~210 lines. Total agentic capability: equivalent to what would have been ~800+ lines of imperative scraping code.
 
 ---
 

@@ -35,6 +35,7 @@ def log_migration(migration_data: dict) -> None:
                        routing_sequence, fidelity_score, outcome, lessons
     """
     import logging
+    import sys
 
     logger = logging.getLogger(__name__)
     logger.info(f"Migration logged: {migration_data.get('migration_id')}")

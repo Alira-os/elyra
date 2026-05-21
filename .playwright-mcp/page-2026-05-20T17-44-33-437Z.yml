@@ -1,0 +1,345 @@
+- generic [ref=e3]:
+  - region "top of page"
+  - button "Skip to Main Content"
+  - generic [ref=e10]:
+    - group:
+      - banner:
+        - generic [ref=e11]:
+          - img "SJWA Smallest" [ref=e19]
+          - heading "St. Joseph the Worker Academy" [level=1] [ref=e21]
+          - navigation "Site" [ref=e24]:
+            - list [ref=e25]:
+              - listitem [ref=e26]:
+                - generic [ref=e28]:
+                  - generic [ref=e30]: Academics
+                  - button "More Academics pages" [ref=e31] [cursor=pointer]:
+                    - img [ref=e32]
+              - listitem [ref=e34]:
+                - generic [ref=e35]:
+                  - generic [ref=e36]:
+                    - generic [ref=e38]: Administration
+                    - button "More Administration pages" [expanded] [active] [ref=e39] [cursor=pointer]:
+                      - img [ref=e40]
+                  - group "Administration" [ref=e526]:
+                    - list [ref=e529]:
+                      - listitem [ref=e530]:
+                        - link "Faculty" [ref=e531] [cursor=pointer]:
+                          - /url: https://www.saintjosephtheworkeracademy.org/faculty
+                          - generic [ref=e532]: Faculty
+                      - listitem [ref=e533]:
+                        - link "Board of Directors" [ref=e534] [cursor=pointer]:
+                          - /url: https://www.saintjosephtheworkeracademy.org/board-of-directors
+                          - generic [ref=e535]: Board of Directors
+              - listitem [ref=e42]:
+                - link "Events" [ref=e45] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/event-list
+                  - generic [ref=e46]: Events
+              - listitem [ref=e47]:
+                - link "FAQ" [ref=e50] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/blank-2
+                  - generic [ref=e51]: FAQ
+              - listitem [ref=e52]:
+                - link "Donate" [ref=e55] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/donate
+                  - generic [ref=e56]: Donate
+      - main:
+        - generic [ref=e57]:
+          - img "Draft (29 of 30)_edited_edited.png" [ref=e62]
+          - group:
+            - generic [ref=e63]:
+              - heading "Classical in Content, Monastic in Method" [level=2] [ref=e66]
+              - link "Faith Magazine Article" [ref=e68] [cursor=pointer]:
+                - /url: https://faithmag.com/forming-boys-virtuous-men
+                - generic [ref=e69]: Faith Magazine Article
+        - generic [ref=e74]:
+          - group:
+            - generic [ref=e76]:
+              - group:
+                - img "SJWA.png" [ref=e82]
+                - heading "Our Mission, Your Sons" [level=2] [ref=e84]
+                - heading "St. Joseph the Worker Academy is an all-boys school in the Ann Arbor area based upon the educational philosophies of St. John Bosco and Dr. John Senior." [level=6] [ref=e86]
+                - paragraph [ref=e89]: "\"As parents, our purpose is to raise sons in the image of our Heavenly Father. Raising sons to be good fathers means teaching them to love beauty through poetry, literature, and the first hand experience of the grandeur of creation. It means forming goodness and virtue by imitating Our Lord and his foster father St. Joseph in physical labor with other men. By learning about created things in the natural sciences, philosophy, the study of Scripture, and most of all by meeting Him in the Sacrifice of the Mass, it means coming to know the Truth, Who is Christ the Son.\""
+                - link "Learn More" [ref=e91] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school
+                  - generic [ref=e92]: Learn More
+        - generic [ref=e93]:
+          - group:
+            - generic [ref=e97]:
+              - group:
+                - heading "Our Curriculum" [level=2] [ref=e100]
+            - generic [ref=e101]:
+              - group:
+                - generic [ref=e103]:
+                  - list:
+                    - listitem [ref=e104]:
+                      - group:
+                        - generic [ref=e106]:
+                          - group
+                        - link "Theology" [ref=e109] [cursor=pointer]:
+                          - /url: https://www.saintjosephtheworkeracademy.org/curriculum/theology
+                          - img "Theology" [ref=e113]
+                        - generic [ref=e114]:
+                          - group:
+                            - heading "Theology" [level=3] [ref=e117]
+                            - link "Learn More" [ref=e119] [cursor=pointer]:
+                              - /url: https://www.saintjosephtheworkeracademy.org/curriculum/theology
+                              - generic [ref=e120]: Learn More
+                    - listitem [ref=e121]:
+                      - group:
+                        - generic [ref=e123]:
+                          - group
+                        - link "Literature" [ref=e126] [cursor=pointer]:
+                          - /url: https://www.saintjosephtheworkeracademy.org/curriculum/literature
+                          - img "Literature" [ref=e130]
+                        - generic [ref=e131]:
+                          - group:
+                            - heading "Literature" [level=3] [ref=e134]
+                            - link "Learn More" [ref=e136] [cursor=pointer]:
+                              - /url: https://www.saintjosephtheworkeracademy.org/curriculum/literature
+                              - generic [ref=e137]: Learn More
+                    - listitem [ref=e138]:
+                      - group:
+                        - generic [ref=e140]:
+                          - group
+                        - link "History" [ref=e143] [cursor=pointer]:
+                          - /url: https://www.saintjosephtheworkeracademy.org/curriculum/history
+                          - img "History" [ref=e147]
+                        - generic [ref=e148]:
+                          - group:
+                            - heading "History" [level=3] [ref=e151]
+                            - link "Learn More" [ref=e153] [cursor=pointer]:
+                              - /url: https://www.saintjosephtheworkeracademy.org/curriculum/history
+                              - generic [ref=e154]: Learn More
+                    - listitem [ref=e155]:
+                      - group:
+                        - generic [ref=e157]:
+                          - group
+                        - link "Science" [ref=e160] [cursor=pointer]:
+                          - /url: https://www.saintjosephtheworkeracademy.org/curriculum/science
+                          - img "Science" [ref=e164]
+                        - generic [ref=e165]:
+                          - group:
+                            - heading "Science" [level=3] [ref=e168]
+                            - link "Learn More" [ref=e170] [cursor=pointer]:
+                              - /url: https://www.saintjosephtheworkeracademy.org/curriculum/science
+                              - generic [ref=e171]: Learn More
+                    - listitem [ref=e172]:
+                      - group:
+                        - generic [ref=e174]:
+                          - group
+                        - link "Mathematics" [ref=e177] [cursor=pointer]:
+                          - /url: https://www.saintjosephtheworkeracademy.org/curriculum/math
+                          - img "Mathematics" [ref=e181]
+                        - generic [ref=e182]:
+                          - group:
+                            - heading "Mathematics" [level=3] [ref=e185]
+                            - link "Learn More" [ref=e187] [cursor=pointer]:
+                              - /url: https://www.saintjosephtheworkeracademy.org/curriculum/math
+                              - generic [ref=e188]: Learn More
+                    - listitem [ref=e189]:
+                      - group:
+                        - generic [ref=e191]:
+                          - group
+                        - link "Fine Arts" [ref=e194] [cursor=pointer]:
+                          - /url: https://www.saintjosephtheworkeracademy.org/curriculum/arts
+                          - img "Fine Arts" [ref=e198]
+                        - generic [ref=e199]:
+                          - group:
+                            - heading "Fine Arts" [level=3] [ref=e202]
+                            - link "Learn More" [ref=e204] [cursor=pointer]:
+                              - /url: https://www.saintjosephtheworkeracademy.org/curriculum/arts
+                              - generic [ref=e205]: Learn More
+                    - listitem [ref=e206]:
+                      - group:
+                        - generic [ref=e208]:
+                          - group
+                        - link "Latin" [ref=e211] [cursor=pointer]:
+                          - /url: https://www.saintjosephtheworkeracademy.org/curriculum/latin
+                          - img "Latin" [ref=e215]
+                        - generic [ref=e216]:
+                          - group:
+                            - heading "Latin" [level=3] [ref=e219]
+                            - link "Learn More" [ref=e221] [cursor=pointer]:
+                              - /url: https://www.saintjosephtheworkeracademy.org/curriculum/latin
+                              - generic [ref=e222]: Learn More
+                    - listitem [ref=e223]:
+                      - group:
+                        - generic [ref=e225]:
+                          - group
+                        - link "Trades" [ref=e228] [cursor=pointer]:
+                          - /url: https://www.saintjosephtheworkeracademy.org/curriculum/cross-curriculars
+                          - img "Trades" [ref=e232]
+                        - generic [ref=e233]:
+                          - group:
+                            - heading "Trades" [level=3] [ref=e236]
+                            - link "Learn More" [ref=e238] [cursor=pointer]:
+                              - /url: https://www.saintjosephtheworkeracademy.org/curriculum/cross-curriculars
+                              - generic [ref=e239]: Learn More
+        - generic [ref=e240]:
+          - group:
+            - generic [ref=e244]:
+              - heading "Admissions Inquiry" [level=2] [ref=e247]
+              - paragraph [ref=e249]: If you are interested in exploring admission for the 2025-26 school year please fill out the form below and we will reach out to you.
+            - button "Inquiry Form" [ref=e251] [cursor=pointer]:
+              - generic [ref=e252]: Inquiry Form
+        - generic [ref=e253]:
+          - group:
+            - generic [ref=e257]:
+              - group:
+                - heading "Fundamental Principles" [level=2] [ref=e260]
+            - generic [ref=e261]:
+              - group:
+                - generic [ref=e263]:
+                  - list:
+                    - listitem [ref=e264]:
+                      - group:
+                        - generic [ref=e266]:
+                          - heading "Classical" [level=3] [ref=e269]
+                          - paragraph [ref=e271]: Classical education involves immersion in the great ideas, conversations, and methods of inquiry that comprise the Western Tradition, immersing students in the best of what has been thought and expressed, whether through books, plays, paintings, music, or architecture. Rather than diminishing the value of what has come before now, classical education sees that which has been handed down as part of our precious patrimony.
+                    - listitem [ref=e272]:
+                      - group:
+                        - generic [ref=e274]:
+                          - heading "Poetic" [level=3] [ref=e277]
+                          - paragraph [ref=e279]: An education which makes frequent use of poetry, along with philosophy, concerns itself first and foremost with wonder. Much of today's analytically-focused educational models revolves around abstract thought (often divorced from real experiences), but a poetic education helps man recognize his unique place and role in the cosmos as a bridge between the material and immaterial worlds.
+                    - listitem [ref=e280]:
+                      - group:
+                        - generic [ref=e282]:
+                          - heading "Gymnastic" [level=3] [ref=e285]
+                          - paragraph [ref=e287]: Gymnastic education involves the development of man's senses—five exterior and five interior—through exposure to tangible realities. While all acknowledge the importance of sight, hearing, and the rest of the exterior senses, many schools have forgotten the need for the imagination, memory, common sense, estimative sense, and illative sense.
+            - generic [ref=e288]:
+              - group
+        - generic [ref=e290]:
+          - img "Don Bosco with the Boys" [ref=e298]
+          - generic [ref=e299]:
+            - group:
+              - generic [ref=e301]:
+                - paragraph [ref=e304]: "\"To educate the head without educating the heart is not to educate at all; and to educate the heart without educating the hands is to leave the pupil unprepared for life.\""
+                - heading "St. John Bosco" [level=5] [ref=e306]
+        - generic [ref=e307]:
+          - generic [ref=e311]:
+            - group:
+              - generic [ref=e313]:
+                - heading "The Bosco Program" [level=2] [ref=e316]
+                - generic [ref=e317]:
+                  - paragraph [ref=e318]: "A fundamental part of the gymnastic and poetic aspects of the St. Joseph’s education is trades work. We do not have the boys learn carpentry and other trades so that they all become tradesmen but so they can begin to wonder, learn confidence, and practice fortitude. As St. John Bosco said: “It is not the end; it is rather the instrumental means for improving the way of life.”"
+                  - paragraph [ref=e319]
+                  - paragraph [ref=e320]: The Bosco Program provides young men with the opportunity to develop mastery in several crafts with the object of giving them a beautiful life and possibly a way to support their futures.
+                - link "Learn More" [ref=e322] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/the-bosco-program
+                  - generic [ref=e323]: Learn More
+          - generic [ref=e326]:
+            - group:
+              - img "The boys working on a large wedding barn." [ref=e331]
+        - generic [ref=e332]:
+          - group:
+            - generic [ref=e336]:
+              - group:
+                - heading "Faculty and Staff" [level=2] [ref=e339]
+            - generic [ref=e343]:
+              - list:
+                - listitem [ref=e344]:
+                  - group:
+                    - link "Inshal Chenet, M.A." [ref=e347] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/faculty/inshal-chenet
+                      - img "Inshal Chenet, M.A." [ref=e351]
+                    - generic [ref=e352]:
+                      - heading "Inshal Chenet, M.A." [level=5] [ref=e355]
+                      - heading "Headmaster" [level=6] [ref=e357]
+                      - paragraph [ref=e359]
+                - listitem [ref=e360]:
+                  - group:
+                    - link "Jack Carter, M.A." [ref=e363] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/faculty/jack-carter
+                      - img "Jack Carter, M.A." [ref=e367]
+                    - generic [ref=e368]:
+                      - heading "Jack Carter, M.A." [level=5] [ref=e371]
+                      - heading "Dean of Men" [level=6] [ref=e373]
+                      - paragraph [ref=e375]
+                - listitem [ref=e376]:
+                  - group:
+                    - link "Joseph Fredriksson, M.Hum." [ref=e379] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/faculty/-joseph-fredriksson
+                      - img "Joseph Fredriksson, M.Hum." [ref=e383]
+                    - generic [ref=e384]:
+                      - heading "Joseph Fredriksson, M.Hum." [level=5] [ref=e387]
+                      - heading "Board Member, Teacher" [level=6] [ref=e389]
+                      - paragraph [ref=e391]
+                - listitem [ref=e392]:
+                  - group:
+                    - link "John Henry Gleason" [ref=e395] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/faculty/john-henry-gleason
+                      - img "John Henry Gleason" [ref=e399]
+                    - generic [ref=e400]:
+                      - heading "John Henry Gleason" [level=5] [ref=e403]
+                      - heading "Trades Teacher" [level=6] [ref=e405]
+                      - paragraph [ref=e407]
+                - listitem [ref=e408]:
+                  - group:
+                    - link "Michael Sumerton, M.A." [ref=e411] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/faculty/michael-sumerton
+                      - img "Michael Sumerton, M.A." [ref=e415]
+                    - generic [ref=e416]:
+                      - heading "Michael Sumerton, M.A." [level=5] [ref=e419]
+                      - heading "Board Member, Teacher" [level=6] [ref=e421]
+                      - paragraph [ref=e423]
+                - listitem [ref=e424]:
+                  - group:
+                    - link "Jacob Visovatti" [ref=e427] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/faculty/jacob-visovatti
+                      - img "Jacob Visovatti" [ref=e431]
+                    - generic [ref=e432]:
+                      - heading "Jacob Visovatti" [level=5] [ref=e435]
+                      - heading "Teacher" [level=6] [ref=e437]
+                      - paragraph [ref=e439]
+                - listitem [ref=e440]:
+                  - group:
+                    - link "Mark Campbell" [ref=e443] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/faculty/mark-campbell
+                      - img "Mark Campbell" [ref=e447]
+                    - generic [ref=e448]:
+                      - heading "Mark Campbell" [level=5] [ref=e451]
+                      - heading "Trades Partner" [level=6] [ref=e453]
+                      - paragraph [ref=e455]
+      - contentinfo:
+        - generic [ref=e456]:
+          - group:
+            - generic [ref=e460]:
+              - group:
+                - generic [ref=e462]:
+                  - img "SJWA.png" [ref=e468]
+                  - heading "St. Joseph the Worker Academy" [level=5] [ref=e470]:
+                    - link "St. Joseph the Worker Academy" [ref=e472] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org
+            - generic [ref=e473]:
+              - group:
+                - generic [ref=e475]:
+                  - paragraph [ref=e478]: © 2024 St. Joseph the Worker Academy, Ann Arbor
+                  - generic [ref=e479]:
+                    - paragraph [ref=e480]: Website Crafted by
+                    - paragraph [ref=e481]:
+                      - link "Merimee Solutions" [ref=e483] [cursor=pointer]:
+                        - /url: https://www.merimeesolutions.com/
+            - generic [ref=e484]:
+              - group
+            - generic [ref=e487]:
+              - group:
+                - form "Newsletter Signup" [ref=e495]:
+                  - group [ref=e496]:
+                    - generic [ref=e497]:
+                      - generic [ref=e498]:
+                        - heading "Sign up for Opifex, the academy's monthly newsletter" [level=1] [ref=e506]:
+                          - generic [ref=e507]:
+                            - text: Sign up for
+                            - emphasis [ref=e508]: Opifex
+                            - text: ","
+                            - emphasis [ref=e509]
+                            - text: the academy's monthly newsletter
+                        - generic [ref=e511]:
+                          - generic [ref=e513]:
+                            - generic [ref=e514]: "*"
+                            - text: Email
+                          - textbox "Email" [ref=e519]
+                        - button "Yes, please subscribe me!" [ref=e524] [cursor=pointer]:
+                          - generic [ref=e525]: Yes, please subscribe me!
+                      - region
+  - region "bottom of page"

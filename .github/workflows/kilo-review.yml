@@ -1,0 +1,137 @@
+name: Kilo Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Prevent duplicate runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 1: Kilo Code Review
+  # ─────────────────────────────────────────────────────────────────────────────
+  kilo-review:
+    name: Kilo Code Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout with full history for diff
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Kilo Code Reviewer
+        id: review
+        run: |
+          echo "Running Kilo code review on PR #${{ github.event.pull_request.number }}..."
+
+          # Try Kilo CLI first, fall back to npx
+          if command -v kilo &> /dev/null; then
+            REVIEW_OUTPUT=$(kilo run --agent code-reviewer --format json --auto -- "${{ github.event.pull_request.title }}" 2>&1) || true
+          elif command -v npx &> /dev/null; then
+            REVIEW_OUTPUT=$(npx -y @kilo-ai/kilo-cli run --agent code-reviewer --format json --auto -- "${{ github.event.pull_request.title }}" 2>&1) || true
+          else
+            REVIEW_OUTPUT='{"error": "Kilo not available", "passed": false}'
+          fi
+
+          echo "review_output=$REVIEW_OUTPUT" >> $GITHUB_OUTPUT
+          echo "$REVIEW_OUTPUT" >> $GITHUB_STEP_SUMMARY
+
+      - name: Parse review results
+        id: parse
+        run: |
+          OUTPUT="${{ steps.review.outputs.review_output }}"
+          echo "## Kilo Code Review Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          echo "$OUTPUT" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
+
+      - name: Post review comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const OUTPUT = `${{ steps.review.outputs.review_output || '{}' }}`;
+            let reviewData;
+            try {
+              reviewData = JSON.parse(OUTPUT);
+            } catch (e) {
+              reviewData = { error: 'Could not parse review output', raw: OUTPUT };
+            }
+
+            const passed = reviewData.passed !== false;
+            const findings = reviewData.findings || [];
+            const error = reviewData.error;
+
+            let comment = `
+            ## Kilo Code Review
+
+            **Status:** ${passed ? '✅ Passed' : '⚠️ Issues Found'}
+
+            ${error ? `**Error:** ${error}` : ''}
+
+            ${findings.length > 0 ? `
+            ### Findings
+
+            ${findings.map(f => `- **${f.severity || 'info'}**: ${f.message}`).join('\n')}
+            ` : ''}
+
+            ---
+            *Review performed by Kilo on ${new Date().toLocaleString()}*
+            `;
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            // Find existing Kilo review comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number
+            });
+
+            const existing = comments.find(c =>
+              c.user.login === 'github-actions[bot]' && c.body.includes('Kilo Code Review')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: comment
+              });
+            }
+
+            // Update PR status check
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: passed ? 'success' : 'failure',
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/pull/${pr.number}`,
+              description: passed ? 'Kilo review passed' : 'Kilo found issues',
+              context: 'kilo/code-review'
+            });
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

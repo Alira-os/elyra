@@ -23,7 +23,7 @@
     "performance": [
       {
         "metric": "performance",
-        "budgetThreshold": 0.85
+        "budgetThreshold": 0.95
       }
     ],
     "accessibility": [
@@ -35,13 +35,13 @@
     "best-practices": [
       {
         "metric": "best-practices",
-        "budgetThreshold": 0.85
+        "budgetThreshold": 0.90
       }
     ],
     "seo": [
       {
         "metric": "seo",
-        "budgetThreshold": 0.85
+        "budgetThreshold": 0.90
       }
     ]
   }

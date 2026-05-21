@@ -1,0 +1,174 @@
+- generic [ref=e3]:
+  - region "top of page"
+  - generic [ref=e10]:
+    - group:
+      - banner:
+        - generic [ref=e11]:
+          - img "SJWA Smallest" [ref=e19]
+          - heading "St. Joseph the Worker Academy" [level=1] [ref=e21]
+          - navigation "Site" [ref=e24]:
+            - list [ref=e25]:
+              - listitem [ref=e26]:
+                - generic [ref=e28]:
+                  - generic [ref=e30]: Academics
+                  - button "More Academics pages" [ref=e31] [cursor=pointer]:
+                    - img [ref=e32]
+              - listitem [ref=e34]:
+                - generic [ref=e36]:
+                  - generic [ref=e38]: Administration
+                  - button "More Administration pages" [ref=e39] [cursor=pointer]:
+                    - img [ref=e40]
+              - listitem [ref=e42]:
+                - link "Events" [ref=e45] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/event-list
+                  - generic [ref=e46]: Events
+              - listitem [ref=e47]:
+                - link "FAQ" [ref=e50] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/blank-2
+                  - generic [ref=e51]: FAQ
+              - listitem [ref=e52]:
+                - link "Donate" [ref=e55] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/donate
+                  - generic [ref=e56]: Donate
+      - main:
+        - generic [ref=e57]:
+          - group:
+            - generic [ref=e61]:
+              - group:
+                - generic [ref=e63]:
+                  - heading "Our Mission" [level=2] [ref=e66]
+                  - paragraph [ref=e68]: As parents, our purpose is to raise sons in the image of our Heavenly Father. Raising sons to be good fathers means teaching them to love beauty through poetry, literature, and the first hand experience of the grandeur of creation. It means forming goodness and virtue by imitating Our Lord and his foster father St. Joseph in physical labor with other men. By learning about created things in the natural sciences, philosophy, the study of Scripture, and most of all by meeting Him in the Sacrifice of the Mass, it means coming to know the Truth, Who is Christ the Son.
+                - link "View the Arms of the Academy" [ref=e70] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/mission-1
+                  - generic [ref=e71]: View the Arms of the Academy
+            - generic [ref=e72]:
+              - group:
+                - img "Draft (1 of 30).jpg" [ref=e78]
+        - generic [ref=e79]:
+          - generic [ref=e83]:
+            - group:
+              - heading "Our Educational Philosophy" [level=2] [ref=e86]
+          - generic [ref=e87]:
+            - group:
+              - region "Post list. Select a post to read." [ref=e100]:
+                - generic [ref=e102]:
+                  - generic [ref=e105] [cursor=pointer]:
+                    - generic [ref=e106]:
+                      - img "Why Agriculture?" [ref=e107]
+                      - img "Why Agriculture?" [ref=e108]
+                    - generic [ref=e114]:
+                      - link "Why Agriculture?" [ref=e116]:
+                        - /url: https://www.saintjosephtheworkeracademy.org/post/why-agriculture
+                        - heading "Why Agriculture?" [level=2] [ref=e119]
+                      - generic [ref=e124]: 2 min read
+                  - generic [ref=e127] [cursor=pointer]:
+                    - generic [ref=e128]:
+                      - img "A Useless Education" [ref=e129]
+                      - img "A Useless Education" [ref=e130]
+                    - generic [ref=e136]:
+                      - link "A Useless Education" [ref=e138]:
+                        - /url: https://www.saintjosephtheworkeracademy.org/post/a-useless-education
+                        - heading "A Useless Education" [level=2] [ref=e141]
+                      - generic [ref=e146]: 2 min read
+                  - generic [ref=e149] [cursor=pointer]:
+                    - generic [ref=e150]:
+                      - img "Why a Boys School?" [ref=e151]
+                      - img "Why a Boys School?" [ref=e152]
+                    - generic [ref=e158]:
+                      - link "Why a Boys School?" [ref=e160]:
+                        - /url: https://www.saintjosephtheworkeracademy.org/post/why-a-boys-school
+                        - heading "Why a Boys School?" [level=2] [ref=e163]
+                      - generic [ref=e168]: 2 min read
+        - generic [ref=e169]:
+          - generic [ref=e173]:
+            - group:
+              - heading "Phases of Development" [level=2] [ref=e176]
+          - generic [ref=e181]:
+            - group:
+              - generic [ref=e183]:
+                - group:
+                  - generic [ref=e187]:
+                    - list:
+                      - listitem [ref=e188]:
+                        - generic [ref=e190]:
+                          - img [ref=e194]
+                          - generic [ref=e197]:
+                            - paragraph [ref=e200]:
+                              - generic [ref=e201]: Phase I
+                            - paragraph [ref=e203]: The Nascent Bosco Program
+                            - generic [ref=e207]: From 2022 to 2024, the founders ran the Bosco Program as a stand-alone course. In addition to a single academic class, boys started with tool benches and worked up to both a two-story addition and a barn raising. The course culminated in a communal dinner. During those two years, the Bosco Program showcased just how capable High School boys can be.
+                      - listitem [ref=e208]:
+                        - generic [ref=e210]:
+                          - img [ref=e214]
+                          - generic [ref=e217]:
+                            - paragraph [ref=e220]:
+                              - generic [ref=e221]: Phase II
+                            - paragraph [ref=e223]: The First St. Joseph's Summer Camp
+                            - generic [ref=e227]: To expand on the initial offering of the Bosco Program, the founders started a two-week summer camp where boys received a greater portion of the intended St. Joseph the Worker Academy experience. Learning Latin, poetry, and history while also felling trees and laying foundations, the participants utilized their summers well.
+                      - listitem [ref=e228]:
+                        - generic [ref=e230]:
+                          - img [ref=e234]
+                          - generic [ref=e237]:
+                            - paragraph [ref=e240]:
+                              - generic [ref=e241]: Phase III
+                            - paragraph [ref=e243]: Expanding the Bosco Program
+                            - generic [ref=e247]: As more families expressed interest, the founders began putting on the Bosco Program at four different times so that the trades experience was available for even more people. The program also began taking on greater projects, such as building two houses.
+                      - listitem [ref=e248]:
+                        - generic [ref=e250]:
+                          - img [ref=e254]
+                          - generic [ref=e257]:
+                            - paragraph [ref=e260]:
+                              - generic [ref=e261]: Phase IV
+                            - paragraph [ref=e263]: Opening the Academy
+                            - generic [ref=e267]: "In Fall 2025, the St. Joseph the Worker Academy opened its doors to three classes: Freshmen, Sophomores, and a combined class of Juniors and Seniors. Although the academy is currently at a temporary location, the enrolled boys have five days a week in which they can develop each aspect of man (i.e., his body, mind, and spirit)."
+                      - listitem [ref=e268]:
+                        - generic [ref=e270]:
+                          - img [ref=e274]
+                          - generic [ref=e277]:
+                            - paragraph [ref=e280]:
+                              - generic [ref=e281]: Phase V
+                            - paragraph [ref=e283]: Acquiring a Permanent Location
+                            - generic [ref=e287]: With either an endowment of a property or from the profits coming from our construction jobs, SJWA will work towards aquiring a permanent location for its school. The Bosco Program will spend the year before building the students' future classrooms giving them a sense of ownership of the place itself.
+      - contentinfo:
+        - generic [ref=e288]:
+          - group:
+            - generic [ref=e292]:
+              - group:
+                - generic [ref=e294]:
+                  - img "SJWA.png" [ref=e300]
+                  - heading "St. Joseph the Worker Academy" [level=5] [ref=e302]:
+                    - link "St. Joseph the Worker Academy" [ref=e304] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org
+            - generic [ref=e305]:
+              - group:
+                - generic [ref=e307]:
+                  - paragraph [ref=e310]: © 2024 St. Joseph the Worker Academy, Ann Arbor
+                  - generic [ref=e311]:
+                    - paragraph [ref=e312]: Website Crafted by
+                    - paragraph [ref=e313]:
+                      - link "Merimee Solutions" [ref=e315] [cursor=pointer]:
+                        - /url: https://www.merimeesolutions.com/
+            - generic [ref=e316]:
+              - group
+            - generic [ref=e319]:
+              - group:
+                - form "Newsletter Signup" [ref=e327]:
+                  - group [ref=e328]:
+                    - generic [ref=e329]:
+                      - generic [ref=e330]:
+                        - heading "Sign up for Opifex, the academy's monthly newsletter" [level=1] [ref=e338]:
+                          - generic [ref=e339]:
+                            - text: Sign up for
+                            - emphasis [ref=e340]: Opifex
+                            - text: ","
+                            - emphasis [ref=e341]
+                            - text: the academy's monthly newsletter
+                        - generic [ref=e343]:
+                          - generic [ref=e345]:
+                            - generic [ref=e346]: "*"
+                            - text: Email
+                          - textbox "Email" [ref=e351]
+                        - button "Yes, please subscribe me!" [ref=e356] [cursor=pointer]:
+                          - generic [ref=e357]: Yes, please subscribe me!
+                      - region
+  - region "bottom of page"

@@ -11,6 +11,16 @@ CREATE TABLE IF NOT EXISTS migrations (
     fidelity_score REAL,
     routing_used TEXT,  -- JSON array of personas invoked
     outcome TEXT NOT NULL,  -- success, partial, failed
+    stage_history TEXT,  -- JSON array of stage transitions with timestamps
+    fidelity_history TEXT,  -- JSON array of fidelity scores at each stage
+    persona_versions TEXT,  -- JSON map of persona name to version used
+    decisions TEXT,  -- JSON array of key architectural decisions made
+    site_architecture_id TEXT,  -- FK to site_architectures table
+    content_recommendation_id TEXT,  -- FK to content_recommendations table
+    production_url TEXT,  -- set after production deploy
+    github_repo TEXT,  -- full repo name e.g. "Alira-os/saint-joseph-the-worker-academy"
+    preview_url TEXT,  -- temporary preview URL with TTL
+    preview_expires_at DATETIME,  -- when preview URL expires
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -19,6 +29,66 @@ CREATE INDEX IF NOT EXISTS idx_migrations_platform ON migrations(platform);
 CREATE INDEX IF NOT EXISTS idx_migrations_task_type ON migrations(task_type);
 CREATE INDEX IF NOT EXISTS idx_migrations_outcome ON migrations(outcome);
 CREATE INDEX IF NOT EXISTS idx_migrations_created_at ON migrations(created_at);
+
+-- Site architectures (from Architect Specialist)
+CREATE TABLE IF NOT EXISTS site_architectures (
+    id TEXT PRIMARY KEY,
+    migration_id TEXT,
+    source_url TEXT NOT NULL,
+    target_stack TEXT NOT NULL,  -- JSON of stack decisions
+    deployment_spec TEXT NOT NULL,  -- JSON of DeploymentSpec
+    pages_spec TEXT,  -- JSON array of PageSpec
+    components_spec TEXT,  -- JSON array of ComponentSpec
+    image_strategy TEXT,  -- JSON of ImageMigrationStrategy
+    seo_migration TEXT,  -- JSON of SeoMigrationPlan
+    architecture_decisions TEXT,  -- JSON array of ArchitectureDecision
+    estimated_build_hours REAL,
+    confidence REAL,
+    warnings TEXT,  -- JSON array
+    reasoning_trace TEXT,  -- JSON array
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (migration_id) REFERENCES migrations(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_architectures_migration ON site_architectures(migration_id);
+
+-- Content recommendations (from Marketing Specialist)
+CREATE TABLE IF NOT EXISTS content_recommendations (
+    id TEXT PRIMARY KEY,
+    migration_id TEXT,
+    source_url TEXT NOT NULL,
+    site_name TEXT NOT NULL,
+    content_strategy TEXT,  -- overall strategy description
+    tone_of_voice TEXT,  -- JSON of ToneOfVoice
+    page_strategies TEXT,  -- JSON array of PageContentStrategy
+    variants TEXT,  -- JSON array of ContentVariant
+    chosen_variant TEXT,
+    final_rationale TEXT,
+    brand_preservation_notes TEXT,  -- JSON array
+    seo_opportunities TEXT,  -- JSON array
+    reasoning_trace TEXT,  -- JSON array
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (migration_id) REFERENCES migrations(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_recommendations_migration ON content_recommendations(migration_id);
+
+-- Structured artifacts (JSON blobs for lessons, anti-patterns)
+CREATE TABLE IF NOT EXISTS artifacts (
+    id TEXT PRIMARY KEY,
+    migration_id TEXT,
+    artifact_type TEXT NOT NULL,  -- lesson, anti_pattern, routing_insight, deploy_result
+    content TEXT NOT NULL,  -- JSON content
+    embedding_vector_id TEXT,  -- reference to LanceDB vector ID
+    tags TEXT,  -- JSON array of searchable tags
+    source_persona TEXT,  -- which persona generated this
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (migration_id) REFERENCES migrations(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_artifacts_migration ON artifacts(migration_id);
+CREATE INDEX IF NOT EXISTS idx_artifacts_type ON artifacts(artifact_type);
+CREATE INDEX IF NOT EXISTS idx_artifacts_tags ON artifacts(tags);
 
 -- Debate outputs
 CREATE TABLE IF NOT EXISTS debate_outputs (

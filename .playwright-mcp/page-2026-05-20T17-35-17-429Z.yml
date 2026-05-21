@@ -1,0 +1,144 @@
+- generic [ref=e3]:
+  - region "top of page"
+  - generic [ref=e10]:
+    - group:
+      - banner:
+        - generic [ref=e11]:
+          - img "SJWA Smallest" [ref=e19]
+          - heading "St. Joseph the Worker Academy" [level=1] [ref=e21]
+          - navigation "Site" [ref=e24]:
+            - list [ref=e25]:
+              - listitem [ref=e26]:
+                - generic [ref=e28]:
+                  - generic [ref=e30]: Academics
+                  - button "More Academics pages" [ref=e31] [cursor=pointer]:
+                    - img [ref=e32]
+              - listitem [ref=e34]:
+                - generic [ref=e36]:
+                  - generic [ref=e38]: Administration
+                  - button "More Administration pages" [ref=e39] [cursor=pointer]:
+                    - img [ref=e40]
+              - listitem [ref=e42]:
+                - link "Events" [ref=e45] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/event-list
+                  - generic [ref=e46]: Events
+              - listitem [ref=e47]:
+                - link "FAQ" [ref=e50] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/blank-2
+                  - generic [ref=e51]: FAQ
+              - listitem [ref=e52]:
+                - link "Donate" [ref=e55] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/donate
+                  - generic [ref=e56]: Donate
+      - main:
+        - generic [ref=e67]:
+          - navigation "Blog" [ref=e70]:
+            - list [ref=e71] [cursor=pointer]:
+              - listitem [ref=e72]:
+                - link "All Posts" [ref=e73]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/ideas
+          - generic [ref=e75]:
+            - article [ref=e79]:
+              - generic [ref=e80]:
+                - generic [ref=e82]:
+                  - generic [ref=e83]:
+                    - heading "Why a Boys School?" [level=1] [ref=e85]
+                    - generic [ref=e86]:
+                      - list [ref=e87]:
+                        - listitem [ref=e88]:
+                          - 'img "Writer: Dominic Perrotta" [ref=e91]'
+                          - generic [ref=e92] [cursor=pointer]: Dominic Perrotta
+                        - listitem [ref=e93]: ·Jan 4, 2024
+                        - listitem [ref=e94]: ·2 min read
+                      - button "More actions" [ref=e96] [cursor=pointer]:
+                        - img [ref=e97]
+                  - paragraph [ref=e99]: "Updated: May 24, 2024"
+                - generic [ref=e106]:
+                  - paragraph [ref=e108]:
+                    - generic [ref=e110]: "Boys lag behind in the American education system. The modern school system is designed by women, and works well for girls. Boys need something further, something more tactile. Looking at John Bosco and John Senior we want to have a school that focuses on the whole person of the boy. As creatures made for union with God, we can only find true fulfillment through an ever-deepening relationship with Jesus Christ. And that relationship demands engagement from the whole person: body, mind and soul. In all that we do at this school – trades, study and prayer – we seek to create a rich and fertile soil for God to do His work in cultivating Saints. A boy coming out of our program needs to be an ideal candidate for anything, whether it is seminary, college, or working a trade."
+                  - paragraph [ref=e115]:
+                    - generic [ref=e116]:
+                      - generic [ref=e117]: In a world that is constantly disparaging “toxic” masculinity and effeminating boys, we want to focus on nurturing authentic masculinity. (Not superficial bravado, but the true masculinity that comes from striving towards aurduis goods and seeing the fruits of one's labor.) Our culture wants to make us soft, but by regular contact with the animals, with the trades, with the
+                      - emphasis [ref=e118]:
+                        - generic [ref=e119]: Usus Antiquior,
+                      - generic [ref=e120]: and with the Classics we will counteract this softness.
+                  - paragraph [ref=e125]:
+                    - generic [ref=e127]: All of this amounts to an education that relies heavily on first-hand experience of the world, and formation of the intellect through images over abstractions. This approach may be summarized as "gymnopoetic," from the Greek "gymnos" for bare and "poeisis" for making, from which the word poetry is derived. These two concepts summarize the distinctive aspects of this approach to forming men. It is a method that relies on forming a true image of the world and the self by work, by a first-hand "naked" encounter with creation through making beautiful things, and by beauty distilled in poetry and the other imaginative arts.
+                  - paragraph [ref=e132]:
+                    - generic [ref=e134]: This is why starting freshman year every student spends time daily working with their hands. This is most easily seen with the Wednesday trades day. Every Wednesday will be a focus on the trades. As Freshmen it will start with shop class, learning the various tools and how to do simple work. By the time they reach their Junior year they will be joining local tradesmen on jobsites, getting a real taste of the work and a sense of community.
+                  - paragraph [ref=e139]:
+                    - generic [ref=e140]:
+                      - generic [ref=e141]: This school is also connected to the community; we are not a boarding school. To help engage the students with the life of their own families, we will emphasize family time. This means we want to be
+                      - strong [ref=e142]:
+                        - generic [ref=e143]: a school without homework.
+                      - generic [ref=e144]: Readings are done in class as a group, and when they get home at the end of the day they can rest with their families. Furthermore the shop class will have a focus in building things to take home and learning skills that are applicable in the home.
+                - generic [ref=e150]:
+                  - button "Share via Facebook" [ref=e152] [cursor=pointer]:
+                    - img "Facebook" [ref=e153]
+                  - button "Share via X (Twitter)" [ref=e157] [cursor=pointer]:
+                    - img "X" [ref=e158]
+                  - button "Share via LinkedIn" [ref=e162] [cursor=pointer]:
+                    - img "LinkedIn" [ref=e163]
+                  - button "Share via link" [ref=e168] [cursor=pointer]:
+                    - img [ref=e169]
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - heading "Recent Posts" [level=2] [ref=e181]
+                - link "See All" [ref=e182] [cursor=pointer]:
+                  - /url: https://www.saintjosephtheworkeracademy.org/ideas
+              - generic [ref=e184]:
+                - article [ref=e185]:
+                  - generic [ref=e186]:
+                    - link "Why Agriculture?" [ref=e187] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/post/why-agriculture
+                    - link "Why Agriculture?" [ref=e192] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/post/why-agriculture
+                - article [ref=e199]:
+                  - generic [ref=e200]:
+                    - link "A Useless Education" [ref=e201] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/post/a-useless-education
+                    - link "A Useless Education" [ref=e206] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org/post/a-useless-education
+      - contentinfo:
+        - generic [ref=e213]:
+          - group:
+            - generic [ref=e217]:
+              - group:
+                - generic [ref=e219]:
+                  - img "SJWA.png" [ref=e225]
+                  - heading "St. Joseph the Worker Academy" [level=5] [ref=e227]:
+                    - link "St. Joseph the Worker Academy" [ref=e229] [cursor=pointer]:
+                      - /url: https://www.saintjosephtheworkeracademy.org
+            - generic [ref=e230]:
+              - group:
+                - generic [ref=e232]:
+                  - paragraph [ref=e235]: © 2024 St. Joseph the Worker Academy, Ann Arbor
+                  - generic [ref=e236]:
+                    - paragraph [ref=e237]: Website Crafted by
+                    - paragraph [ref=e238]:
+                      - link "Merimee Solutions" [ref=e240] [cursor=pointer]:
+                        - /url: https://www.merimeesolutions.com/
+            - generic [ref=e241]:
+              - group
+            - generic [ref=e244]:
+              - group:
+                - form "Newsletter Signup" [ref=e252]:
+                  - group [ref=e253]:
+                    - generic [ref=e254]:
+                      - generic [ref=e255]:
+                        - heading "Sign up for Opifex, the academy's monthly newsletter" [level=1] [ref=e263]:
+                          - generic [ref=e264]:
+                            - text: Sign up for
+                            - emphasis [ref=e265]: Opifex
+                            - text: ","
+                            - emphasis [ref=e266]
+                            - text: the academy's monthly newsletter
+                        - generic [ref=e268]:
+                          - generic [ref=e270]:
+                            - generic [ref=e271]: "*"
+                            - text: Email
+                          - textbox "Email" [ref=e276]
+                        - button "Yes, please subscribe me!" [ref=e281] [cursor=pointer]:
+                          - generic [ref=e282]: Yes, please subscribe me!
+                      - region
+  - region "bottom of page"

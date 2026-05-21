@@ -1,8 +1,8 @@
 # Elyra Architecture — Target State
 
-**Version:** 1.0
-**Status:** Planning (updated from Phase 0 learnings)
-**Last Updated:** 2026-05-02
+**Version:** 1.1
+**Status:** Planning (updated from Phase 0/1 learnings)
+**Last Updated:** 2026-05-20
 
 ---
 
@@ -688,6 +688,195 @@ Deploy to staging happens on merge to `develop`:
 
 Production deploy happens on merge to `main`:
 - After phase completion, `main` is deployed to production
+
+---
+
+## Hybrid Storage Architecture (Phase 1+)
+
+Production-grade hybrid memory system for 50-100+ migrations:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     Hybrid Memory Architecture                    │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Layer 1: Metadata + Provenance (SQLite)                 │   │
+│  │  • Migration ledger (stage_history, fidelity_scores)  │   │
+│  │  • Routing heuristics                                   │   │
+│  │  • Debate outputs + human approvals                     │   │
+│  │  • Persona versions used per stage                       │   │
+│  │  • Production URLs, GitHub repos, preview URLs + TTLs   │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                              │                                  │
+│                              ▼                                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Layer 2: Structured Artifacts (git-tracked JSON)       │   │
+│  │  memory/site_understandings/<id>.json                 │   │
+│  │  memory/site_architectures/<id>.json                  │   │
+│  │  memory/marketing_recommendations/<id>.json          │   │
+│  │  memory/artifacts/<id>.json (lessons, anti-patterns) │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                              │                                  │
+│                              ▼                                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Layer 3: Code Artifacts (Git repos)                    │   │
+│  │  Alira-os/<site-repo> per migration/client             │   │
+│  │  Permanent immutable history                            │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                              │                                  │
+│                              ▼                                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Layer 4: Semantic Search (LanceDB)                     │   │
+│  │  • Vector embeddings of lessons, site summaries        │   │
+│  │  • Query: "Find all trades gallery migrations"        │   │
+│  │  • Query: "What worked for classical schools?"         │   │
+│  │  • Phase 0/1: hash-based fallback until real embeddings │  │
+│  └─────────────────────────────────────────────────────────┘   │
+│                              │                                  │
+│                              ▼                                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Layer 5: Large Media (external, URL-referenced only)   │   │
+│  │  • Fly.io Volumes or Cloudflare R2                    │   │
+│  │  • URLs stored in metadata; media NOT in git           │   │
+│  │  • Retention: "as needed"                             │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### SQLite Schema Extensions
+
+New tables:
+- `site_architectures`: Architect Specialist output per migration
+- `content_recommendations`: Marketing Specialist output per migration
+- `artifacts`: Lessons, anti-patterns, routing insights with vector references
+
+New columns on `migrations`:
+- `stage_history`, `fidelity_history`, `persona_versions`, `decisions`
+- `production_url`, `github_repo`, `preview_url`, `preview_expires_at`
+
+### LanceDB Integration (`memory/vector/lessons.py`)
+
+```python
+# Semantic search over lessons
+results = memory.query_lessons("trades gallery wix", tags=["gallery", "wix"])
+
+# Log a lesson from a migration
+lessons.log_lesson(
+    migration_id="abc-123",
+    lesson={"description": "Trades gallery works well for wix portfolios"},
+    tags=["wix", "portfolio", "gallery"]
+)
+
+# Search for site patterns
+results = lessons.search_site_summaries("classical academy education religious")
+```
+
+---
+
+## Promotion Pipeline (Phase 1+)
+
+Hardened multi-stage promotion flow with automated gates + single human approval:
+
+```
+Builder + SEO finish
+        │
+        ▼
+┌───────────────────────┐
+│  GitHub Repo Created │  ← github_strategy_agent (Alira-os org, per-site)
+│  (post-local-build)   │
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│  Kilo Code Reviewer   │  ← GitHub Action (kilo-review.yml)
+│  + Security Agent     │
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────────────────────────────────┐
+│  Elyra SecurityQualityGate (REQUIRED)             │
+│  • Lighthouse perf ≥ 95 (raised from 85)          │
+│  • Lighthouse a11y ≥ 90                          │
+│  • Lighthouse best-practices ≥ 90 (raised from 85)│
+│  • Lighthouse SEO ≥ 90 (raised from 85)          │
+│  • npm audit: 0 critical                          │
+└──────────┬────────────────────────────────────────┘
+           │ FAIL → Block + report issues
+           │ PASS
+           ▼
+┌───────────────────────┐
+│  Preview Deployment   │  ← Fly.io preview app (7-day TTL)
+│  Temporary public URL │  + banner: "Preview of new {site} website"
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│  Human Approval Gate  │  ← ONLY mandatory human touchpoint
+│  "Good to go?"       │    PR comment / CLI / Slack
+└──────────┬────────────┘
+           │ REJECT → Return to Builder
+           │ APPROVE
+           ▼
+┌───────────────────────────────────────────────────┐
+│  Production Deploy (Deploy Specialist)             │
+│  • Creates/updates Fly app (org/region)           │
+│  • Custom domain + SSL                           │
+│  • Env vars + secrets                            │
+│  • DNS update                                    │
+│  • Mark "Production Live" in SQLite ledger        │
+└───────────────────────────────────────────────────┘
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `promotion_pipeline.py` | Orchestrator: build→review→preview→approval→deploy |
+| `.github/workflows/kilo-review.yml` | Auto-trigger Kilo on PRs |
+| `conductor/security_gate.py` | Hardened thresholds (perf ≥ 95, etc.) |
+| `skills/agentic/github_strategy_agent.py` | Repo creation under Alira-os org |
+
+### Preview Banner (Creative Enhancement)
+
+Time-limited public preview (7 days) with excitement banner injected into pages:
+
+```html
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); ...">
+  ⚠️ Preview Mode — This is a preview of the new {site_name} website
+  — This is NOT the live site
+  Preview expires in 7 days
+</div>
+```
+
+---
+
+## GitHub Strategy (Alira-os Org + Per-Site Repos)
+
+### Org Structure
+
+```
+Alira OS (GitHub Organization) ← https://github.com/Alira-os
+├── elyra                          ← Elyra project itself
+├── saint-joseph-the-worker-academy  ← Per-site repos (created post-local-build)
+├── merimee-solutions
+├── chesterton-academy-akron
+├── holy-rollers
+└── ... (one repo per migration/client)
+```
+
+### Repo Creation Timing
+
+Per-site repos are created **ONLY** when:
+1. Site migration completes (scraper → architect → marketing → builder)
+2. Site has been built locally
+3. Builder + SEO signals "ready for deploy"
+
+### Kilo Integration
+
+- **Auto-trigger Kilo Code Reviewer** on every PR via `.github/workflows/kilo-review.yml`
+- **Client portal** via GitHub Discussions (clients can ask for updates)
+- **Branch protection** + required status checks (CI + security gate)
+- **Ownership transfer**: `gh repo transfer` as final human-approved step
 
 ---
 

@@ -1,3 +1,14 @@
+"""
+SecurityQualityGate — Hardened for Phase 1+.
+
+Checks (mandatory for promotion):
+- npm audit: 0 critical vulnerabilities
+- Lighthouse performance >= 95 (raised from 85)
+- Lighthouse accessibility >= 90
+- Lighthouse best practices >= 90 (raised from 85)
+- Lighthouse SEO >= 90 (raised from 85)
+"""
+
 from skills.executable.npm_audit import run_npm_audit, get_fix_instructions
 from skills.executable.lighthouse import run_lighthouse
 from dataclasses import dataclass
@@ -19,21 +30,21 @@ class SecurityQualityGate:
     """
     Security and quality gate that must pass before deployment.
 
-    Checks:
+    Hardened thresholds (Phase 1+):
     - npm audit: 0 critical vulnerabilities
-    - Lighthouse performance >= 85
-    - Lighthouse accessibility >= 90
-    - Lighthouse best practices >= 85
-    - Lighthouse SEO >= 85
+    - Lighthouse performance >= 0.95
+    - Lighthouse accessibility >= 0.90
+    - Lighthouse best practices >= 0.90
+    - Lighthouse SEO >= 0.90
     """
 
     def __init__(self):
         self.npm_audit_threshold = {"critical": 0}
         self.lighthouse_thresholds = {
-            "performance": 0.85,
-            "accessibility": 0.90,
-            "best_practices": 0.85,
-            "seo": 0.85
+            "performance": 0.95,    # raised from 0.85
+            "accessibility": 0.90,  # unchanged
+            "best_practices": 0.90, # raised from 0.85
+            "seo": 0.90            # raised from 0.85
         }
 
     def check(self, project_dir: str, staging_url: Optional[str] = None) -> SecurityCheckResult:

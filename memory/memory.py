@@ -1,6 +1,29 @@
 from memory.sqlite.crud import Database, MigrationCRUD, DebateCRUD, HeuristicCRUD, SessionStateCRUD
-from skills.executable.memory_query import query_similar_sites, log_migration
+from memory.vector.lessons import LessonStore, SemanticMatch
 from typing import Optional
+from dataclasses import dataclass
+from datetime import datetime
+
+
+@dataclass
+class MutationSeed:
+    """Memory-derived context injected into OpenCode prompts for biasing codegen toward proven patterns."""
+    similar_sites_count: int
+    winning_stack: str
+    average_fidelity: float
+    preferred_patterns: list[str]
+    anti_patterns: list[str]
+    source_migrations: list[str]
+
+    def to_prompt_section(self) -> str:
+        """Convert to markdown section for OpenCode prompt."""
+        return f"""## Memory-Derived Guidance (Mutation Seed)
+Based on {self.similar_sites_count} similar migrations with avg fidelity {self.average_fidelity:.2f}:
+- Preferred stack: {self.winning_stack}
+- Successful patterns: {', '.join(self.preferred_patterns) if self.preferred_patterns else 'none identified'}
+- Avoid: {', '.join(self.anti_patterns) if self.anti_patterns else 'none identified'}
+
+Use this guidance unless user explicitly specifies otherwise."""
 
 
 class Memory:
@@ -10,13 +33,13 @@ class Memory:
         self.debates = DebateCRUD(self.db)
         self.heuristics = HeuristicCRUD(self.db)
         self.sessions = SessionStateCRUD(self.db)
+        self.lessons = LessonStore()
 
     def query_similar_sites(self, platform: str, task_type: str) -> list[dict]:
         """
         Query memory for similar past migrations.
 
-        Phase 0: Returns empty list (LanceDB not wired yet)
-        Phase 1+: Will perform vector similarity search
+        Phase 1+: Uses LanceDB for semantic similarity search.
 
         Args:
             platform: wix, squarespace, wordpress, generic
@@ -25,7 +48,26 @@ class Memory:
         Returns:
             List of similar migrations with routing sequences and outcomes
         """
-        return query_similar_sites(platform, task_type)
+        query = f"{platform} {task_type} site migration"
+        results = self.lessons.search_lessons(query, tags=[platform, task_type], limit=5)
+        migrations = []
+        for r in results:
+            content = r.content
+            if "migration_id" in content:
+                mig = self.migrations.get_migration(content["migration_id"])
+                if mig:
+                    mig["_lesson_similarity"] = r.similarity
+                    migrations.append(mig)
+        return migrations
+
+    def query_lessons(self, query: str, tags: Optional[list[str]] = None, limit: int = 5) -> list[SemanticMatch]:
+        """
+        Semantic search over migration lessons.
+
+        Example: "Find all migrations that used a trades gallery"
+        Example: "What worked for classical schools?"
+        """
+        return self.lessons.search_lessons(query, tags=tags, limit=limit)
 
     def save_migration(self, migration_data: dict) -> str:
         """
@@ -38,7 +80,16 @@ class Memory:
             migration_id
         """
         migration_id = self.migrations.create_migration(migration_data)
-        log_migration(migration_data)
+        self.lessons.log_site_summary(
+            migration_id=migration_id,
+            site_summary={
+                "url": migration_data.get("url", ""),
+                "platform": migration_data.get("platform", ""),
+                "task_type": migration_data.get("task_type", ""),
+                "description": f"{migration_data.get('platform')} {migration_data.get('task_type')} migration"
+            },
+            tags=[migration_data.get("platform", ""), migration_data.get("task_type", "")]
+        )
         return migration_id
 
     def get_migration(self, migration_id: str) -> Optional[dict]:
@@ -49,11 +100,81 @@ class Memory:
         """Update fidelity score for a migration."""
         self.migrations.update_fidelity(migration_id, fidelity_score)
 
+    def update_stage_history(self, migration_id: str, stage: str, metadata: Optional[dict] = None) -> None:
+        """Append a stage transition to the migration's stage_history."""
+        self.migrations.update_stage_history(migration_id, stage, metadata)
+
+    def update_preview_url(self, migration_id: str, preview_url: str, expires_at: datetime) -> None:
+        """Set preview URL with expiration for a migration."""
+        self.migrations.update_preview(migration_id, preview_url, expires_at)
+
+    def mark_production_live(self, migration_id: str, production_url: str, github_repo: str) -> None:
+        """Mark migration as production live."""
+        self.migrations.update_production(migration_id, production_url, github_repo)
+
     def list_recent_migrations(self, platform: Optional[str] = None,
                                task_type: Optional[str] = None,
                                limit: int = 20) -> list[dict]:
         """List recent migrations, optionally filtered."""
         return self.migrations.list_migrations(platform, task_type, limit)
+
+    def get_mutation_seed(self, task_context: dict) -> Optional[MutationSeed]:
+        """
+        Get memory-derived "mutation seed" for biasing codegen.
+
+        Queries similar past migrations and extracts patterns that worked.
+        If no similar migrations exist, returns None (no injection).
+
+        Args:
+            task_context: Dict with 'platform', 'task_type', 'url', etc.
+
+        Returns:
+            MutationSeed or None
+        """
+        platform = task_context.get("platform", "generic")
+        task_type = task_context.get("task_type", "generic")
+
+        similar = self.list_recent_migrations(platform, task_type, limit=5)
+
+        if not similar:
+            return None
+
+        successful = [m for m in similar if m.get("outcome") == "success"]
+        if not successful:
+            return None
+
+        stacks = [m.get("stack_chosen") for m in successful if m.get("stack_chosen")]
+        stack_counts = {}
+        for s in stacks:
+            if s:
+                stack_counts[s] = stack_counts.get(s, 0) + 1
+
+        winning_stack = max(stack_counts, key=stack_counts.get) if stack_counts else "nextjs+tailwind"
+
+        fidelity_scores = [m.get("fidelity_score") for m in successful if m.get("fidelity_score")]
+        avg_fidelity = sum(fidelity_scores) / len(fidelity_scores) if fidelity_scores else 0.7
+
+        routing_seqs = [m.get("routing_used") for m in successful if m.get("routing_used")]
+
+        preferred = []
+        for seq in routing_seqs:
+            if seq and "stack_intelligence" in seq:
+                preferred.append("uses stack_intelligence")
+            if seq and "ui_polish" in seq:
+                preferred.append("includes ui_polish")
+            if seq and "seo_optimizer" in seq:
+                preferred.append("includes seo_optimizer")
+
+        migration_ids = [m.get("id") for m in successful[:3]]
+
+        return MutationSeed(
+            similar_sites_count=len(successful),
+            winning_stack=winning_stack,
+            average_fidelity=avg_fidelity,
+            preferred_patterns=list(set(preferred)) if preferred else [],
+            anti_patterns=[],
+            source_migrations=migration_ids
+        )
 
     def save_debate(self, migration_id: str, debate_result: dict) -> str:
         """Save a debate output for a migration."""
