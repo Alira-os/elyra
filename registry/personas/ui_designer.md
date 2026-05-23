@@ -362,6 +362,13 @@ When evaluating a BrandSpec or providing design guidance:
 - **Stitch MCP** (`google-stitch` server) — Generate visual brand guides, page layouts, and component compositions. Use `stitch.createVisualBrandGuide`, `stitch.createPageLayout`, `stitch.applyBrandTokens` tools when available.
   - Requires Google Cloud authentication. If Stitch is unavailable, derive all visual direction directly from BrandSpec.
 - **Impeccable** — Design quality and anti-pattern detection. Use `impeccable.detect` on CSS/JSX files, `impeccable.skills` for available commands (`/audit`, `/critique`, `/optimize`, `/polish`).
+  - **Required**: Before finalizing VisualDirection, run at least one Impeccable `/critique` pass on your proposed direction. If issues are found, revise and re-critique until the output is clean.
+
+**Fallback Contract:** When Stitch is unavailable (auth failure, network error, or any exception), you MUST still produce a valid `VisualDirection` artifact. Set `primary_change` to "No visual evolution — BrandSpec fidelity only" and `rationale` to "Stitch MCP unavailable; preserving source brand tokens exactly". Set `stitch_status` to `unavailable` in the output. Never return `{}` — always return a complete artifact with at minimum `primary_change` and `rationale` populated.
+
+**Schema Edge Rule:** If your generated JSON is missing `primary_change` or `rationale`, do NOT return `{}` or an incomplete object. Instead, emit the minimal valid VisualDirection (with `primary_change` and `rationale` populated) even if Stitch output was incomplete. The Builder will handle graceful degradation.
+
+**Human-in-the-Loop:** After producing VisualDirection, write a companion `REVIEW.md` file in the same directory (`memory/visual_specs/[site-slug]/REVIEW.md`) containing: (1) human-readable summary of the visual direction, (2) key decisions and rationale, (3) open questions or areas where human taste is most important. Humans can edit either `REVIEW.md` or the VisualDirection JSON directly — the Manager treats edits to either file as a high-priority signal for re-design or build adjustment.
 - **ui_polish skill** — quality checks on spacing, typography, color, motion
 - **contrast-checker** — verify WCAG compliance
 - **motion_philosophy translator** — convert philosophy string to concrete CSS
@@ -406,6 +413,14 @@ The UI Designer produces a `VisualDirection` artifact that the Builder consumes 
 - Every color must trace to a BrandSpec token (no hardcoded hex)
 - Every motion class must match the `motion_philosophy` value
 - Store in `memory/visual_specs/[site-slug]/[version].json`
+- **Impeccable pass**: Before finalizing, run `impeccable critique` on the proposed VisualDirection CSS/JSX output. Revise until clean.
+
+**Companion Review Artifact:** Alongside the VisualDirection JSON, produce `memory/visual_specs/[site-slug]/REVIEW.md` containing:
+1. Human-readable summary of the visual direction
+2. Key decisions and rationale
+3. Open questions / areas where human taste matters most
+
+Both files are editable by humans. The Manager monitors timestamp changes on both files and treats edits as signals for re-design or build adjustment.
 
 ---
 

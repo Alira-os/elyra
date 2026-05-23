@@ -38,19 +38,47 @@ The Conductor maintains a **Gap Ledger** — a structured log of failures, missi
 - After migration completion, invoke Elyra Engineer with aggregated Gap Ledger entries
 - Track gap frequency per persona to identify systematic issues
 
-### 2. Request-More-Data Protocol
+### 2. Request-More-Data Protocol (LLM-Driven)
 
-When a persona (Designer, Builder) detects insufficient data (e.g., "need higher-fidelity hero imagery", "full faculty bios missing"), the Conductor:
+The Conductor no longer uses hardcoded routing logic. After every persona completion, quality-gate run, or gap emission it assembles `CurrentState` (artifacts present, gaps with optional `target_persona`, iteration counts, gate results) and delegates the routing decision to the Manager persona via Kilo.
 
-1. Receives the request-more-data signal from the persona
-2. Determines the appropriate responder (Scraper, Architect, Marketing)
-3. Re-invokes the responder with targeted instructions
-4. Passes the enriched data back to the original persona
-5. Logs the exchange in the Gap Ledger
+Any gap may now carry an explicit `target_persona` field. The Manager persona examines every gap's `target_persona` (if present) and may route backward to **any** prior persona — Scraper, Architect, Marketing, Designer, Builder, etc. — not just the deterministic set.
 
-**Example Flow:**
+**ManagerDecision Schema (returned by Kilo):**
+```json
+{
+  "action": "invoke_persona" | "route_back" | "complete" | "abort" | "create_github_issue",
+  "persona": "<target persona>",
+  "reason": "string",
+  "gap_context": "2-4 bullet crisp summary (only when action=route_back)",
+  "confidence": 0.0-1.0
+}
 ```
-Builder → "Need full faculty bios" → Conductor → Re-invoke Scraper with targeted extraction → Builder (retry)
+
+**Python Safety Rails (non-negotiable, enforced after ManagerDecision):**
+- `iteration_count[persona] > MAX_RETRIES (3)` → GitHub issue
+- `consecutive_gate_failures[gate] >= SAME_GATE_FAIL_LIMIT (3)` → GitHub issue
+- High-severity gap with no `target_persona` → abort + GitHub issue
+
+### Routing Decision Protocol (NEW)
+
+You are the Migration Manager. Your sole responsibility in this step is to decide the next action and return a single `ManagerDecision` JSON object.
+
+**Rules:**
+1. You may route backward to **ANY** persona if a gap indicates missing information from that persona — look for `target_persona` in the gaps list.
+2. You may only invoke the next forward persona if all required artifacts for that persona are present in the `artifacts` map.
+3. If the same issue has occurred on 3+ consecutive iterations of the same persona, or the same quality gate has failed 3 times in a row, you **must** choose `create_github_issue`.
+4. You must never bypass the safety rails (max retries, same-gate limit). Python will reject an invalid decision.
+
+**Example Decision (route back to Scraper from Architect):**
+```json
+{
+  "action": "route_back",
+  "persona": "scraper",
+  "reason": "Architect requires full faculty bios which are missing from SiteUnderstanding",
+  "gap_context": "• Faculty bios absent — Scrape /team page with selector '.faculty-card'",
+  "confidence": 0.92
+}
 ```
 
 ### 3. Concurrent Planning Handoff
@@ -66,7 +94,22 @@ Before Builder executes, the Conductor ensures the planning phase is complete:
 
 The Conductor blocks Builder execution until the planning phase is complete. If Stitch or Designer produces partial output, the Conductor proceeds with BrandSpec-only fallback.
 
-### 4. Post-Run Analysis (Elyra Engineer Trigger)
+### 4. Human Change Detection Rule
+
+**On every run, the Manager checks for timestamp changes** in `memory/visual_specs/[site-slug]/`.
+
+If any of the following files have changed since the last planning phase:
+- `*.json` (VisualDirection artifact files)
+- `REVIEW.md` (human-editable review file)
+
+The Manager must treat this as a **high-priority Gap Ledger signal** and decide:
+- If the change is minor (e.g., designer_notes edit): proceed to Builder with the updated artifact
+- If the change is significant (e.g., new `primary_change` or `color_delta`): re-run Designer with the updated spec before proceeding to Builder
+- If unclear: log a gap and ask for human clarification before proceeding
+
+This rule ensures humans can tweak visual direction between runs and the system respects those changes without requiring a full re-run.
+
+### 5. Post-Run Analysis (Elyra Engineer Trigger)
 
 After each migration, the Conductor triggers Elyra Engineer with:
 - All `BuildManifest.json` files from the run
@@ -191,5 +234,64 @@ ONBOARDING → ROUTING → SCRAPING → ARCHITECT → MARKETING → DESIGNER →
 - `memory/gap_ledger/` — for gap entry storage
 - `skills/agentic/*.py` — thin glue agents for each persona
 - `models.site_schemas` — Pydantic models for all artifacts
-- `skills.quality_gate` — for quality gate execution
-- `elyra_engineer.py` — for post-run analysis (future)
+- `quality_gate.py` — for quality gate execution (`run_quality_gates`)
+- `elyra_engineer.py` — for post-run analysis and persona improvement PRs
+
+---
+
+## Phase 4D Closed-Loop Manager (Automated)
+
+### Decision Engine Rules (`_decide_next_action`)
+
+1. **Forward Flow**  
+   `onboarding → routing → scraper → architect → marketing → designer → builder`
+
+2. **Quality Gate Step** (deterministic, outside LLM)  
+   `run_quality_gates(site_dir, re_run_impeccable=False)` returns:
+   ```json
+   { "npm_build", "impeccable_report", "token_fidelity", "accessibility", "overall_passed", "failing_gate", "gaps" }
+   ```
+
+3. **Decision Matrix**
+   - Gates passed + 0 high-severity gaps → `complete`
+   - Gate failure or high-severity gap → `route_back` to responsible persona with crisp `gap_context` (2–4 bullets)
+   - `iteration_count[persona] > MAX_RETRIES (3)` OR same gate fails 3 consecutive times on same persona → create GitHub issue + `github_issue_created`
+
+4. **Backward Routing Contract**
+   - `_invoke_persona(persona, gap_context=...)` injects summarized context into Kilo prompt
+   - Every route_back produces a versioned artifact via `_get_next_version_path()`
+   - Record `{persona, iteration, artifact_path, gap_ids, timestamp, gap_context}` in `BuildManifest.rework_log`
+
+5. **Gap Summarization Helper**
+   `summarize_gaps_for_kilo(gaps: list[dict]) -> str` — always used before route_back.
+
+6. **State Consistency**
+   After every re-invocation, downstream personas call `_get_latest_artifact_id(site_slug, artifact_type)`.
+
+7. **Terminal Escalation (Fully Automated)**
+   Structured GitHub issue created in `Alira-os/elyra` via `github_strategy_agent` containing:
+   - migration_id, url, platform
+   - iteration_counts, top 5–10 gaps
+   - last gate report, full trace summary
+   - one-line reproduce command
+
+8. **Elyra Engineer Invocation**
+   Automatically invoked (non-blocking) on both `complete` and `github_issue_created` states.
+   Consumes `GapLedger + rework_log + iteration_counts` and proposes persona improvements as PRs.
+
+9. **Trace & BuildManifest Completeness**
+   Every `route_back`, quality gate run, and escalation is appended to in-memory trace and final `BuildManifest`.
+
+### Persona Iteration Contract
+
+- Designer & Builder agents accept optional `gap_context: str` parameter.
+- When present, the Kilo prompt is augmented with the crisp gap summary before invocation.
+- Builder persona always ends with `impeccable detect` and emits the report (no external wrapper).
+
+---
+
+## Anti-Patterns (Reinforced)
+
+- Never leave a persona state without a versioned artifact on route_back.
+- Never skip quality gates.
+- Never allow human-in-the-loop states — GitHub issue creation is the only terminal escalation path.

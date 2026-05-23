@@ -1,0 +1,1 @@
+{"gap_id": "a6a624d8", "timestamp": "2026-05-22T20:50:07.760588+00:00", "migration_id": "test-mig-001", "type": "missing_data", "source_persona": "designer", "description": "Hero image not found", "suggested_fix": "", "severity": "medium", "resolved": false, "resolution_note": ""}

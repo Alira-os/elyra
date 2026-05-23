@@ -38,12 +38,14 @@ from models.site_schemas import (
     BuildManifest,
     PolishChange,
     SelfCritique,
+    VisualDirection,
 )
 
 
 MEMORY_DIR = Path("memory/site_understandings")
 ARCHITECTURE_DIR = Path("memory/site_architectures")
 RECOMMENDATION_DIR = Path("memory/site_recommendations")
+VISUAL_SPEC_DIR = Path("memory/visual_specs")
 OUTPUT_DIR = Path("memory/site_builds")
 SITES_DIR = Path("sites")
 PERSONA_PATH = Path("registry/personas/builder_specialist.md")
@@ -64,6 +66,7 @@ def build_builder_prompt(
     architecture: SiteArchitecture,
     recommendation: ContentRecommendation,
     site_slug: str,
+    visual_direction: Optional[VisualDirection] = None,
 ) -> str:
     """Build the prompt that Kilo CLI will execute."""
     persona = PERSONA_PATH.read_text() if PERSONA_PATH.exists() else ""
@@ -72,10 +75,48 @@ def build_builder_prompt(
     arch_json = architecture.model_dump_json(indent=2)
     rec_json = recommendation.model_dump_json(indent=2)
 
+    vd_section = ""
+    if visual_direction:
+        vd_json = visual_direction.model_dump_json(indent=2)
+        vd_section = f"""
+
+## Input VisualDirection (from UI Designer)
+{vd_json}
+
+## VisualDirection Usage
+- visual_direction.primary_change = the overarching design evolution direction
+- visual_direction.rationale = why the direction was chosen
+- visual_direction.color_delta / typography_delta / motion_delta = specific overrides
+- visual_direction.impacted_components / impacted_pages = which parts are affected
+- visual_direction.stitch_status = "available" | "unavailable" | "partial"
+- If stitch_status is "unavailable", the Builder must apply BrandSpec tokens exactly without introducing new visual choices.
+
+Apply VisualDirection AFTER applying BrandSpec. VisualDirection overrides BrandSpec only where explicitly delta-ed.
+If no VisualDirection is present, apply BrandSpec tokens exactly as the final authority.
+"""
+    else:
+        vd_section = """
+
+## VisualDirection
+No VisualDirection artifact found. Apply BrandSpec tokens exactly as the final visual authority.
+Log any deviation from BrandSpec tokens as a gap in the Gap Ledger.
+"""
+
+    gap_section = ""
+    if gap_context:
+        gap_section = f"""
+
+## Prioritized Rework Instructions (from Quality Gate)
+{gap_context}
+
+Apply these changes first. Re-run `impeccable detect` as the final step and ensure the report is emitted.
+"""
+
     return f"""{persona}
 
 ## Task
-Build a complete, production-ready site implementation from the following three artifacts.
+Build a complete, production-ready site implementation from the following artifacts.
+{gap_section}
 
 ## Input SiteUnderstanding
 {site_json}
@@ -85,7 +126,7 @@ Build a complete, production-ready site implementation from the following three 
 
 ## Input ContentRecommendation (with chosen variant + brand_spec)
 {rec_json}
-
+{vd_section}
 The chosen variant is already decided. Apply it fully. Apply the brand_spec as the design system contract.
 Run the polish pass after initial generation. Log every polish change with reason + brand_spec_reference.
 Run a structured self-critique after polish.
@@ -233,6 +274,28 @@ def load_content_recommendation(rec_id: str) -> Optional[ContentRecommendation]:
         return None
 
 
+def load_visual_direction(site_slug: str) -> Optional[VisualDirection]:
+    """Load the latest VisualDirection from memory/visual_specs/[site_slug]/."""
+    spec_dir = VISUAL_SPEC_DIR / site_slug
+    if not spec_dir.exists():
+        return None
+    json_files = sorted(spec_dir.glob("*.json"), reverse=True)
+    for json_file in json_files:
+        try:
+            with open(json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            vd = VisualDirection(**data)
+            if vd.primary_change or vd.rationale:
+                print(f"  [VISUAL] Loaded VisualDirection from {json_file.name}")
+                print(f"  [VISUAL] stitch_status: {vd.stitch_status}")
+                print(f"  [VISUAL] primary_change: {vd.primary_change[:80]}...")
+                return vd
+        except Exception as e:
+            print(f"[WARN] Failed to load VisualDirection {json_file}: {e}")
+            continue
+    return None
+
+
 def save_build_manifest(manifest: BuildManifest, output_id: str) -> Path:
     """Save BuildManifest to JSON file in memory directory."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -264,15 +327,20 @@ def list_site_understandings() -> list[Path]:
     return sorted(MEMORY_DIR.glob("*.json"), reverse=True)
 
 
-def build(site_id: str, arch_id: str, rec_id: str) -> Optional[BuildManifest]:
+def build(site_id: str, arch_id: str, rec_id: str, gap_context: Optional[str] = None) -> Optional[BuildManifest]:
     """
     Main entry point: load all three artifacts -> build prompt -> call kilo run ->
     parse manifest + write code files.
+
+    When gap_context is supplied (from MigrationManager route_back), the
+    prompt includes prioritized rework instructions. Builder always runs
+    `impeccable detect` as its final step and emits the report.
 
     Args:
         site_id: timestamp ID of the SiteUnderstanding
         arch_id: timestamp ID of the SiteArchitecture
         rec_id: timestamp ID of the ContentRecommendation
+        gap_context: optional crisp 2-4 bullet summary of quality-gate gaps
 
     Returns:
         BuildManifest or None on failure
@@ -295,7 +363,19 @@ def build(site_id: str, arch_id: str, rec_id: str) -> Optional[BuildManifest]:
     site_name = recommendation.site_name or site.name or "unnamed"
     site_slug = get_site_slug(site_name)
 
-    prompt = build_builder_prompt(site, architecture, recommendation, site_slug)
+    visual_direction = load_visual_direction(site_slug)
+    if not visual_direction:
+        print(f"  [VISUAL] No VisualDirection found — using BrandSpec as final authority")
+        log_gap(
+            migration_id=site_id,
+            gap_type="missing_data",
+            source_persona="ui_designer",
+            description=f"No VisualDirection found for site '{site_slug}' — Builder applying BrandSpec only",
+            suggested_fix="Run designer_agent.py to produce VisualDirection before builder",
+            severity="medium",
+        )
+
+    prompt = build_builder_prompt(site, architecture, recommendation, site_slug, visual_direction, gap_context=gap_context)
 
     print(f"\n[BUILDER] Building {site.url} via Kilo CLI")
     print("=" * 60)

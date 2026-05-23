@@ -303,4 +303,9 @@ Also run Impeccable for design quality validation:
 
 Log every ui_polish change in the ui_polish_changes array with reason + brand_spec_reference.
 
+**Output Rules:**
+- If Kilo emits a partial or incomplete BuildManifest JSON, do NOT return `{}`. Instead, emit the minimal valid BuildManifest with all required fields populated (even if some values are empty or "pending").
+- If VisualDirection is absent, apply BrandSpec tokens as the final visual authority and log the gap.
+- If you detect that a VisualDirection field duplicates a BrandSpec field (e.g., `primary_color` in `color_delta` already present in BrandSpec), apply the BrandSpec value and log a Gap Ledger entry noting the duplication.
+
 Begin building now.

@@ -295,23 +295,51 @@ class SelfCritique(BaseModel):
 
 
 class VisualDirection(BaseModel):
-    """Lightweight delta on BrandSpec — captures design evolution decisions.
-    
+    """Lightweight STRICT DELTA on BrandSpec — captures design evolution decisions.
+
     Used by UI Designer persona to record direction changes, reasoning, and impact.
     NOT a replacement for BrandSpec — composes on top of it.
+    VisualDirection must NEVER duplicate fields already in BrandSpec. Only add
+    page-specific or layout-specific overrides. Deltas are applied AFTER BrandSpec.
     """
     delta_id: str = ""
     parent_brand_spec_version: str = ""
-    primary_change: str  # "Shift from minimalist to bold editorial"
-    rationale: str  # "Source site uses heavy typography to convey authority"
+    primary_change: str = ""  # "Shift from minimalist to bold editorial"
+    rationale: str = ""  # "Source site uses heavy typography to convey authority"
     impacted_components: List[str] = Field(default_factory=list)  # component_ids affected
     impacted_pages: List[str] = Field(default_factory=list)  # route paths affected
-    color_delta: Optional[Dict[str, str]] = None  # {primary_color: "#E63946"} delta
-    typography_delta: Optional[Dict[str, str]] = None  # {font_family_heading: "Playfair Display"} delta
-    motion_delta: Optional[Dict[str, str]] = None  # {motion_philosophy: "energetic"} delta
+    color_delta: Optional[Dict[str, str]] = None  # {primary_color: "#E63946"} delta ONLY — never repeat BrandSpec fields
+    typography_delta: Optional[Dict[str, str]] = None  # {font_family_heading: "Playfair Display"} delta ONLY
+    motion_delta: Optional[Dict[str, str]] = None  # {motion_philosophy: "energetic"} delta ONLY
     designer_notes: List[str] = Field(default_factory=list)
     created_by: str = "ui_designer"
     created_at: str = ""
+    stitch_status: str = "available"  # "available" | "unavailable" | "partial"
+    schema_version: str = "1.1"
+    page_layouts: Optional[Dict[str, Dict[str, Any]]] = None  # {"/": {grid_system, spacing_philosophy, section_order, ...}}
+    typography_hierarchy: Optional[Dict[str, Dict[str, Any]]] = None  # {"/": {h1: {size, weight, tracking}, ...}}
+    motion_class_map: Optional[Dict[str, str]] = None  # {card_hover: "motion-classical", ...}
+    reference_images: List[str] = Field(default_factory=list)  # local paths or URLs to reference images
+
+    def validate_delta_no_duplication(self, brand_spec: Optional["BrandSpec"] = None) -> List[str]:
+        """Check for fields in delta that duplicate BrandSpec. Returns list of warnings."""
+        if not brand_spec:
+            return []
+        warnings = []
+        brand_fields = {k: v for k, v in brand_spec.model_dump().items() if v and k not in ("notes",)}
+        if self.color_delta:
+            for key in self.color_delta:
+                if key in brand_fields:
+                    warnings.append(f"color_delta.{key} duplicates BrandSpec.{key} — applying BrandSpec value")
+        if self.typography_delta:
+            for key in self.typography_delta:
+                if key in brand_fields:
+                    warnings.append(f"typography_delta.{key} duplicates BrandSpec.{key} — applying BrandSpec value")
+        if self.motion_delta:
+            for key in self.motion_delta:
+                if key in brand_fields:
+                    warnings.append(f"motion_delta.{key} duplicates BrandSpec.{key} — applying BrandSpec value")
+        return warnings
 
 
 class BuildManifest(BaseModel):
@@ -332,6 +360,12 @@ class BuildManifest(BaseModel):
     build_timestamp: str = ""
     personas_used: List[str] = Field(default_factory=list)
     deployment_readiness: Dict[str, Any] = Field(default_factory=dict)
+
+    # Closed-loop migration fields
+    rework_log: List[Dict[str, Any]] = Field(default_factory=list)  # [{persona, iteration, artifact_path, gap_ids, timestamp, gap_context}]
+    iteration_history: List[Dict[str, Any]] = Field(default_factory=list)  # per-persona iteration counts
+    final_state: Optional[str] = None  # "complete" | "github_issue_created" | "abort"
+    completed_at: Optional[str] = None
 
 
 class ContentRecommendation(BaseModel):

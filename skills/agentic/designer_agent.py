@@ -34,6 +34,7 @@ from models.site_schemas import (
     SiteUnderstanding,
     ContentRecommendation,
     VisualDirection,
+    BrandSpec,
 )
 
 
@@ -56,17 +57,29 @@ def build_designer_prompt(
     site: SiteUnderstanding,
     recommendation: ContentRecommendation,
     site_slug: str,
+    gap_context: Optional[str] = None,
 ) -> str:
-    """Build the prompt that Kilo CLI will execute."""
+    """Build the prompt that Kilo CLI will execute. When gap_context is provided, inject it as prioritized rework instructions."""
     persona = PERSONA_PATH.read_text() if PERSONA_PATH.exists() else ""
 
     site_json = site.model_dump_json(indent=2)
     rec_json = recommendation.model_dump_json(indent=2)
 
+    gap_section = ""
+    if gap_context:
+        gap_section = f"""
+
+## Prioritized Rework Instructions (from Quality Gate)
+{gap_context}
+
+Apply these changes first. Produce a new versioned VisualDirection (_vN.json) reflecting the requested adjustments.
+"""
+
     return f"""{persona}
 
 ## Task
 Produce a VisualDirection artifact that the Builder will use as the authoritative visual specification.
+{gap_section}
 
 ## Input SiteUnderstanding
 {site_json}
@@ -154,19 +167,55 @@ def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]
         return None, None
 
 
-def parse_visual_direction(raw_json: str) -> Optional[VisualDirection]:
-    """Parse and validate JSON against VisualDirection schema."""
+def parse_visual_direction(
+    raw_json: str,
+    stitch_status: str = "available",
+    brand_spec: Optional["BrandSpec"] = None,
+) -> Optional[VisualDirection]:
+    """Parse and validate JSON against VisualDirection schema.
+
+    Always returns a minimal valid VisualDirection — even on partial or missing fields.
+    stitch_status is used to set the fallback rationale when Kilo emits nothing useful.
+    Duplication warnings (delta fields that repeat BrandSpec) are logged to Gap Ledger.
+    """
     try:
         data = json.loads(raw_json)
-        return VisualDirection(**data)
+        allowed = {k: v for k, v in data.items() if k in VisualDirection.model_fields}
+        vd = VisualDirection(**allowed)
+        dup_warnings = vd.validate_delta_no_duplication(brand_spec)
+        for warning in dup_warnings:
+            print(f"[WARN] VisualDirection delta duplication: {warning}")
+            log_gap(
+                migration_id="",
+                gap_type="visual_mismatch",
+                source_persona="ui_designer",
+                description=f"VisualDirection delta duplication detected: {warning}",
+                suggested_fix="Remove duplicate delta fields — apply BrandSpec value directly",
+                severity="medium",
+            )
+        if vd.primary_change and vd.rationale:
+            return vd
+        if stitch_status == "unavailable":
+            vd.primary_change = vd.primary_change or "No visual evolution — BrandSpec fidelity only"
+            vd.rationale = vd.rationale or "Stitch MCP unavailable; preserving source brand tokens exactly"
+            vd.stitch_status = "unavailable"
+            return vd
+        return vd
     except Exception as e:
         print(f"[WARN] Validation error: {e}")
-        try:
-            data = json.loads(raw_json)
-            allowed = {k: v for k, v in data.items() if k in VisualDirection.model_fields}
-            return VisualDirection(**allowed)
-        except Exception:
-            return None
+
+    fallback_change = "No visual evolution — BrandSpec fidelity only"
+    fallback_rationale = "Stitch MCP unavailable; preserving source brand tokens exactly"
+    if stitch_status == "available":
+        fallback_change = "Minimal delta — confirm BrandSpec fidelity in build"
+        fallback_rationale = "Kilo output partial; Builder should validate against BrandSpec tokens"
+
+    return VisualDirection(
+        primary_change=fallback_change,
+        rationale=fallback_rationale,
+        stitch_status=stitch_status,
+        created_at=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+    )
 
 
 def load_site_understanding(site_id: str) -> Optional[SiteUnderstanding]:
@@ -214,17 +263,63 @@ def save_visual_direction(
     filepath = site_dir / f"{version}.json"
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(visual_direction.model_dump_json(indent=2))
+
+    designer_notes_text = "\n".join(f"- {n}" for n in visual_direction.designer_notes) if visual_direction.designer_notes else "None"
+    review_path = site_dir / "REVIEW.md"
+    review_content = f"""# Visual Direction Review — {site_slug}
+
+## Primary Change
+{visual_direction.primary_change}
+
+## Rationale
+{visual_direction.rationale}
+
+## Stitch Status
+{visual_direction.stitch_status}
+
+## Impacted Components
+{", ".join(visual_direction.impacted_components) if visual_direction.impacted_components else "None specified"}
+
+## Impacted Pages
+{", ".join(visual_direction.impacted_pages) if visual_direction.impacted_pages else "None specified"}
+
+## Color Delta
+{visual_direction.color_delta or "{}"}
+
+## Typography Delta
+{visual_direction.typography_delta or "{}"}
+
+## Motion Delta
+{visual_direction.motion_delta or "{}"}
+
+## Designer Notes
+{designer_notes_text}
+
+## Open Questions
+_Edit this section to capture areas where human taste matters most_
+
+---
+*This file is editable. The Manager monitors timestamp changes on this file and treats edits as signals for re-design or build adjustment.*
+"""
+    with open(review_path, "w", encoding="utf-8") as f:
+        f.write(review_content)
+
     return filepath
 
 
-def design(site_id: str, rec_id: str) -> Optional[VisualDirection]:
+def design(site_id: str, rec_id: str, gap_context: Optional[str] = None) -> Optional[VisualDirection]:
     """
     Main entry point: load artifacts -> build prompt -> call kilo run ->
     parse VisualDirection JSON.
 
+    When gap_context is supplied (from MigrationManager route_back), it is
+    injected as prioritized rework instructions and the output artifact is
+    automatically versioned by the Manager.
+
     Args:
         site_id: timestamp ID of the SiteUnderstanding
         rec_id: timestamp ID of the ContentRecommendation
+        gap_context: optional crisp 2-4 bullet summary of quality-gate gaps
 
     Returns:
         VisualDirection or None on failure
@@ -242,7 +337,7 @@ def design(site_id: str, rec_id: str) -> Optional[VisualDirection]:
     site_name = recommendation.site_name or site.name or "unnamed"
     site_slug = get_site_slug(site_name)
 
-    prompt = build_designer_prompt(site, recommendation, site_slug)
+    prompt = build_designer_prompt(site, recommendation, site_slug, gap_context=gap_context)
 
     print(f"\n[DESIGNER] Designing {site.url} via Kilo CLI")
     print("=" * 60)
@@ -348,11 +443,28 @@ def design(site_id: str, rec_id: str) -> Optional[VisualDirection]:
         )
         return None
 
-    visual_direction = parse_visual_direction(json_str)
+    stitch_status = "available"
+    try:
+        result = subprocess.run(
+            ["npx", "stitch", "status"],
+            capture_output=True,
+            timeout=10,
+        )
+        if result.returncode != 0 or "not authenticated" in result.stderr.lower():
+            stitch_status = "unavailable"
+    except Exception:
+        stitch_status = "unavailable"
+
+    visual_direction = parse_visual_direction(
+        json_str,
+        stitch_status=stitch_status,
+        brand_spec=recommendation.brand_spec if recommendation else None,
+    )
     if visual_direction:
         filepath = save_visual_direction(visual_direction, site_slug)
         print(f"  [OK] VisualDirection created")
         print(f"  [OUTPUT] {filepath}")
+        print(f"  [STITCH] {visual_direction.stitch_status}")
         print(f"  [PRIMARY CHANGE] {visual_direction.primary_change}")
     else:
         print("[ERROR] JSON parsed but failed schema validation")

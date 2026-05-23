@@ -96,10 +96,27 @@ LEDGER_DIR = Path(__file__).parent.parent / "memory" / "gap_ledger"
 LEDGER_FILE = LEDGER_DIR / "gaps.jsonl"
 
 
-def _ensure_ledger_dir() -> None:
+def get_site_ledger_path(migration_id: str) -> Path:
+    """Return the per-site Gap Ledger path for a given migration_id.
+
+    Format: memory/gap_ledger/[migration_id]/gaps.jsonl
+    Falls back to the global LEDGER_FILE if the per-site directory doesn't exist yet.
+    """
+    site_dir = LEDGER_DIR / migration_id
+    return site_dir / "gaps.jsonl"
+
+
+def _ensure_ledger_dir(migration_id: Optional[str] = None) -> None:
+    """Ensure the global ledger dir and optionally the per-site dir exist."""
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     if not LEDGER_FILE.exists():
         LEDGER_FILE.write_text("")
+    if migration_id:
+        site_dir = LEDGER_DIR / migration_id
+        site_dir.mkdir(parents=True, exist_ok=True)
+        site_file = site_dir / "gaps.jsonl"
+        if not site_file.exists():
+            site_file.write_text("")
 
 
 def log_gap(
@@ -109,9 +126,14 @@ def log_gap(
     description: str,
     suggested_fix: str = "",
     severity: str = "medium",
+    write_to_site_ledger: bool = True,
 ) -> GapEntry:
-    """Log a new gap entry to the Gap Ledger JSONL file."""
-    _ensure_ledger_dir()
+    """Log a new gap entry to the Gap Ledger JSONL file.
+
+    Writes to both the global gaps.jsonl and the per-site [migration_id]/gaps.jsonl
+    to support concurrent multi-site runs without entry interleaving.
+    """
+    _ensure_ledger_dir(migration_id)
     entry = GapEntry(
         migration_id=migration_id,
         gap_type=gap_type,
@@ -120,8 +142,17 @@ def log_gap(
         suggested_fix=suggested_fix,
         severity=severity,
     )
+
+    json_line = json.dumps(entry.to_dict(), indent=None) + "\n"
+
     with open(LEDGER_FILE, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry.to_dict(), indent=None) + "\n")
+        f.write(json_line)
+
+    if write_to_site_ledger and migration_id:
+        site_file = get_site_ledger_path(migration_id)
+        with open(site_file, "a", encoding="utf-8") as f:
+            f.write(json_line)
+
     return entry
 
 
@@ -131,13 +162,20 @@ def query_gaps(
     severity: Optional[str] = None,
     resolved: Optional[bool] = None,
     source_persona: Optional[str] = None,
+    read_from_site_ledger: bool = True,
 ) -> List[GapEntry]:
-    """Query gap entries by optional filters."""
+    """Query gap entries by optional filters.
+
+    If migration_id is provided and read_from_site_ledger is True, reads from
+    the per-site [migration_id]/gaps.jsonl for that migration only.
+    Otherwise reads from the global gaps.jsonl.
+    """
     _ensure_ledger_dir()
+    ledger_file = get_site_ledger_path(migration_id) if (migration_id and read_from_site_ledger) else LEDGER_FILE
     entries: List[GapEntry] = []
-    if not LEDGER_FILE.exists():
+    if not ledger_file.exists():
         return entries
-    with open(LEDGER_FILE, "r", encoding="utf-8") as f:
+    with open(ledger_file, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:

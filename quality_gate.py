@@ -138,8 +138,31 @@ def gate_impeccable() -> Dict[str, Any]:
     return result
 
 
+def _find_latest_visual_direction(site_slug: str) -> Optional[Dict[str, Any]]:
+    """Find the most recent VisualDirection JSON for a site slug."""
+    vd_dir = Path("memory/visual_specs") / site_slug
+    if not vd_dir.exists():
+        return None
+    json_files = sorted(vd_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not json_files:
+        return None
+    try:
+        data = json.loads(json_files[0].read_text(encoding="utf-8"))
+        if data.get("schema_version") and data.get("primary_change"):
+            return data
+        return None
+    except Exception:
+        return None
+
+
 def gate_token_fidelity() -> Dict[str, Any]:
-    """Gate 3: Token fidelity — all colors, fonts, spacing from BrandSpec tokens."""
+    """Gate 3: Token fidelity — all colors, fonts, spacing from BrandSpec + VisualDirection tokens.
+
+    Loads the newest VisualDirection from memory/visual_specs/[site-slug]/ (inferred from
+    the site directory name) and treats its color_delta/typography_delta/motion_delta values
+    as valid additional tokens. Violations are logged only for values that are neither
+    BrandSpec tokens nor VisualDirection delta tokens.
+    """
     log("=== Gate 3: Token fidelity ===")
     start = time.time()
 
@@ -149,6 +172,9 @@ def gate_token_fidelity() -> Dict[str, Any]:
             brand_spec = json.loads(BRAND_SPEC_FILE.read_text(encoding="utf-8"))
         except Exception as e:
             log(f"Failed to parse brand spec: {e}")
+
+    site_slug = SITE_DIR.name
+    visual_direction = _find_latest_visual_direction(site_slug)
 
     css_files = list(SITE_DIR.glob("**/*.css")) + list(SITE_DIR.glob("**/*.module.css"))
 
@@ -167,6 +193,26 @@ def gate_token_fidelity() -> Dict[str, Any]:
     }
     brand_fonts.discard("")
 
+    vd_colors: set = set()
+    vd_fonts: set = set()
+    vd_colors_found = False
+    vd_fonts_found = False
+
+    if visual_direction:
+        if visual_direction.get("color_delta"):
+            for val in visual_direction["color_delta"].values():
+                if val and isinstance(val, str):
+                    vd_colors.add(val.lower())
+            vd_colors_found = True
+        if visual_direction.get("typography_delta"):
+            for key, val in visual_direction["typography_delta"].items():
+                if val and isinstance(val, str) and key.startswith("font"):
+                    vd_fonts.add(val)
+            vd_fonts_found = True
+
+    all_valid_colors = brand_colors | vd_colors
+    all_valid_fonts = brand_fonts | vd_fonts
+
     hex_pattern = re.compile(r"#[0-9a-fA-F]{3,8}")
     violations: List[str] = []
     colors_used = 0
@@ -178,24 +224,23 @@ def gate_token_fidelity() -> Dict[str, Any]:
         except Exception:
             continue
 
-        for color in brand_colors:
-            if color.lower() in content.lower():
+        for color in all_valid_colors:
+            if color and color in content.lower():
                 colors_used += 1
 
-        for font in brand_fonts:
-            if font in content:
+        for font in all_valid_fonts:
+            if font and font in content:
                 fonts_used += 1
 
         hex_colors = hex_pattern.findall(content)
         for hc in hex_colors:
             normalized = hc.lower()
-            if not any(bc.lower() == normalized for bc in brand_colors):
+            if not any(bc.lower() == normalized for bc in all_valid_colors):
                 if "rgba" not in normalized and "hsla" not in normalized:
                     violations.append(f"{css_file.name}: non-brand color {hc}")
 
     duration = time.time() - start
 
-    brand_color_count = len(brand_colors)
     passed = len(violations) == 0
 
     result = {
@@ -204,6 +249,9 @@ def gate_token_fidelity() -> Dict[str, Any]:
         "duration_seconds": round(duration, 1),
         "brand_colors": list(brand_colors),
         "brand_fonts": list(brand_fonts),
+        "visual_direction_found": visual_direction is not None,
+        "vd_colors": list(vd_colors) if vd_colors_found else [],
+        "vd_fonts": list(vd_fonts) if vd_fonts_found else [],
         "colors_used_from_brand": colors_used,
         "violation_count": len(violations),
         "violations": violations[:10],
@@ -217,22 +265,232 @@ def gate_token_fidelity() -> Dict[str, Any]:
     return result
 
 
+def run_quality_gates(site_dir: str, re_run_impeccable: bool = False) -> Dict[str, Any]:
+    """
+    Public entry point for MigrationManager.
+    Runs all four deterministic gates and returns a consolidated report.
+
+    Args:
+        site_dir: Absolute or relative path to the built site directory.
+        re_run_impeccable: When True, force a fresh `impeccable detect` run.
+                           Default=False → read existing impeccable-report.json.
+    """
+    global SITE_DIR, MANIFEST_FILE, BRAND_SPEC_FILE, IMPECCABLE_REPORT_FILE, QUALITY_GATE_FILE
+    SITE_DIR = Path(site_dir)
+    MANIFEST_FILE = SITE_DIR / "build-manifest.json"
+    BRAND_SPEC_FILE = SITE_DIR / "brand-spec.json"
+    IMPECCABLE_REPORT_FILE = SITE_DIR / "impeccable-report.json"
+    QUALITY_GATE_FILE = SITE_DIR / "quality-gate-report.json"
+
+    if re_run_impeccable and IMPECCABLE_REPORT_FILE.exists():
+        IMPECCABLE_REPORT_FILE.unlink()
+
+    reports = []
+    overall_passed = True
+    failing_gate = None
+
+    # Gate 1
+    r1 = gate_npm_build()
+    reports.append(r1)
+    if not r1["passed"]:
+        overall_passed = False
+        failing_gate = "npm_build"
+
+    # Gate 2
+    r2 = gate_impeccable()
+    reports.append(r2)
+    if not r2["passed"] and not failing_gate:
+        overall_passed = False
+        failing_gate = "impeccable_audit"
+
+    # Gate 3
+    r3 = gate_token_fidelity()
+    reports.append(r3)
+    if not r3["passed"] and not failing_gate:
+        overall_passed = False
+        failing_gate = "token_fidelity"
+
+    # Gate 4
+    r4 = gate_accessibility()
+    reports.append(r4)
+    if not r4["passed"] and not failing_gate:
+        overall_passed = False
+        failing_gate = "accessibility"
+
+    result = {
+        "overall_passed": overall_passed,
+        "failing_gate": failing_gate,
+        "gates": reports,
+        "gaps": _extract_gaps_from_reports(reports),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    QUALITY_GATE_FILE.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    return result
+
+
+def _extract_gaps_from_reports(reports: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Convert gate failures into GapLedger-compatible gap dicts."""
+    gaps = []
+    for r in reports:
+        if r.get("passed"):
+            continue
+        for err in r.get("errors", []):
+            gaps.append({
+                "id": f"{r['gate']}_{len(gaps)}",
+                "description": err,
+                "severity": "high" if r["gate"] in ("npm_build", "impeccable_audit") else "medium",
+                "suggested_fix": "Address the reported violation",
+                "gate": r["gate"],
+            })
+    return gaps
+
+
 def gate_accessibility() -> Dict[str, Any]:
-    """Gate 4: Accessibility scan via Playwright + axe-core."""
+    """Gate 4: Accessibility scan via Playwright + axe-core.
+
+    Starts the Next.js production server, runs axe-core accessibility checks
+    against the running site, then kills the server.
+
+    Requires: Node.js, Playwright installed (npx playwright install chromium).
+
+    The accessibility check runs via an inline Playwright Node.js script
+    (not via npx playwright evaluate, which is not a valid command).
+    """
     log("=== Gate 4: Accessibility (WCAG AA) ===")
     start = time.time()
 
-    result: Dict[str, Any] = {
-        "gate": "accessibility",
-        "passed": True,
-        "duration_seconds": round(time.time() - start, 1),
-        "violations": [],
-        "wcag_level": "AA",
-        "errors": [],
-        "note": "Accessibility gate requires Playwright + axe-core runtime. Run manually or integrate into CI.",
-    }
+    server_proc = None
+    tmp_script = None
 
-    log("Accessibility: SKIP (requires Playwright + axe-core runtime)")
+    try:
+        next_dist_dir = SITE_DIR / ".next"
+        if not next_dist_dir.exists():
+            return {
+                "gate": "accessibility",
+                "passed": False,
+                "duration_seconds": round(time.time() - start, 1),
+                "violations": [],
+                "wcag_level": "AA",
+                "errors": ["Next.js build output not found — run npm build first"],
+            }
+
+        port = 3456
+        log(f"Starting Next.js server on port {port}...")
+
+        server_proc = subprocess.Popen(
+            ["npm", "start", "--", "--port", str(port)],
+            cwd=str(SITE_DIR),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        time.sleep(5)
+
+        script_content = (
+            "const { chromium } = require('playwright');\\n"
+            "(async () => {\\n"
+            "  const browser = await chromium.launch();\\n"
+            "  const page = await browser.newPage();\\n"
+            "  const errors = [];\\n"
+            "  page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });\\n"
+            "  await page.goto('http://localhost:" + str(port) + "', { waitUntil: 'networkidle', timeout: 30000 });\\n"
+            "  await page.addScriptTag({ url: 'https://cdn.jsdelivr.net/npm/axe-core@4.9.0/axe.min.js' });\\n"
+            "  const violations = await page.evaluate(() => new Promise((resolve) => {\\n"
+            "    /* global axe */\\n"
+            "    axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] } }, (err, results) => {\\n"
+            "      resolve(results && results.violations ? results.violations : []);\\n"
+            "    });\\n"
+            "  }));\\n"
+            "  await browser.close();\\n"
+            "  process.stdout.write(JSON.stringify({ violations, consoleErrors: errors }));\\n"
+            "})();\\n"
+        )
+
+        tmp_script = SITE_DIR / f"a11y_check_{os.getpid()}.js"
+        tmp_script.write_text(script_content, encoding="utf-8")
+
+        exit_code, stdout, stderr = run_cmd(
+            ["node", str(tmp_script)],
+            timeout=90,
+        )
+
+        log(f"Accessibility script exit code: {exit_code}")
+        if stderr:
+            log(f"Accessibility stderr: {stderr[:500]}")
+
+        violations = []
+        console_errors = []
+        try:
+            if stdout:
+                parsed = json.loads(stdout.strip())
+                violations = parsed.get("violations", [])
+                console_errors = parsed.get("consoleErrors", [])
+        except json.JSONDecodeError:
+            log(f"Failed to parse accessibility output: {stdout[:200]}")
+
+        if console_errors:
+            log(f"Page had {len(console_errors)} console errors during scan")
+
+        high_violations = [v for v in violations if v.get("impact") in ("critical", "serious")]
+        passed = len(high_violations) == 0
+
+        result: Dict[str, Any] = {
+            "gate": "accessibility",
+            "passed": passed,
+            "duration_seconds": round(time.time() - start, 1),
+            "total_violations": len(violations),
+            "high_impact_violations": len(high_violations),
+            "violations": [
+                {"id": v.get("id"), "impact": v.get("impact"), "description": v.get("description")}
+                for v in high_violations[:10]
+            ],
+            "wcag_level": "AA",
+            "errors": [],
+        }
+
+        if not passed:
+            result["errors"].append(f"{len(high_violations)} high-impact WCAG violations found")
+
+        log(f"Accessibility: {'PASS' if passed else 'FAIL'} ({len(high_violations)} high-impact, {len(violations)} total)")
+
+    except FileNotFoundError as e:
+        result = {
+            "gate": "accessibility",
+            "passed": False,
+            "duration_seconds": round(time.time() - start, 1),
+            "violations": [],
+            "wcag_level": "AA",
+            "errors": [f"Required tool not found: {e}"],
+        }
+        log(f"Accessibility: FAIL — required tool not installed ({e})")
+
+    except Exception as e:
+        result = {
+            "gate": "accessibility",
+            "passed": False,
+            "duration_seconds": round(time.time() - start, 1),
+            "violations": [],
+            "wcag_level": "AA",
+            "errors": [str(e)],
+        }
+        log(f"Accessibility: FAIL — {e}")
+
+    finally:
+        if tmp_script and tmp_script.exists():
+            try:
+                tmp_script.unlink()
+                log("Cleaned up temporary accessibility script")
+            except Exception:
+                pass
+        if server_proc:
+            log("Stopping Next.js server...")
+            server_proc.terminate()
+            try:
+                server_proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                server_proc.kill()
+
     return result
 
 
