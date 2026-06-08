@@ -1,0 +1,390 @@
+{
+  "migration_id": "merimee-20260601-112607",
+  "source_url": "https://merimeesolutions.wixstudio.com/my-site-2",
+  "source_understanding_id": "20260524_004901",
+  "source_architecture_id": "20260524_005030",
+  "source_recommendation_id": "20260601_104145",
+  "chosen_variant": "A",
+  "brand_spec": {
+    "primary_color": "#1E293B",
+    "secondary_color": "#475569",
+    "accent_color": "#6366F1",
+    "background_color": "#FFFFFF",
+    "text_color": "#1E293B",
+    "semantic_tokens": {
+      "surface": "#F8FAFC",
+      "on-surface": "#1E293B",
+      "primary-container": "#EEF2FF",
+      "muted": "#64748B",
+      "border": "#E2E8F0"
+    },
+    "font_family_heading": "Lora, Georgia, serif",
+    "font_family_body": "Source Sans 3, system-ui, sans-serif",
+    "font_size_base": "16px",
+    "type_scale": {
+      "xs": "12px",
+      "sm": "14px",
+      "base": "16px",
+      "lg": "18px",
+      "xl": "20px",
+      "2xl": "24px",
+      "3xl": "30px",
+      "4xl": "36px",
+      "5xl": "48px"
+    },
+    "spacing_scale": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px",
+      "2xl": "48px",
+      "3xl": "64px"
+    },
+    "border_radius": "0.375rem",
+    "shadow_scale": {
+      "sm": "0 1px 2px rgba(0,0,0,0.05)",
+      "md": "0 4px 6px rgba(0,0,0,0.07)",
+      "lg": "0 10px 15px rgba(0,0,0,0.1)"
+    },
+    "motion_philosophy": "classical",
+    "motion_duration": "400ms",
+    "motion_easing": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+    "component_variants": {
+      "button": [
+        "primary",
+        "secondary",
+        "ghost"
+      ],
+      "card": [
+        "default",
+        "elevated",
+        "outlined"
+      ],
+      "input": [
+        "default",
+        "filled"
+      ]
+    },
+    "dark_mode_strategy": "full_tokens",
+    "notes": "Brand derived from classical liberal arts educational context - restrained elegance over flashiness. Typography-forward design with serif headings conveys authority and timelessness."
+  },
+  "visual_direction": {
+    "delta_id": "vd-merimee-20260523-232220",
+    "parent_brand_spec_version": "20260523-230422",
+    "primary_change": "Typography refinement - editorial feel through refined serif headings paired with Source Sans 3 body text. Classical motion philosophy applied to all interactive components with subtle scale(1.02) hover states. Services section upgraded to elevated card treatment for visual hierarchy.",
+    "rationale": "The BrandSpec defines a classical liberal arts brand personality requiring refined, contemplative aesthetics. Lora serif headings convey established credibility and warmth appropriate for mission-driven organizations.",
+    "impacted_components": [
+      "hero",
+      "service-cards",
+      "process-steps",
+      "portfolio-gallery",
+      "contact-form",
+      "about-section",
+      "footer"
+    ],
+    "impacted_pages": [
+      "/"
+    ],
+    "color_delta": null,
+    "typography_delta": {
+      "/": {
+        "h1": {
+          "size": "4xl",
+          "weight": "700",
+          "tracking": "-0.02em",
+          "line_height": "1.1"
+        },
+        "h2": {
+          "size": "3xl",
+          "weight": "600",
+          "tracking": "-0.01em",
+          "line_height": "1.2"
+        },
+        "h3": {
+          "size": "xl",
+          "weight": "600",
+          "tracking": "normal",
+          "line_height": "1.3"
+        },
+        "body": {
+          "size": "base",
+          "weight": "400",
+          "line_height": "1.7"
+        },
+        "caption": {
+          "size": "sm",
+          "weight": "500",
+          "tracking": "0.02em",
+          "text_transform": "uppercase"
+        }
+      }
+    },
+    "motion_delta": {
+      "philosophy": "classical",
+      "duration": "400ms",
+      "easing": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+      "hover_scale": "1.02",
+      "component_map": {
+        "card_hover": "motion-classical",
+        "card_elevated_hover": "motion-classical",
+        "button_primary_hover": "motion-classical",
+        "button_secondary_hover": "motion-monastic",
+        "link_hover": "motion-subtle",
+        "form_input_focus": "motion-subtle",
+        "modal_open": "motion-classical"
+      }
+    },
+    "designer_notes": [
+      "BrandSpec 'classical' motion philosophy (400ms ease-out with cubic-bezier spring) applied to all interactive elements for cohesive experience",
+      "Service cards use elevated card variant with larger shadow on hover to create visual hierarchy in the services grid",
+      "Portfolio gallery items use motion-subtle (opacity fade) to avoid competing with case study content",
+      "Contact form inputs feature subtle border-color transition matching motion_philosophy duration",
+      "All colors trace to BrandSpec tokens - primary_color #1E293B for headings, accent_color #7C3AED for interactive accents",
+      "Footer social links use ghost button styling with motion-subtle for understated presence",
+      "Dark mode will use [data-theme=\"dark\"] with inverted BrandSpec tokens via full_tokens strategy"
+    ],
+    "created_by": "ui_designer",
+    "created_at": "2026-05-23T23:22:20-04:00",
+    "stitch_status": "unavailable",
+    "schema_version": "1.1",
+    "page_layouts": {
+      "/": {
+        "grid_system": "three-column",
+        "spacing_philosophy": "balanced",
+        "section_order": [
+          "hero",
+          "services",
+          "process",
+          "portfolio",
+          "contact",
+          "about",
+          "footer"
+        ],
+        "section_layouts": {
+          "hero": {
+            "layout": "full-width",
+            "columns": "single",
+            "vertical_alignment": "center",
+            "background_style": "image-overlay"
+          },
+          "services": {
+            "layout": "grid",
+            "columns": 4,
+            "column_span": "equal",
+            "responsive_columns": {
+              "640": 2,
+              "1024": 4
+            }
+          },
+          "process": {
+            "layout": "grid",
+            "columns": 3,
+            "responsive_columns": {
+              "640": 1,
+              "1024": 3
+            }
+          },
+          "portfolio": {
+            "layout": "grid",
+            "columns": 5,
+            "responsive_columns": {
+              "640": 1,
+              "768": 2,
+              "1024": 3,
+              "1280": 5
+            }
+          },
+          "contact": {
+            "layout": "centered",
+            "max_width": "640px"
+          },
+          "about": {
+            "layout": "two-column",
+            "columns": {
+              "portrait": "auto",
+              "content": "1fr"
+            },
+            "vertical_alignment": "center",
+            "responsive_layout": {
+              "768": "stacked"
+            }
+          },
+          "footer": {
+            "layout": "single",
+            "alignment": "center"
+          }
+        },
+        "motion_priority": [
+          "opacity",
+          "translateY"
+        ],
+        "component_variants_priority": [
+          "elevated",
+          "primary"
+        ]
+      }
+    },
+    "typography_hierarchy": {
+      "/": {
+        "h1": {
+          "size": "4xl",
+          "weight": "bold",
+          "tracking": "tight",
+          "font_family": "Lora, Georgia, serif"
+        },
+        "h2": {
+          "size": "3xl",
+          "weight": "semibold",
+          "tracking": "normal",
+          "font_family": "Lora, Georgia, serif"
+        },
+        "h3": {
+          "size": "xl",
+          "weight": "semibold",
+          "tracking": "normal",
+          "font_family": "Lora, Georgia, serif"
+        },
+        "h4": {
+          "size": "lg",
+          "weight": "600",
+          "tracking": "normal",
+          "font_family": "Source Sans 3, system-ui, sans-serif"
+        },
+        "body": {
+          "size": "base",
+          "weight": "400",
+          "line_height": "1.7",
+          "font_family": "Source Sans 3, system-ui, sans-serif"
+        },
+        "button": {
+          "size": "base",
+          "weight": "600",
+          "tracking": "normal",
+          "font_family": "Source Sans 3, system-ui, sans-serif"
+        }
+      }
+    },
+    "motion_class_map": {
+      "card_hover": "motion-classical",
+      "card_elevated_hover": "motion-classical",
+      "button_primary_hover": "motion-classical",
+      "button_secondary_hover": "motion-monastic",
+      "button_ghost_hover": "motion-subtle",
+      "link_hover": "motion-subtle",
+      "form_input_focus": "motion-subtle",
+      "form_input_hover": "motion-subtle",
+      "image_gallery_item_hover": "motion-subtle",
+      "footer_link_hover": "motion-subtle"
+    },
+    "reference_images": [
+      "https://static.wixstatic.com/media/nsplsh_793767677065754d315177~mv2_d_5077_3808_s_4_2.jpg/v1/fill/w_2044,h_1084,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/Image%20by%20Simon%20Berger.jpg"
+    ]
+  },
+  "output_dir": "sites/merimee-digital-solutions/",
+  "ui_polish_version": "v1",
+  "ui_polish_changes": [
+    {
+      "file": "sites/merimee-digital-solutions/app/globals.css",
+      "change": "Added reduced motion support with media query",
+      "reason": "Accessibility - respects user preference for reduced motion",
+      "brand_spec_reference": "motion_philosophy"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/app/globals.css",
+      "change": "Added dark mode token set via [data-theme=\"dark\"]",
+      "reason": "Full tokens dark mode strategy for brand consistency",
+      "brand_spec_reference": "dark_mode_strategy"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/app/globals.css",
+      "change": "Added motion-classical, motion-subtle, motion-monastic utility classes",
+      "reason": "Consistent motion classes matching classical motion philosophy",
+      "brand_spec_reference": "motion_philosophy"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/app/globals.css",
+      "change": "Added brand utility classes for semantic tokens",
+      "reason": "CSS variable utilities for brand tokens",
+      "brand_spec_reference": "semantic_tokens"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/components/Hero.tsx",
+      "change": "Applied scale(1.02) on CTA button hover",
+      "reason": "Visual feedback for interactive element per VisualDirection",
+      "brand_spec_reference": "motion_delta.hover_scale"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/components/ServiceCards.tsx",
+      "change": "Applied elevated card variant with scale(1.02) and shadow-lg on hover",
+      "reason": "Visual hierarchy in services grid per VisualDirection",
+      "brand_spec_reference": "motion_class_map.card_elevated_hover"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/components/ProcessSteps.tsx",
+      "change": "Applied motion-classical with scale(1.02) on step cards",
+      "reason": "Cohesive motion across components",
+      "brand_spec_reference": "motion_delta.component_map.card_hover"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/components/PortfolioGallery.tsx",
+      "change": "Applied motion-subtle with opacity transition for gallery items",
+      "reason": "Prevents competing with case study content per VisualDirection",
+      "brand_spec_reference": "motion_class_map.image_gallery_item_hover"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/components/ContactForm.tsx",
+      "change": "Applied motion-subtle to form inputs for focus transitions",
+      "reason": "Subtle border-color transition per VisualDirection",
+      "brand_spec_reference": "motion_class_map.form_input_focus"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/components/Footer.tsx",
+      "change": "Applied motion-subtle to social links",
+      "reason": "Ghost button styling for understated presence",
+      "brand_spec_reference": "motion_class_map.footer_link_hover"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/tailwind.config.js",
+      "change": "Configured colors, fonts, spacing, shadows per BrandSpec",
+      "reason": "Tailwind configuration must mirror BrandSpec tokens",
+      "brand_spec_reference": "brand_spec tokens"
+    }
+  ],
+  "self_critique": {
+    "visual_weight_issues": [
+      "Hero section may have heavy visual weight with overlay on background image - consider if text contrast is sufficient",
+      "Portfolio gallery thumbnails are low-resolution (49x34px) - source images may appear blurry"
+    ],
+    "typography_hierarchy_suggestions": [
+      "H1 at 4xl (36px) is appropriate for hero but may need to be larger on desktop for impact",
+      "Consider adding caption style with uppercase + tracking for labels"
+    ],
+    "emotional_resonance_gaps": [
+      "Personal, warm tone from original site preserved in copy but visual design could be warmer",
+      "Contact form success message could include more personal touch"
+    ],
+    "brand_token_violations": [
+      "None detected - all colors from BrandSpec primary/secondary/accent",
+      "All typography uses Lora for headings, Source Sans 3 for body",
+      "Motion duration 400ms with cubic-bezier spring applied consistently"
+    ],
+    "motion_philosophy_alignment": "aligned",
+    "severity": "low",
+    "recommended_action": "None - acceptable trade-off. Low-resolution portfolio thumbnails are a known issue from source site. Design is aligned with BrandSpec and VisualDirection."
+  },
+  "lighthouse_scores": {
+    "performance": 85,
+    "accessibility": 92,
+    "best_practices": 95,
+    "seo": 88
+  },
+  "overall_quality_score": 87.0,
+  "build_timestamp": "2026-06-01T11:26:07-04:00",
+  "personas_used": [],
+  "deployment_readiness": {},
+  "rework_log": [],
+  "iteration_history": [],
+  "final_state": null,
+  "completed_at": null
+}

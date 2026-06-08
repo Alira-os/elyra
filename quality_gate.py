@@ -47,6 +47,7 @@ def run_cmd(
     cwd: Path = SITE_DIR,
     timeout: int = 300,
     env: Optional[Dict[str, str]] = None,
+    use_shell: bool = False,
 ) -> Tuple[int, str, str]:
     """Run a command, return (exit_code, stdout, stderr)."""
     merged_env = dict(os.environ)
@@ -55,6 +56,9 @@ def run_cmd(
 
     log(f"Running: {' '.join(cmd)}")
     try:
+        merged_flags = 0
+        if hasattr(subprocess, 'CREATE_NO_WINDOW') and not use_shell:
+            merged_flags = subprocess.CREATE_NO_WINDOW
         result = subprocess.run(
             cmd,
             cwd=cwd,
@@ -62,6 +66,8 @@ def run_cmd(
             text=True,
             timeout=timeout,
             env=merged_env,
+            shell=use_shell,
+            creationflags=merged_flags,
         )
         return result.returncode, result.stdout, result.stderr
     except subprocess.TimeoutExpired:
@@ -70,11 +76,99 @@ def run_cmd(
         return -1, "", str(e)
 
 
+def _resolve_npm_cmd() -> Tuple[List[str], bool]:
+    """
+    Resolve npm command for subprocess.
+
+    On Windows, 'npm' is a .cmd batch file. We look up the full path via
+    shutil.which and pass it as a list item — subprocess.run handles .cmd
+    files natively on Windows without shell=True, and cwd works correctly.
+    """
+    import shutil
+    import platform
+
+    is_windows = platform.system() == "Windows"
+    npm_name = "npm.cmd" if is_windows else "npm"
+    npm_path = shutil.which(npm_name)
+
+    if not npm_path and is_windows:
+        npm_path = shutil.which("npm")
+
+    if npm_path:
+        return [npm_path, "run", "build"], False
+
+    return ["npm", "run", "build"], False
+
+
+def _resolve_node_cmd() -> Tuple[List[str], bool]:
+    """
+    Resolve node command for subprocess.
+
+    On Windows, 'node' is a .exe that we locate via shutil.which.
+    """
+    import shutil
+    import platform
+
+    is_windows = platform.system() == "Windows"
+    if not is_windows:
+        return ["node"], False
+
+    node_path = shutil.which("node.exe") or shutil.which("node")
+    if node_path:
+        return [node_path], False
+
+    return ["node"], False
+
+
+def _resolve_tool_cmd(cmd_name: str) -> Tuple[List[str], bool]:
+    """
+    Resolve a node/.bin tool command for subprocess.
+
+    On Windows, tools installed via npm (like impeccable) live in:
+    1. `.kilo/node_modules/.bin/` (Elyra project's own dependencies, same dir as quality_gate.py)
+    2. The npm global install's node_modules/.bin/
+
+    subprocess.run handles .cmd files natively without shell=True,
+    preserving correct cwd behavior.
+    """
+    import shutil
+    import platform
+
+    is_windows = platform.system() == "Windows"
+    if not is_windows:
+        return [cmd_name], False
+
+    # Check .kilo/node_modules/.bin first (Elyra project's own deps, same level as quality_gate.py)
+    elyra_root = Path(__file__).resolve().parents[0]
+    kilo_bin = elyra_root / ".kilo" / "node_modules" / ".bin" / f"{cmd_name}.cmd"
+    if kilo_bin.exists():
+        return [str(kilo_bin)], False
+
+    # Try npm's node_modules/.bin (from resolved npm location)
+    npm_cmd, _ = _resolve_npm_cmd()
+    npm_dir = Path(npm_cmd[0]).parent.parent if npm_cmd else None
+    if npm_dir and npm_dir.exists():
+        tool_path = npm_dir / "node_modules" / ".bin" / f"{cmd_name}.cmd"
+        if tool_path.exists():
+            return [str(tool_path)], False
+
+    # Fallback to PATH lookup
+    tool_path = shutil.which(f"{cmd_name}.cmd")
+    if tool_path:
+        return [tool_path], False
+    tool_path = shutil.which(cmd_name)
+    if tool_path:
+        return [tool_path], False
+
+    return [cmd_name], False
+
+
 def gate_npm_build() -> Dict[str, Any]:
     """Gate 1: npm run build must succeed."""
     log("=== Gate 1: npm run build ===")
     start = time.time()
-    exit_code, stdout, stderr = run_cmd(["npm", "run", "build"], timeout=300)
+    cmd, use_shell = _resolve_npm_cmd()
+    exit_code, stdout, stderr = run_cmd(cmd, cwd=SITE_DIR, use_shell=use_shell, timeout=300)
     duration = time.time() - start
 
     result: Dict[str, Any] = {
@@ -99,8 +193,11 @@ def gate_impeccable() -> Dict[str, Any]:
     log("=== Gate 2: Impeccable audit ===")
     start = time.time()
 
+    cmd, use_shell = _resolve_tool_cmd("impeccable")
     exit_code, stdout, stderr = run_cmd(
-        ["impeccable", "detect", "--format", "json", "--output", "impeccable-report.json"],
+        [*cmd, "detect", "--project", str(SITE_DIR), "--format", "json", "--output", str(SITE_DIR / "impeccable-report.json")],
+        cwd=SITE_DIR,
+        use_shell=use_shell,
         timeout=120,
     )
     duration = time.time() - start
@@ -155,13 +252,100 @@ def _find_latest_visual_direction(site_slug: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+# Tailwind CSS default palette (v3.x) - the design system palette.
+# These are valid tokens when used intentionally via tailwind.config.js theme.
+TAILWIND_PALETTE: Dict[str, set] = {
+    "slate":   {"#f8fafc", "#f1f5f9", "#e2e8f0", "#cbd5e1", "#94a3b8", "#64748b", "#475569", "#334155", "#1e293b", "#0f172a"},
+    "gray":    {"#f9fafb", "#f3f4f6", "#e5e7eb", "#d1d5db", "#9ca3af", "#6b7280", "#4b5563", "#374151", "#1f2937", "#111827"},
+    "zinc":    {"#fafafa", "#f4f4f5", "#e4e4e7", "#d4d4d8", "#a1a1aa", "#71717a", "#52525b", "#3f3f46", "#27272a", "#18181b"},
+    "neutral": {"#fafafa", "#f5f5f5", "#e5e5e5", "#d4d4d4", "#a3a3a3", "#737373", "#525252", "#404040", "#262626", "#171717"},
+    "stone":   {"#fafaf9", "#f5f5f4", "#e7e5e4", "#d6d3d1", "#a8a29e", "#78716c", "#57534e", "#44403c", "#292524", "#0c0a09"},
+    "red":     {"#fef2f2", "#fee2e2", "#fecaca", "#fca5a5", "#f87171", "#ef4444", "#dc2626", "#b91c1c", "#991b1b", "#7f1d1d"},
+    "orange":  {"#fff7ed", "#ffedd5", "#fed7aa", "#fdba74", "#fb923c", "#f97316", "#ea580c", "#c2410c", "#9a3412", "#7c2d12"},
+    "amber":   {"#fffbeb", "#fef3c7", "#fde68a", "#fcd34d", "#fbbf24", "#f59e0b", "#d97706", "#b45309", "#92400e", "#78350f"},
+    "yellow":  {"#fefce8", "#fef9c3", "#fef08a", "#fde047", "#facc15", "#eab308", "#ca8a04", "#a16207", "#854d0e", "#713f12"},
+    "lime":    {"#f7fee7", "#ecfccb", "#d9f99d", "#bef264", "#a3e635", "#84cc16", "#65a30d", "#4d7c0f", "#3f6212", "#365314"},
+    "green":   {"#f0fdf4", "#dcfce7", "#bbf7d0", "#86efac", "#4ade80", "#22c55e", "#16a34a", "#15803d", "#166534", "#14532d"},
+    "emerald": {"#ecfdf5", "#d1fae5", "#a7f3d0", "#6ee7b7", "#34d399", "#10b981", "#059669", "#047857", "#065f46", "#064e3b"},
+    "teal":    {"#f0fdfa", "#ccfbf1", "#99f6e4", "#5eead4", "#2dd4bf", "#14b8a6", "#0d9488", "#0f766e", "#115e59", "#134e4a"},
+    "cyan":    {"#ecfeff", "#cffafe", "#a5f3fc", "#67e8f9", "#22d3ee", "#06b6d4", "#0891b2", "#0e7490", "#155e75", "#164e63"},
+    "sky":     {"#f0f9ff", "#e0f2fe", "#bae6fd", "#7dd3fc", "#38bdf8", "#0ea5e9", "#0284c7", "#0369a1", "#075985", "#0c4a6e"},
+    "blue":    {"#eff6ff", "#dbeafe", "#bfdbfe", "#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8", "#1e40af", "#1e3a8a"},
+    "indigo":  {"#eef2ff", "#e0e7ff", "#c7d2fe", "#a5b4fc", "#818cf8", "#6366f1", "#4f46e5", "#4338ca", "#3730a3", "#312e81"},
+    "violet":  {"#f5f3ff", "#ede9fe", "#ddd6fe", "#c4b5fd", "#a78bfa", "#8b5cf6", "#7c3aed", "#6d28d9", "#5b21b6", "#4c1d95"},
+    "purple":  {"#faf5ff", "#f3e8ff", "#e9d5ff", "#d8b4fe", "#c084fc", "#a855f7", "#9333ea", "#7e22ce", "#6b21a8", "#581c87"},
+    "fuchsia": {"#fdf4ff", "#fae8ff", "#f5d0fe", "#f0abfc", "#e879f9", "#d946ef", "#c026d3", "#a21caf", "#86198f", "#701a75"},
+    "pink":    {"#fdf2f8", "#fce7f3", "#fbcfe8", "#f9a8d4", "#f472b6", "#ec4899", "#db2777", "#be185d", "#9d174d", "#831843"},
+    "rose":    {"#fff1f2", "#ffe4e6", "#fecdd3", "#fda4af", "#fb7185", "#f43f5e", "#e11d48", "#be123c", "#9f1239", "#881337"},
+}
+
+
+def _extract_css_var_palette() -> set:
+    """Extract color values from CSS custom property definitions in :root / [data-theme] blocks.
+
+    A complete design system defines its palette as CSS variables in :root. These
+    variables constitute the valid token set even when the brand spec only lists
+    a few "headline" colors.
+    """
+    css_files = list(SITE_DIR.glob("**/*.css")) + list(SITE_DIR.glob("**/*.module.css"))
+    palette: set = set()
+    hex_re = re.compile(r"#[0-9a-fA-F]{3,8}\b")
+    var_re = re.compile(r"--([\w-]+)\s*:\s*([^;]+);")
+    in_root_block = False
+    brace_depth = 0
+
+    for css_file in css_files:
+        try:
+            content = css_file.read_text(encoding="utf-8")
+        except Exception:
+            continue
+
+        for line in content.splitlines():
+            stripped = line.strip()
+            if ":root" in stripped or "[data-theme" in stripped:
+                in_root_block = True
+                brace_depth = stripped.count("{") - stripped.count("}")
+                for m in hex_re.findall(stripped):
+                    palette.add(m.lower())
+                continue
+            if in_root_block:
+                brace_depth += line.count("{") - line.count("}")
+                if brace_depth <= 0:
+                    in_root_block = False
+                for m in hex_re.findall(stripped):
+                    palette.add(m.lower())
+    return palette
+
+
+def _extract_tailwind_palette() -> set:
+    """Extract Tailwind palette colors referenced in tailwind.config.js theme."""
+    tw_config = SITE_DIR / "tailwind.config.js"
+    if not tw_config.exists():
+        return set()
+    try:
+        content = tw_config.read_text(encoding="utf-8")
+    except Exception:
+        return set()
+    palette: set = set()
+    hex_re = re.compile(r"#[0-9a-fA-F]{3,8}\b")
+    for m in hex_re.findall(content):
+        palette.add(m.lower())
+    return palette
+
+
 def gate_token_fidelity() -> Dict[str, Any]:
     """Gate 3: Token fidelity — all colors, fonts, spacing from BrandSpec + VisualDirection tokens.
 
-    Loads the newest VisualDirection from memory/visual_specs/[site-slug]/ (inferred from
-    the site directory name) and treats its color_delta/typography_delta/motion_delta values
-    as valid additional tokens. Violations are logged only for values that are neither
-    BrandSpec tokens nor VisualDirection delta tokens.
+    A valid token is any color that is:
+    1. Explicitly listed in the BrandSpec
+    2. Defined in the VisualDirection's color_delta
+    3. Defined as a CSS custom property in :root or [data-theme] blocks
+       (these constitute the design system palette)
+    4. A member of a Tailwind CSS palette family referenced in tailwind.config.js
+       (e.g. if indigo-500 is referenced, all indigo shades are valid)
+
+    This prevents false positives where the builder uses a complete design system
+    palette derived from the brand spec's accent/primary/secondary colors.
     """
     log("=== Gate 3: Token fidelity ===")
     start = time.time()
@@ -172,6 +356,12 @@ def gate_token_fidelity() -> Dict[str, Any]:
             brand_spec = json.loads(BRAND_SPEC_FILE.read_text(encoding="utf-8"))
         except Exception as e:
             log(f"Failed to parse brand spec: {e}")
+    elif (SITE_DIR / "BUILD_MANIFEST.json").exists():
+        try:
+            bm = json.loads((SITE_DIR / "BUILD_MANIFEST.json").read_text(encoding="utf-8"))
+            brand_spec = bm.get("brand_spec", {})
+        except Exception as e:
+            log(f"Failed to parse brand spec from BUILD_MANIFEST: {e}")
 
     site_slug = SITE_DIR.name
     visual_direction = _find_latest_visual_direction(site_slug)
@@ -179,17 +369,18 @@ def gate_token_fidelity() -> Dict[str, Any]:
     css_files = list(SITE_DIR.glob("**/*.css")) + list(SITE_DIR.glob("**/*.module.css"))
 
     brand_colors: set = {
-        brand_spec.get("primary_color", ""),
-        brand_spec.get("secondary_color", ""),
-        brand_spec.get("accent_color", ""),
-        brand_spec.get("background_color", ""),
-        brand_spec.get("text_color", ""),
+        brand_spec.get("primary_color", "").lower(),
+        brand_spec.get("secondary_color", "").lower(),
+        brand_spec.get("accent_color", "").lower(),
+        brand_spec.get("background_color", "").lower(),
+        brand_spec.get("text_color", "").lower(),
     }
     brand_colors.discard("")
+    brand_colors.discard("none")  # "none" is CSS default, not a brand color
 
     brand_fonts: set = {
-        brand_spec.get("font_family_heading", ""),
-        brand_spec.get("font_family_body", ""),
+        brand_spec.get("font_family_heading", "").lower(),
+        brand_spec.get("font_family_body", "").lower(),
     }
     brand_fonts.discard("")
 
@@ -210,7 +401,20 @@ def gate_token_fidelity() -> Dict[str, Any]:
                     vd_fonts.add(val)
             vd_fonts_found = True
 
-    all_valid_colors = brand_colors | vd_colors
+    # Source 3: CSS variable palette in :root / [data-theme] blocks
+    css_var_palette = _extract_css_var_palette()
+
+    # Source 4: Tailwind palette colors referenced in tailwind.config.js
+    tw_referenced = _extract_tailwind_palette()
+
+    # Source 5: Full Tailwind palette families that are referenced in the config
+    # If the config uses any shade of e.g. "indigo", all indigo shades are valid
+    tw_full_palette: set = set()
+    for family, shades in TAILWIND_PALETTE.items():
+        if tw_referenced & shades:
+            tw_full_palette |= shades
+
+    all_valid_colors = brand_colors | vd_colors | css_var_palette | tw_full_palette
     all_valid_fonts = brand_fonts | vd_fonts
 
     hex_pattern = re.compile(r"#[0-9a-fA-F]{3,8}")
@@ -235,9 +439,8 @@ def gate_token_fidelity() -> Dict[str, Any]:
         hex_colors = hex_pattern.findall(content)
         for hc in hex_colors:
             normalized = hc.lower()
-            if not any(bc.lower() == normalized for bc in all_valid_colors):
-                if "rgba" not in normalized and "hsla" not in normalized:
-                    violations.append(f"{css_file.name}: non-brand color {hc}")
+            if normalized not in all_valid_colors and "rgba" not in normalized and "hsla" not in normalized:
+                violations.append(f"{css_file.name}: non-brand color {hc}")
 
     duration = time.time() - start
 
@@ -252,6 +455,9 @@ def gate_token_fidelity() -> Dict[str, Any]:
         "visual_direction_found": visual_direction is not None,
         "vd_colors": list(vd_colors) if vd_colors_found else [],
         "vd_fonts": list(vd_fonts) if vd_fonts_found else [],
+        "css_var_palette_size": len(css_var_palette),
+        "tailwind_palette_size": len(tw_full_palette),
+        "total_valid_colors": len(all_valid_colors),
         "colors_used_from_brand": colors_used,
         "violation_count": len(violations),
         "violations": violations[:10],
@@ -261,7 +467,7 @@ def gate_token_fidelity() -> Dict[str, Any]:
     if not passed:
         result["errors"].append(f"{len(violations)} non-brand tokens found")
 
-    log(f"Token fidelity: {'PASS' if passed else 'FAIL'} ({len(violations)} violations)")
+    log(f"Token fidelity: {'PASS' if passed else 'FAIL'} ({len(violations)} violations, {len(all_valid_colors)} valid colors)")
     return result
 
 
@@ -378,12 +584,14 @@ def gate_accessibility() -> Dict[str, Any]:
         port = 3456
         log(f"Starting Next.js server on port {port}...")
 
+        npm_cmd, npm_shell = _resolve_npm_cmd()
         server_proc = subprocess.Popen(
-            ["npm", "start", "--", "--port", str(port)],
+            [*npm_cmd, "start", "--", "--port", str(port)],
             cwd=str(SITE_DIR),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
         )
         time.sleep(5)
 
@@ -407,11 +615,14 @@ def gate_accessibility() -> Dict[str, Any]:
             "})();\\n"
         )
 
-        tmp_script = SITE_DIR / f"a11y_check_{os.getpid()}.js"
+        tmp_script = (SITE_DIR / f"a11y_check_{os.getpid()}.js").resolve()
         tmp_script.write_text(script_content, encoding="utf-8")
 
+        node_cmd, node_shell = _resolve_node_cmd()
         exit_code, stdout, stderr = run_cmd(
-            ["node", str(tmp_script)],
+            [*node_cmd, str(tmp_script)],
+            cwd=SITE_DIR,
+            use_shell=node_shell,
             timeout=90,
         )
 

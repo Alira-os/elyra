@@ -20,8 +20,16 @@ import subprocess
 import json
 import tempfile
 import os
+import sys
 from pathlib import Path
 from typing import Optional
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from memory.gap_ledger import log_gap
+from skills.agentic.json_extract import extract_json, JSONExtractionError
+from skills.agentic.kilo_callbacks import make_timeout_callback
+from skills.agentic.prompt_budget import compact_site_understanding, compact_site_architecture
+from tools.kilo import invoke_kilo_safe
 
 from models.site_schemas import (
     SiteUnderstanding,
@@ -32,6 +40,7 @@ from models.site_schemas import (
 
 MEMORY_DIR = Path("memory/site_understandings")
 ARCHITECTURE_DIR = Path("memory/site_architectures")
+RECOMMENDATION_DIR = Path("memory/site_recommendations")
 OUTPUT_DIR = Path("memory/site_recommendations")
 PERSONA_PATH = Path("registry/personas/marketing_specialist.md")
 
@@ -40,25 +49,33 @@ def build_marketing_prompt(
     site: SiteUnderstanding,
     architecture: SiteArchitecture,
 ) -> str:
-    """Build the prompt that Kilo CLI will execute."""
+    """Build the prompt that Kilo CLI will execute.
+
+    Phase 0.6: uses compact views of both SiteUnderstanding and
+    SiteArchitecture. Full JSON is available at memory/<dir>/[id].json.
+    """
     persona = PERSONA_PATH.read_text() if PERSONA_PATH.exists() else ""
 
     schema_json = json.dumps(ContentRecommendation.model_json_schema(), indent=2)
-    site_json = site.model_dump_json(indent=2)
-    arch_json = architecture.model_dump_json(indent=2)
+    site_compact = compact_site_understanding(site)
+    arch_compact = compact_site_architecture(architecture)
+    site_json = json.dumps(site_compact, indent=2, default=str)
+    arch_json = json.dumps(arch_compact, indent=2, default=str)
 
     return f"""{persona}
 
 ## Task
-Analyze the following SiteUnderstanding and SiteArchitecture.
+Analyze the following SiteUnderstanding and SiteArchitecture (compact views).
 Develop two content strategy variants (A and B), then autonomously choose the winning variant.
 Produce a complete ContentRecommendation.
 
-## Input SiteUnderstanding
+## Input SiteUnderstanding (compact view)
 {site_json}
 
-## Input SiteArchitecture
+## Input SiteArchitecture (compact view)
 {arch_json}
+
+_Full upstream JSON is available at `memory/site_understandings/` and `memory/site_architectures/` — re-read via your tools if you need per-page detail._
 
 ## Output Contract
 Output ONLY valid JSON matching this schema — no markdown, no commentary,
@@ -71,17 +88,10 @@ Begin content strategy analysis now."""
 def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]:
     """Extract JSON object from Kilo CLI --format json output.
 
-    Kilo outputs NDJSON events. Find the last text event and extract JSON from it.
-    Returns (json_str, last_text) for debugging.
+    Returns (json_str, last_text) for debugging. Returns (None, last_text)
+    on extraction failure — callers MUST treat None as a hard error.
+    Thin shim over the shared extractor.
     """
-    stdout = stdout.strip()
-
-    try:
-        json.loads(stdout)
-        return stdout, None
-    except json.JSONDecodeError:
-        pass
-
     last_text = None
     for line in stdout.splitlines():
         line = line.strip()
@@ -89,40 +99,17 @@ def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]
             continue
         try:
             event = json.loads(line)
-            if event.get("type") == "text":
-                last_text = event["part"].get("text", "")
+            if isinstance(event, dict) and event.get("type") == "text":
+                t = event.get("part", {}).get("text", "")
+                if isinstance(t, str):
+                    last_text = t
         except json.JSONDecodeError:
             continue
-
-    if last_text:
-        last_text = last_text.strip()
-        try:
-            json.loads(last_text)
-            return last_text, last_text
-        except json.JSONDecodeError:
-            pass
-
-        first_brace = last_text.find("{")
-        last_brace = last_text.rfind("}")
-        if first_brace != -1 and last_brace != -1 and last_brace >= first_brace:
-            json_str = last_text[first_brace : last_brace + 1]
-            try:
-                json.loads(json_str)
-                return json_str, last_text
-            except json.JSONDecodeError:
-                pass
-
-    first_brace = stdout.find("{")
-    last_brace = stdout.rfind("}")
-    if first_brace == -1 or last_brace == -1 or last_brace <= first_brace:
-        return None, None
-
-    json_str = stdout[first_brace : last_brace + 1]
     try:
-        json.loads(json_str)
-        return json_str, None
-    except json.JSONDecodeError:
-        return None, None
+        obj = extract_json(stdout)
+        return json.dumps(obj), last_text
+    except JSONExtractionError:
+        return None, last_text
 
 
 def parse_and_validate(raw_json: str) -> Optional[ContentRecommendation]:
@@ -202,6 +189,26 @@ def list_architectures() -> list[Path]:
     return sorted(ARCHITECTURE_DIR.glob("*.json"), reverse=True)
 
 
+def load_content_recommendation(rec_id: str) -> Optional[ContentRecommendation]:
+    """Load a saved ContentRecommendation from memory/site_recommendations/.
+
+    Companion to market(). Both are used by the Phase 1.1 Forge Room
+    personas which read their upstream artifacts from the blackboard.
+    """
+    if not rec_id:
+        return None
+    rec_path = RECOMMENDATION_DIR / f"{rec_id}.json"
+    if not rec_path.exists():
+        rec_path = Path(rec_id)
+    try:
+        with open(rec_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return ContentRecommendation(**data)
+    except Exception as e:
+        print(f"[ERROR] Failed to load ContentRecommendation: {e}")
+        return None
+
+
 def market(site_id: str, arch_id: str) -> Optional[ContentRecommendation]:
     """
     Main entry point: load SiteUnderstanding + SiteArchitecture -> build prompt ->
@@ -229,78 +236,63 @@ def market(site_id: str, arch_id: str) -> Optional[ContentRecommendation]:
     print(f"\n[MARKETING] Analyzing content for {site.url} via Kilo CLI")
     print("=" * 60)
 
-    try:
-        import platform
-        if platform.system() == "Windows":
-            node_exe = (
-                "C:\\Program Files\\nodejs\\node.exe"
-                if Path("C:\\Program Files\\nodejs\\node.exe").exists()
-                else "node"
-            )
-            kilo_bin_local = (
-                Path(__file__).resolve().parents[2]
-                / "node_modules"
-                / "@kilocode"
-                / "cli"
-                / "bin"
-                / "kilo"
-            )
-            kilo_bin_fallback = Path(
-                "C:\\Users\\micha\\AppData\\Roaming\\npm\\node_modules\\@kilocode\\cli\\bin\\kilo"
-            )
-            kilo_bin = kilo_bin_fallback
+    # Phase 0.5: route through invoke_kilo_safe so prompt-size + timeout
+    # guard-rails apply uniformly.
+    result = invoke_kilo_safe(
+        prompt=prompt,
+        context={"site_id": site_id, "arch_id": arch_id, "url": site.url},
+        working_dir=".",
+        persona="marketing_specialist",
+        timeout=300,
+        on_timeout=make_timeout_callback(
+            persona="marketing_specialist",
+            migration_id_fn=lambda: site_id,
+            default_timeout_s=300,
+        ),
+    )
 
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".txt", delete=False, encoding="utf-8"
-            ) as f:
-                f.write(prompt)
-                prompt_file = f.name
-
-            try:
-                result = subprocess.run(
-                    [node_exe, str(kilo_bin), "run", "--format", "json", "--auto", "--", f"@{prompt_file}"],
-                    capture_output=True,
-                    encoding="utf-8",
-                    errors="replace",
-                    timeout=300,
-                )
-            finally:
-                try:
-                    os.unlink(prompt_file)
-                except Exception:
-                    pass
-        else:
-            result = subprocess.run(
-                ["kilo", "run", "--format", "json", "--auto", "--", prompt],
-                capture_output=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=300,
-            )
-    except subprocess.TimeoutExpired:
-        print("[ERROR] Kilo CLI timed out after 5 minutes")
-        return None
-    except FileNotFoundError:
-        print("[ERROR] 'kilo' command not found. Is Kilo CLI installed and in PATH?")
+    if not result.success:
+        print(f"[ERROR] Kilo invocation failed: {result.errors}")
         return None
 
-    if result.returncode != 0:
-        print(f"[ERROR] Kilo CLI exited with code {result.returncode}")
-        print(f"[STDERR] {result.stderr[:500] if result.stderr else ''}")
-        return None
-
-    stdout = result.stdout or ""
-
+    stdout = result.summary or ""
     print(f"[KILO] Output received ({len(stdout)} chars)")
 
-    json_str, last_text = extract_json_from_output(stdout)
-    if not json_str:
-        print("[ERROR] Could not extract JSON from Kilo output")
-        lines = result.stdout.splitlines()
+    # Track last_text for debug parity.
+    last_text = None
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+            if isinstance(event, dict) and event.get("type") == "text":
+                t = event.get("part", {}).get("text", "")
+                if isinstance(t, str):
+                    last_text = t
+        except json.JSONDecodeError:
+            continue
+
+    try:
+        data = extract_json(stdout)
+    except JSONExtractionError as e:
+        print(f"[ERROR] Could not extract JSON from Kilo output: {e.reason}")
+        lines = stdout.splitlines()
         print(f"[KILO] Got {len(lines)} NDJSON events")
         if last_text:
             print(f"[TEXT] Last text event: {last_text[:500]}")
+        log_gap(
+            migration_id=site_id,
+            gap_type="gate_failure",
+            source_persona="marketing_specialist",
+            target_persona="marketing_specialist",
+            description=f"Could not extract ContentRecommendation JSON from Kilo output: {e.reason}",
+            suggested_fix="Check Kilo output format and prompt instructions",
+            severity="high",
+        )
         return None
+
+    json_str = json.dumps(data)
 
     validated = parse_and_validate(json_str)
     if validated:
@@ -313,6 +305,15 @@ def market(site_id: str, arch_id: str) -> Optional[ContentRecommendation]:
         save_content_recommendation(validated, site_id)
     else:
         print("[ERROR] JSON parsed but failed schema validation")
+        log_gap(
+            migration_id=site_id,
+            gap_type="gate_failure",
+            source_persona="marketing_specialist",
+            target_persona="marketing_specialist",
+            description="ContentRecommendation JSON parsed but failed Pydantic schema validation",
+            suggested_fix="Check that Kilo produces valid ContentRecommendation JSON per schema",
+            severity="high",
+        )
 
     return validated
 

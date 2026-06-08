@@ -135,6 +135,7 @@ TaskContext = {
     "migrate_articles": False,  # True for blog
     "user_description": "Portfolio for freelance photographer",
     "user_reference_url": None,  # Optional reference
+    "data_layer": "light",  # light | medium | heavy — controls Cloudflare binding choice (D1 default, Hyperdrive-fronted Postgres for heavy)
     "onboarding_complete": True,
     "onboarding_questions_asked": 4
 }
@@ -160,6 +161,18 @@ TaskContext = {
 ---
 
 ## Edge Case Handling
+
+**Question 4b (asked only when the project implies significant data persistence — e.g., E-commerce + "Same products", Blog + "All of them", Business + "I'll also need [blog/gallery/shop]"):**
+```
+How much data does your site need to handle?
+- Light — a few hundred entries (form submissions, signups). I'll use Cloudflare D1 (SQLite at the edge).
+- Medium — thousands of entries, simple queries. Still D1 by default, with KV cache in front.
+- Heavy — analytics, large datasets, PostGIS/maps, pgvector, or an existing Postgres instance you want to keep.
+  In the heavy case, I'll keep the app on Cloudflare and bind an external Postgres
+  (Neon or Supabase) via Hyperdrive, rather than switching the whole stack.
+```
+
+Capture the answer in `TaskContext.data_layer` with one of `light` | `medium` | `heavy`. The default is `light`. `heavy` is **not** a platform switch trigger — it changes the binding, not the platform. (A platform switch to Fly.io only happens if a Tier-1 trigger fires in `deploy_specialist.md` §3.)
 
 ### User Says "New Site" (No URL)
 **Handling:**

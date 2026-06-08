@@ -47,6 +47,7 @@ class GapEntry:
         severity: str = "medium",
         resolved: bool = False,
         resolution_note: str = "",
+        target_persona: Optional[str] = None,
     ):
         self.gap_id = gap_id or str(uuid.uuid4())[:8]
         self.timestamp = timestamp or datetime.now(timezone.utc).isoformat()
@@ -58,9 +59,13 @@ class GapEntry:
         self.severity = severity
         self.resolved = resolved
         self.resolution_note = resolution_note
+        # Phase 0: which persona should the manager route back to in order
+        # to recover from this gap? Optional — None means the gap is
+        # informational only (no recoverable target).
+        self.target_persona = target_persona
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        out = {
             "gap_id": self.gap_id,
             "timestamp": self.timestamp,
             "migration_id": self.migration_id,
@@ -72,6 +77,9 @@ class GapEntry:
             "resolved": self.resolved,
             "resolution_note": self.resolution_note,
         }
+        if self.target_persona is not None:
+            out["target_persona"] = self.target_persona
+        return out
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=2)
@@ -127,11 +135,16 @@ def log_gap(
     suggested_fix: str = "",
     severity: str = "medium",
     write_to_site_ledger: bool = True,
+    target_persona: Optional[str] = None,
 ) -> GapEntry:
     """Log a new gap entry to the Gap Ledger JSONL file.
 
     Writes to both the global gaps.jsonl and the per-site [migration_id]/gaps.jsonl
     to support concurrent multi-site runs without entry interleaving.
+
+    target_persona (Phase 0+): which persona the manager should route back to
+    in order to recover from this gap. None means the gap is informational
+    only and there is no recoverable persona target.
     """
     _ensure_ledger_dir(migration_id)
     entry = GapEntry(
@@ -141,6 +154,7 @@ def log_gap(
         description=description,
         suggested_fix=suggested_fix,
         severity=severity,
+        target_persona=target_persona,
     )
 
     json_line = json.dumps(entry.to_dict(), indent=None) + "\n"

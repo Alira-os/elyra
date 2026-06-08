@@ -11,16 +11,17 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
-  FLY_REGION: 'lax'
 
 permissions:
   contents: read
-  id-token: write  # Required for OIDC to Fly.io
+  id-token: write  # Required for OIDC to Cloudflare
   pull-requests: write
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 1: Build and Deploy to Production
+  # Default platform: Cloudflare. Fly.io fallback lives in deploy-flyio-production.yml
+  # and is triggered only when the project has been re-architected to fly-io.
   # ─────────────────────────────────────────────────────────────────────────────
   deploy-production:
     name: Deploy to Production
@@ -63,7 +64,7 @@ jobs:
         run: npm run build
 
       # ─────────────────────────────────────────────────────────────────────
-      # Kilo + deploy_specialist for Fly.io Production Deploy
+      # Kilo + deploy_specialist for Cloudflare Production Deploy
       # ─────────────────────────────────────────────────────────────────────
       - name: Check for Kilo CLI
         id: check-kilo
@@ -74,86 +75,67 @@ jobs:
             echo "kilo-available=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Deploy via Kilo + deploy_specialist (Fly.io MCP)
+      - name: Deploy via Kilo + deploy_specialist (Cloudflare MCP)
         id: deploy
         if: steps.check-kilo.outputs.kilo-available == 'true'
         env:
-          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT_NAME: ${{ vars.CF_PROJECT_NAME }}
         run: |
-          APP_NAME="${{ vars.FLY_APP_NAME }}"
-          
+          PROJECT_NAME="${{ vars.CF_PROJECT_NAME }}"
+          PRODUCTION_URL="https://${PROJECT_NAME}.${CLOUDFLARE_ACCOUNT_ID}.workers.dev"
+
           # Build prompt for Kilo deploy_specialist persona
-          PROMPT="Deploy the built site at . to production on Fly.io.
+          PROMPT="Deploy the built site at . to production on Cloudflare.
 
-App name: ${APP_NAME}
-Organization: personal
-Region: lax
+Project name: ${PROJECT_NAME}
+Account ID: ${CLOUDFLARE_ACCOUNT_ID}
+Substrate: workers (default; switch to workers-containers only if the project declares it in wrangler.toml)
 
-Using Fly.io MCP tools:
-1. Create Fly app if not exists: fly apps create ${APP_NAME} (org: personal, region: lax)
-2. Set required secrets/env vars for the app
-3. Deploy: fly deploy --remote-only from current directory
-   - Requires fly.toml or Dockerfile in the project directory
-4. Allocate IPv4 if needed: fly ips allocate-v4 --app ${APP_NAME}
-5. Health check: fly health check --app ${APP_NAME}
+Using Cloudflare MCP tools:
+1. Ensure account-level resources exist (D1, R2, KV, Vectorize bindings per wrangler.toml) — apply infra/cloudflare/ if needed.
+2. Set required Workers vars and Secret Store entries.
+3. Run: wrangler deploy (remote build) from the project directory.
+   - Requires wrangler.toml or wrangler.jsonc at the project root.
+4. Bind the custom domain if vars.CF_CUSTOM_DOMAIN is set (Cloudflare provisions SSL automatically).
+5. Promote the deployed version to 100% traffic.
 
 Return ONLY valid JSON:
 {
   \"success\": true/false,
-  \"production_url\": \"https://${APP_NAME}.fly.dev\",
-  \"app_id\": \"fly app id\",
+  \"production_url\": \"${PRODUCTION_URL}\",
+  \"version_id\": \"...\",
   \"deployed_at\": \"ISO timestamp\",
   \"errors\": []
 }"
 
           # Run Kilo with deploy_specialist persona
           kilo run --persona registry/personas/deploy_specialist.md --format json -- -- "${PROMPT}" || echo '{"success": false}'
-          
-          echo "production-url=https://${APP_NAME}.fly.dev" >> $GITHUB_OUTPUT
 
-      # Fallback: direct Fly CLI if Kilo not available
-      - name: Setup Fly CLI (fallback)
+          echo "production-url=${PRODUCTION_URL}" >> $GITHUB_OUTPUT
+
+      # Fallback: direct wrangler deploy if Kilo not available
+      - name: Setup Wrangler (fallback)
         if: steps.check-kilo.outputs.kilo-available != 'true'
-        uses: superfly/flyctl-actions/setup-flyctl@master
-        with:
-          api-token: ${{ secrets.FLY_API_TOKEN }}
+        run: npm install --no-save wrangler@latest
 
-      - name: Fly Doctor (pre-flight check)
-        if: steps.check-kilo.outputs.kilo-available != 'true'
-        run: flyctl doctor --app ${{ vars.FLY_APP_NAME }} || true
-        continue-on-error: true
-
-      - name: Deploy to Fly.io Production (fallback)
+      - name: Deploy to Cloudflare Production (fallback)
         if: steps.check-kilo.outputs.kilo-available != 'true'
         id: deploy-fallback
-        uses: superfly/flyctl-actions/deploy-flyctl@master
-        with:
-          api-token: ${{ secrets.FLY_API_TOKEN }}
-          args: --remote-only
         env:
-          FLY_APP: ${{ vars.FLY_APP_NAME }}
-          FLY_REGION: ${{ env.FLY_REGION }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT_NAME: ${{ vars.CF_PROJECT_NAME }}
+        run: |
+          npx wrangler deploy --name "${{ vars.CF_PROJECT_NAME }}" --remote
         continue-on-error: false
-
-      - name: Wait for health checks
-        if: steps.check-kilo.outputs.kilo-available != 'true'
-        run: |
-          echo "Checking deployment health..."
-          flyctl health check --app ${{ vars.FLY_APP_NAME }} --timeout 60s || true
-        continue-on-error: true
-
-      - name: Get deployment status
-        if: steps.check-kilo.outputs.kilo-available != 'true'
-        id: status
-        run: |
-          flyctl status --app ${{ vars.FLY_APP_NAME }} --json || echo '{}'
-        continue-on-error: true
 
       - name: Set production URL output (fallback)
         if: steps.check-kilo.outputs.kilo-available != 'true'
         id: deploy-output
         run: |
-          URL="https://${{ vars.FLY_APP_NAME }}.fly.dev"
+          URL="https://${{ vars.CF_PROJECT_NAME }}.${{ vars.CLOUDFLARE_ACCOUNT_ID }}.workers.dev"
           echo "production-url=$URL" >> $GITHUB_OUTPUT
         continue-on-error: false
 
@@ -163,16 +145,11 @@ Return ONLY valid JSON:
       - name: Verify deployment with Lighthouse
         uses: treosh/lighthouse-ci-action@v11
         with:
-          urls: ${{ steps.deploy.outputs.production-url || format('https://{0}.fly.dev', vars.FLY_APP_NAME) }}
+          urls: ${{ steps.deploy.outputs.production-url || format('https://{0}.{1}.workers.dev', vars.CF_PROJECT_NAME, vars.CLOUDFLARE_ACCOUNT_ID) }}
           budgetPath: ./lighthouse-budget.json
           uploadArtifacts: true
           temporaryPublicStorage: true
         continue-on-error: true  # Non-blocking — manual review follows
-
-      - name: Create deployment snapshot
-        run: |
-          flyctl volumes list --app ${{ vars.FLY_APP_NAME }} --json || echo '[]'
-        continue-on-error: true
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 2: Post-Deploy Notification (Slack/Teams webhook)
@@ -190,13 +167,13 @@ Return ONLY valid JSON:
           channel-id: ${{ vars.SLACK_CHANNEL_ID }}
           payload: |
             {
-              "text": "${{ needs.deploy-production.result == 'success' && '✅' || '❌' }} Production Deploy: ${{ needs.deploy-production.result }}",
+              "text": "${{ needs.deploy-production.result == 'success' && '✅' || '❌' }} Production Deploy (Cloudflare): ${{ needs.deploy-production.result }}",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "${{ needs.deploy-production.result == 'success' && '✅ Production deployed' || '❌ Production deploy failed' }}\n<${{ steps.deploy.outputs.production-url }}|View site>"
+                    "text": "${{ needs.deploy-production.result == 'success' && '✅ Production deployed to Cloudflare' || '❌ Production deploy failed' }}\n<${{ steps.deploy.outputs.production-url }}|View site>"
                   }
                 }
               ]

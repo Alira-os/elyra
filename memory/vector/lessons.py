@@ -60,9 +60,9 @@ class VectorStore:
         """Try to connect to LanceDB, fall back to in-memory store."""
         try:
             import lancedb
-            self._client = lanceddb.LanceDBClient()
             os.makedirs(self.db_path, exist_ok=True)
-            self._db = lanceddb.connect(self.db_path)
+            self._db = lancedb.connect(self.db_path)
+            self._client = self._db
             self._try_load_table()
             self._use_fallback = False
             logger.info("LanceDB connected successfully")
@@ -78,17 +78,19 @@ class VectorStore:
         try:
             self._table = self._db.open_table(self.TABLE_NAME)
         except Exception:
-            schema = {
-                "id": "string",
-                "content": "string",
-                "content_hash": "string",
-                "embedding": "list<float32>",
-                "artifact_type": "string",
-                "tags": "string",
-                "migration_id": "string",
-                "created_at": "string"
-            }
-            self._table = self._db.create_table(self.TABLE_NAME, schema=schema)
+            self._table = self._db.create_table(
+                self.TABLE_NAME,
+                data=[{
+                    "id": "_init_",
+                    "content": "",
+                    "content_hash": "",
+                    "embedding": [0.0],
+                    "artifact_type": "",
+                    "tags": "",
+                    "migration_id": "",
+                    "created_at": "",
+                }],
+            )
 
     def _compute_simple_embedding(self, text: str) -> list[float]:
         """

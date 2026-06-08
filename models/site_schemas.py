@@ -309,8 +309,8 @@ class VisualDirection(BaseModel):
     impacted_components: List[str] = Field(default_factory=list)  # component_ids affected
     impacted_pages: List[str] = Field(default_factory=list)  # route paths affected
     color_delta: Optional[Dict[str, str]] = None  # {primary_color: "#E63946"} delta ONLY — never repeat BrandSpec fields
-    typography_delta: Optional[Dict[str, str]] = None  # {font_family_heading: "Playfair Display"} delta ONLY
-    motion_delta: Optional[Dict[str, str]] = None  # {motion_philosophy: "energetic"} delta ONLY
+    typography_delta: Optional[Dict[str, Any]] = None  # {font_family_heading: "Playfair Display"} delta ONLY
+    motion_delta: Optional[Dict[str, Any]] = None  # {motion_philosophy: "energetic"} delta ONLY
     designer_notes: List[str] = Field(default_factory=list)
     created_by: str = "ui_designer"
     created_at: str = ""
@@ -466,3 +466,374 @@ if __name__ == "__main__":
         ]
     )
     print(page.model_dump_json(indent=2))
+
+
+# --- Manager / Orchestrator Decision Schema --------------------------------
+#
+# Phase 0.7: ManagerDecision was a plain @dataclass with no validation. The
+# LLM-driven manager persona occasionally produced malformed decisions
+# ("Missing action in manager decision" aborts). Migrating to Pydantic lets
+# us use the shared extract_json helper + Pydantic validation to either
+# recover the decision or fall through to a deterministic abort — no more
+# "the manager persona returned prose" class of failures.
+
+class ManagerDecision(BaseModel):
+    """Routing decision produced by the Manager persona.
+
+    `action` is a closed enum so the manager loop can dispatch on it
+    exhaustively without string typos causing silent fallthroughs. The
+    LLM is told to return ONLY this shape; the validator coerces / strips
+    anything else.
+    """
+    action: Literal[
+        "invoke_persona",
+        "route_back",
+        "complete",
+        "github_issue_created",
+        "abort",
+    ]
+    persona: Optional[str] = None
+    reason: str = ""
+    gaps_detected: List[Dict[str, Any]] = Field(default_factory=list)
+    retry_with_modified_prompt: Optional[str] = None
+    gap_context: Optional[str] = None  # crisp 2-4 bullet summary for route_back
+    gate_report: Optional[Dict[str, Any]] = None
+    confidence: Optional[float] = None  # 0.0-1.0, used by LLM-driven decisions
+    iteration: Optional[int] = None  # current iteration count when decision was made
+    # Phase 1.0: room + steward routing context. Lets the manager's decision
+    # be tagged with the room it came from and the steward who is
+    # responsible for first-line coordination there. Default values keep
+    # legacy decisions valid (everything was implicit in the planning room).
+    room: Optional[Literal["planning", "forge"]] = None
+    steward: Optional[str] = None  # name of the steward persona, if any
+
+
+# --- Phase 1.0: Room + Steward + HandoffBundle + CoherenceGateReport --------
+#
+# These four schemas are the structural primitives the Dual-Room design
+# calls for. They are Pydantic models (not @dataclass) so they participate
+# in the same validation, JSON-safe serialization, and gap-ledger flow
+# as ManagerDecision. They are *not yet wired into the orchestrator* —
+# they exist as the contract for the next phase. Review the shapes and
+# we will wire them in.
+
+
+class Room(BaseModel):
+    """A phase-bounded container of persona work.
+
+    A Room is a logical scope in which a Steward coordinates a small set
+    of personas. Rooms have:
+      - A name (planning, forge, plus future rooms like 'review' or 'qa').
+      - A small set of Personas that work in the room.
+      - A Steward (the Architect in Planning, the Integration Coordinator
+        in Forge) who is the first-line coordinator.
+      - A set of In/Out contracts describing what the room needs and
+        produces.
+      - A coherence gate that must pass before the room emits its bundle.
+    """
+    name: Literal["planning", "forge"]
+    description: str
+    personas: List[str] = Field(default_factory=list)
+    steward: str
+    inputs: List[str] = Field(default_factory=list)  # what the room needs to start
+    outputs: List[str] = Field(default_factory=list)  # what the room produces
+    coherence_gate: Optional[str] = None  # name of the gate (gate type)
+    # Recommended initial discovery order (flexible starting point — the
+    # manager/steward can adjust or run limited parallel work). Per the
+    # design: "Recommended Initial Discovery Order (flexible starting
+    # point — manager/steward can adjust or run limited parallel work)."
+    # Empty list means "no recommendation" — the steward picks.
+    preflight_order: List[str] = Field(default_factory=list)
+
+    def contains_persona(self, persona: str) -> bool:
+        return persona in self.personas
+
+    def ordered_personas(self) -> List[str]:
+        """Return personas in preflight order, with any unspecified ones
+        appended in their original `personas` list order. Useful for the
+        pre-flight loop, which wants an explicit list to iterate.
+
+        If `preflight_order` is empty, returns `personas` as-is.
+        """
+        if not self.preflight_order:
+            return list(self.personas)
+        seen = set()
+        ordered: List[str] = []
+        for p in self.preflight_order:
+            if p in self.personas and p not in seen:
+                ordered.append(p)
+                seen.add(p)
+        for p in self.personas:
+            if p not in seen:
+                ordered.append(p)
+                seen.add(p)
+        return ordered
+
+
+class Steward(BaseModel):
+    """A persona (or named coordinator) responsible for first-line routing
+    inside a Room.
+
+    Stewards are *not* gatekeepers — they don't block handoffs or make
+    safety-rail decisions. They're the named coordinator the manager
+    delegates to for routine work inside their room. Examples:
+      - Planning Steward: Architect Specialist (Architecture Owner + Integrator)
+      - Forge Steward: Integration Coordinator (Smoother of rough edges)
+
+    `capabilities` is a free-form list of things the steward can do that
+    the manager might want to delegate ("rich_bidirectional_pull",
+    "cross_artifact_review", "design_token_consistency").
+    """
+    name: str
+    room: str  # Room.name
+    persona_ref: str  # the actual persona name to invoke (e.g. "architect_specialist")
+    role_description: str
+    capabilities: List[str] = Field(default_factory=list)
+
+
+class CoherenceGateWaiver(BaseModel):
+    """A documented exception to a Coherence Gate failure.
+
+    When the gate fails but the room is allowed to proceed, a waiver
+    is recorded. The waiver has a `reason`, an `owner` (who is taking
+    responsibility for the risk), and a `risk_level`.
+    """
+    field: str  # which gate check failed
+    reason: str  # why we're proceeding anyway
+    owner: str  # who is taking responsibility
+    risk_level: Literal["low", "medium", "high", "critical"]
+    mitigation: Optional[str] = None  # what we'll do to reduce the risk
+
+
+class CoherenceGateReport(BaseModel):
+    """Result of running a Coherence Gate.
+
+    A gate has 5 inputs (per the design) and 5 outputs. We make the
+    outputs first-class fields so they can be persisted in the gap
+    ledger / blackboard without losing the gate context.
+    """
+    gate_name: str
+    passed: bool
+    blocking: List[str] = Field(default_factory=list)  # hard failures
+    warnings: List[str] = Field(default_factory=list)
+    waivers: List[CoherenceGateWaiver] = Field(default_factory=list)
+    artifact_coverage: Dict[str, bool] = Field(default_factory=dict)
+    # Fidelity score from the Architect (0.0-1.0). The gate refuses
+    # if this is below threshold (default 0.7) unless a waiver covers it.
+    fidelity_score: Optional[float] = None
+    fidelity_threshold: float = 0.7
+    # Free-form: any other room-level signals (e.g. open_questions_count,
+    # bidirectional_pull_count, design_token_consistency_score).
+    signals: Dict[str, Any] = Field(default_factory=dict)
+    evaluated_at: str = ""  # ISO timestamp; set by caller
+
+    def summarize(self) -> str:
+        if self.passed:
+            waiver_note = f" ({len(self.waivers)} waivers)" if self.waivers else ""
+            return f"PASS{waiver_note}"
+        return f"FAIL: {len(self.blocking)} blocking, {len(self.warnings)} warnings"
+
+
+class HandoffBundle(BaseModel):
+    """The structured bundle that crosses from one Room to the next.
+
+    Per the design, the bundle is the *first-class primitive* that
+    connects Planning to Forge. It carries:
+      - All planning artifacts + their rationale + open questions
+      - Known gaps with their target_persona
+      - The Coherence Gate result + any waivers
+      - Migration success criteria (from onboarding + memory)
+      - Optional human-review flag (set by the manager when risk is high)
+
+    The bundle is serialized to memory/<migration_id>/handoff_bundle.json
+    when the handoff ceremony completes, so the Forge Room has a single
+    well-typed input to start from.
+    """
+    bundle_id: str
+    migration_id: str
+    site_slug: str
+    from_room: Literal["planning", "forge"]  # expanded when new rooms ship
+    to_room: Literal["planning", "forge"]
+
+    # Artifact references (pointers into the per-migration blackboard)
+    site_understanding_id: Optional[str] = None
+    site_architecture_id: Optional[str] = None
+    content_recommendation_id: Optional[str] = None
+    visual_direction_id: Optional[str] = None
+    brand_spec: Optional[Dict[str, Any]] = None  # inlined — small and used everywhere
+
+    # Rationale and open questions from the Planning Room
+    planning_rationale: List[str] = Field(default_factory=list)
+    open_questions: List[Dict[str, Any]] = Field(default_factory=list)
+    # Each open question: {question, owner, eta, severity}
+
+    # Gaps known at handoff time, with target_persona so the Forge Room
+    # can route them efficiently.
+    #
+    # Why List[Dict[str, Any]] and not List[GapEntry] (Pydantic):
+    # Phase 0.7 ran a remediation experiment (skills/agentic/remediation.py)
+    # that compared the two shapes against a 3-gap bundle. Both produced
+    # identical outcomes on the happy path. Pydantic would surface bad
+    # data earlier — but only if GapEntry is strict enough to catch it.
+    # Currently GapEntry's `severity` is `str` (no Literal), so a typo
+    # like "kinda_high" passes Pydantic too. Until GapEntry tightens,
+    # dicts are the right choice: zero conversion overhead at the
+    # gap-ledger boundary, and the remediation logic is identical.
+    # When GapEntry grows a Literal["low","medium","high","critical"]
+    # on severity, revisit this decision.
+    known_gaps: List[Dict[str, Any]] = Field(default_factory=list)
+
+    # The Coherence Gate result (the design's "explicit lightweight review")
+    coherence_gate: Optional[CoherenceGateReport] = None
+
+    # Migration success criteria (from onboarding + memory lookups)
+    success_criteria: List[str] = Field(default_factory=list)
+
+    # If True, the manager has flagged this for human review because
+    # risk or novelty is high. The Forge Room can still proceed but
+    # the elyra_engineer / human will be looped in early.
+    requires_human_review: bool = False
+    human_review_reason: Optional[str] = None
+
+    # Provenance — when each artifact was created and which persona.
+    artifact_provenance: Dict[str, Dict[str, str]] = Field(default_factory=dict)
+    # artifact_provenance[artifact_name] = {created_at, persona, version}
+
+    handoff_at: str = ""  # ISO timestamp; set by HandoffCeremony
+
+    def to_memory_path(self) -> str:
+        """Where this bundle is persisted in the per-migration blackboard."""
+        return f"memory/migrations/{self.migration_id}/handoff_bundle.json"
+
+
+# --- Phase 1.1: Forge Room Artifacts (DataContracts, APIContracts, DeploySpec) ---
+#
+# The Forge Room used to be a single monolithic builder. Phase 1.1 splits
+# it into 5 specialized personas that produce 3 typed artifacts between
+# them, with the Integration Coordinator smoothing rough edges and
+# DevOps (Deployment Guardian) participating early.
+#
+# These schemas are the contracts. The persona modules reference them
+# when parsing LLM output; the Integration Coordinator uses them to
+# verify cross-layer consistency; and the orchestrator persists them
+# into the per-migration blackboard so the engineer can review them.
+
+
+class DataContract(BaseModel):
+    """A typed data model. Produced by the Data Engineer.
+
+    Represents one table / collection / content-type in the target
+    architecture, with fields, types, and a CMS/data-sync note.
+    """
+    name: str  # e.g. "BlogPost", "Product", "LandingPage"
+    kind: Literal["static", "cms", "database", "file"] = "static"
+    fields: List[Dict[str, str]] = Field(default_factory=list)
+    # Each field: {name, type, required, notes}
+    relationships: List[str] = Field(default_factory=list)
+    # Other data contracts this one references (by name)
+    cms_sync: Optional[str] = None
+    # Free-form note on how this model is populated from the source
+    # (e.g. "synced from Wix CMS via fetch at build time")
+    notes: str = ""
+
+
+class DataContracts(BaseModel):
+    """The bundle of all data contracts for a migration. One per Forge Room run."""
+    migration_id: str
+    site_slug: str
+    contracts: List[DataContract] = Field(default_factory=list)
+    # Free-form notes about the data architecture overall.
+    data_architecture_summary: str = ""
+    reasoning_trace: List[str] = Field(default_factory=list)
+    produced_at: str = ""
+    produced_by: str = ""  # persona name
+
+
+class APIEndpoint(BaseModel):
+    """A single API endpoint. Produced by the Backend Architect."""
+    method: Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
+    path: str
+    purpose: str
+    request_schema: Optional[Dict[str, Any]] = None
+    response_schema: Optional[Dict[str, Any]] = None
+    auth_required: bool = False
+    notes: str = ""
+
+
+class APIContracts(BaseModel):
+    """The bundle of API contracts for a migration. One per Forge Room run.
+
+    For most static-site migrations this is mostly empty (the site
+    is serverless) — the schema supports it for the cases where the
+    customer has a backend, an API gateway, or webhooks.
+    """
+    migration_id: str
+    site_slug: str
+    base_url: Optional[str] = None
+    auth_strategy: Optional[str] = None
+    # E.g. "JWT via Supabase", "API key in header", "Public read-only"
+    endpoints: List[APIEndpoint] = Field(default_factory=list)
+    business_logic_summary: str = ""
+    reasoning_trace: List[str] = Field(default_factory=list)
+    produced_at: str = ""
+    produced_by: str = ""
+
+
+class DeploySpec(BaseModel):
+    """The deploy specification. Produced by the DevOps Engineer (Deployment
+    Guardian) EARLY in the Forge Room, so Backend and Data decisions
+    can be informed by it.
+
+    Per the design: "DevOps Engineer (Deployment Guardian) — participates
+    early. Injects deployment, scaling, monitoring, security, and
+    operational constraints into Backend and data decisions from the
+    start. Owns IaC, CI/CD setup, preview environments, and
+    'deployment-ready by design'."
+    """
+    migration_id: str
+    site_slug: str
+    platform: Literal["fly", "vercel", "netlify", "cloudflare_pages", "static_hosting", "other"] = "fly"
+    # E.g. "fly.io" with the machine size in target_spec, "vercel" with
+    # the framework preset, "static_hosting" with a CDN target.
+    target_spec: Dict[str, Any] = Field(default_factory=dict)
+    # Platform-specific settings (machine size, region, env vars list, etc.)
+    scaling: Dict[str, Any] = Field(default_factory=dict)
+    # E.g. {"min_instances": 1, "max_instances": 3, "cpu_kind": "shared"}
+    monitoring: List[str] = Field(default_factory=list)
+    # E.g. ["uptime_check", "error_rate_alert", "lighthouse_on_deploy"]
+    security: List[str] = Field(default_factory=list)
+    # E.g. ["https_only", "hsts_enabled", "cors_locked", "secrets_in_env"]
+    ci_cd: List[str] = Field(default_factory=list)
+    # E.g. ["github_actions", "preview_env_on_pr", "prod_deploy_on_main"]
+    # Free-form notes (e.g. "this site uses long-lived images that
+    # need a CDN cache; choose Cloudflare with cache_rules: 1y for /static/...")
+    notes: str = ""
+    reasoning_trace: List[str] = Field(default_factory=list)
+    produced_at: str = ""
+    produced_by: str = ""
+
+
+class IntegrationStatus(BaseModel):
+    """Output of the Integration Coordinator. Captures cross-layer
+    consistency checks and final BuildManifest update.
+
+    Per the design: "Integration Coordinator (Forge Steward / Go-Between
+    + Smoother of Rough Edges). Receives outputs from the layered
+    specialists. Smooths missed connections and rough edges. Maintains
+    lightweight integration standards and resolves cross-layer friction.
+    Maintains the evolving BuildManifest."
+    """
+    migration_id: str
+    site_slug: str
+    cross_layer_checks_run: List[str] = Field(default_factory=list)
+    # E.g. ["api_path_consistent_with_frontend_routes", "design_tokens_applied_everywhere",
+    #       "cms_models_match_frontend_data_fetchers", "deploy_env_vars_match_backend_env"]
+    issues_found: List[str] = Field(default_factory=list)
+    # Crisp description of each cross-layer friction the Coordinator resolved.
+    resolutions: List[str] = Field(default_factory=list)
+    # Crisp description of each resolution.
+    final_build_manifest_id: Optional[str] = None
+    # The ID of the final, Integration-cleaned BuildManifest artifact.
+    reasoning_trace: List[str] = Field(default_factory=list)
+    produced_at: str = ""
+    produced_by: str = ""

@@ -20,8 +20,16 @@ import subprocess
 import json
 import tempfile
 import os
+import sys
 from pathlib import Path
 from typing import Optional
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from memory.gap_ledger import log_gap
+from skills.agentic.json_extract import extract_json, JSONExtractionError
+from skills.agentic.kilo_callbacks import make_timeout_callback
+from skills.agentic.prompt_budget import compact_site_understanding
+from tools.kilo import invoke_kilo_safe
 
 from models.site_schemas import SiteUnderstanding, SiteArchitecture
 
@@ -32,19 +40,31 @@ PERSONA_PATH = Path("registry/personas/architect_specialist.md")
 
 
 def build_architect_prompt(site: SiteUnderstanding) -> str:
-    """Build the prompt that Kilo CLI will execute."""
+    """Build the prompt that Kilo CLI will execute.
+
+    Phase 0.6: uses compact view of SiteUnderstanding. Full JSON is
+    available at memory/site_understandings/[id].json for the persona
+    to re-read if it needs per-page detail.
+    """
     persona = PERSONA_PATH.read_text() if PERSONA_PATH.exists() else ""
 
     schema_json = json.dumps(SiteArchitecture.model_json_schema(), indent=2)
-    site_json = site.model_dump_json(indent=2)
+    site_compact = compact_site_understanding(site)
+    site_json = json.dumps(
+        site_compact if isinstance(site_compact, dict) else site_compact,
+        indent=2,
+        default=str,
+    )
 
     return f"""{persona}
 
 ## Task
-Analyze the following SiteUnderstanding and produce a SiteArchitecture blueprint.
+Analyze the following SiteUnderstanding (compact view) and produce a SiteArchitecture blueprint.
 
-## Input SiteUnderstanding
+## Input SiteUnderstanding (compact view)
 {site_json}
+
+_Full SiteUnderstanding JSON is available at: `memory/site_understandings/[site_id].json`. Re-read via your tools if you need per-page component detail beyond the summary above._
 
 ## Output Contract
 Output ONLY valid JSON matching this schema — no markdown, no commentary,
@@ -57,17 +77,10 @@ Begin architecture analysis now."""
 def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]:
     """Extract JSON object from Kilo CLI --format json output.
 
-    Kilo outputs NDJSON events. Find the last text event and extract JSON from it.
-    Returns (json_str, last_text) for debugging.
+    Returns (json_str, last_text) for debugging. Returns (None, last_text)
+    on extraction failure — callers MUST treat None as a hard error.
+    Thin shim over the shared extractor.
     """
-    stdout = stdout.strip()
-
-    try:
-        json.loads(stdout)
-        return stdout, None
-    except json.JSONDecodeError:
-        pass
-
     last_text = None
     for line in stdout.splitlines():
         line = line.strip()
@@ -75,40 +88,17 @@ def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]
             continue
         try:
             event = json.loads(line)
-            if event.get("type") == "text":
-                last_text = event["part"].get("text", "")
+            if isinstance(event, dict) and event.get("type") == "text":
+                t = event.get("part", {}).get("text", "")
+                if isinstance(t, str):
+                    last_text = t
         except json.JSONDecodeError:
             continue
-
-    if last_text:
-        last_text = last_text.strip()
-        try:
-            json.loads(last_text)
-            return last_text, last_text
-        except json.JSONDecodeError:
-            pass
-
-        first_brace = last_text.find("{")
-        last_brace = last_text.rfind("}")
-        if first_brace != -1 and last_brace != -1 and last_brace >= first_brace:
-            json_str = last_text[first_brace : last_brace + 1]
-            try:
-                json.loads(json_str)
-                return json_str, last_text
-            except json.JSONDecodeError:
-                pass
-
-    first_brace = stdout.find("{")
-    last_brace = stdout.rfind("}")
-    if first_brace == -1 or last_brace == -1 or last_brace <= first_brace:
-        return None, None
-
-    json_str = stdout[first_brace : last_brace + 1]
     try:
-        json.loads(json_str)
-        return json_str, None
-    except json.JSONDecodeError:
-        return None, None
+        obj = extract_json(stdout)
+        return json.dumps(obj), last_text
+    except JSONExtractionError:
+        return None, last_text
 
 
 def parse_and_validate(raw_json: str) -> Optional[SiteArchitecture]:
@@ -128,6 +118,8 @@ def parse_and_validate(raw_json: str) -> Optional[SiteArchitecture]:
 
 def load_site_understanding(site_id: str) -> Optional[SiteUnderstanding]:
     """Load a saved SiteUnderstanding from memory directory."""
+    if not site_id:
+        return None
     site_path = MEMORY_DIR / f"{site_id}.json"
     if not site_path.exists():
         site_path = Path(site_id)
@@ -137,6 +129,29 @@ def load_site_understanding(site_id: str) -> Optional[SiteUnderstanding]:
         return SiteUnderstanding(**data)
     except Exception as e:
         print(f"[ERROR] Failed to load SiteUnderstanding: {e}")
+        return None
+
+
+def load_site_architecture(arch_id: str) -> Optional[SiteArchitecture]:
+    """Load a saved SiteArchitecture from memory directory.
+
+    Companion to load_site_understanding. Both are now used by the
+    Phase 1.1 Forge Room personas (data_engineer, backend_architect,
+    frontend_architect, integration_coordinator, deploy_specialist)
+    which read their upstream artifacts from the blackboard rather
+    than receiving them as kwargs.
+    """
+    if not arch_id:
+        return None
+    arch_path = OUTPUT_DIR / f"{arch_id}.json"
+    if not arch_path.exists():
+        arch_path = Path(arch_id)
+    try:
+        with open(arch_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return SiteArchitecture(**data)
+    except Exception as e:
+        print(f"[ERROR] Failed to load SiteArchitecture: {e}")
         return None
 
 
@@ -194,72 +209,63 @@ def architect(site_id: str) -> Optional[SiteArchitecture]:
     print(f"\n[ARCHITECT] Analyzing {site.url} via Kilo CLI")
     print("=" * 60)
 
-    try:
-        import platform
-        if platform.system() == "Windows":
-            node_exe = (
-                "C:\\Program Files\\nodejs\\node.exe"
-                if Path("C:\\Program Files\\nodejs\\node.exe").exists()
-                else "node"
-            )
-            kilo_bin_local = (
-                Path(__file__).resolve().parents[2]
-                / "node_modules"
-                / "@kilocode"
-                / "cli"
-                / "bin"
-                / "kilo"
-            )
-            kilo_bin_fallback = Path(
-                "C:\\Users\\micha\\AppData\\Roaming\\npm\\node_modules\\@kilocode\\cli\\bin\\kilo"
-            )
-            kilo_bin = kilo_bin_fallback
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".txt", delete=False, encoding="utf-8"
-            ) as f:
-                f.write(prompt)
-                prompt_file = f.name
+    # Phase 0.5: route through invoke_kilo_safe so prompt-size + timeout
+    # guard-rails apply uniformly.
+    result = invoke_kilo_safe(
+        prompt=prompt,
+        context={"site_id": site_id, "url": site.url},
+        working_dir=".",
+        persona="architect_specialist",
+        timeout=300,
+        on_timeout=make_timeout_callback(
+            persona="architect_specialist",
+            migration_id_fn=lambda: site_id,
+            default_timeout_s=300,
+        ),
+    )
 
-            try:
-                result = subprocess.run(
-                    [node_exe, str(kilo_bin), "run", "--format", "json", "--auto", "--", f"@{prompt_file}"],
-                    capture_output=True,
-                    encoding="utf-8",
-                    errors="replace",
-                    timeout=300,
-                )
-            finally:
-                try:
-                    os.unlink(prompt_file)
-                except Exception:
-                    pass
-        else:
-            result = subprocess.run(
-                ["kilo", "run", "--format", "json", "--auto", "--", prompt],
-                capture_output=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=300,
-            )
-    except subprocess.TimeoutExpired:
-        print("[ERROR] Kilo CLI timed out after 5 minutes")
-        return None
-    except FileNotFoundError:
-        print("[ERROR] 'kilo' command not found. Is Kilo CLI installed and in PATH?")
+    if not result.success:
+        print(f"[ERROR] Kilo invocation failed: {result.errors}")
         return None
 
-    stdout = result.stdout or ""
-
+    stdout = result.summary or ""
     print(f"[KILO] Output received ({len(stdout)} chars)")
 
-    json_str, last_text = extract_json_from_output(stdout)
-    if not json_str:
-        print("[ERROR] Could not extract JSON from Kilo output")
-        lines = result.stdout.splitlines()
+    # Track last_text for debug parity.
+    last_text = None
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+            if isinstance(event, dict) and event.get("type") == "text":
+                t = event.get("part", {}).get("text", "")
+                if isinstance(t, str):
+                    last_text = t
+        except json.JSONDecodeError:
+            continue
+
+    try:
+        data = extract_json(stdout)
+    except JSONExtractionError as e:
+        print(f"[ERROR] Could not extract JSON from Kilo output: {e.reason}")
+        lines = stdout.splitlines()
         print(f"[KILO] Got {len(lines)} NDJSON events")
         if last_text:
             print(f"[TEXT] Last text event: {last_text[:500]}")
+        log_gap(
+            migration_id=site_id,
+            gap_type="gate_failure",
+            source_persona="architect_specialist",
+            target_persona="architect_specialist",
+            description=f"Could not extract SiteArchitecture JSON from Kilo output: {e.reason}",
+            suggested_fix="Check Kilo output format and prompt instructions",
+            severity="high",
+        )
         return None
+
+    json_str = json.dumps(data)
 
     validated = parse_and_validate(json_str)
     if validated:
@@ -271,6 +277,15 @@ def architect(site_id: str) -> Optional[SiteArchitecture]:
         save_site_architecture(validated, site_id)
     else:
         print("[ERROR] JSON parsed but failed schema validation")
+        log_gap(
+            migration_id=site_id,
+            gap_type="gate_failure",
+            source_persona="architect_specialist",
+            target_persona="architect_specialist",
+            description="SiteArchitecture JSON parsed but failed Pydantic schema validation",
+            suggested_fix="Check that Kilo produces valid SiteArchitecture JSON per schema",
+            severity="high",
+        )
 
     return validated
 

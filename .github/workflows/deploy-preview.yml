@@ -12,8 +12,6 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
-  FLY_REGION: 'lax'
-  FLY_APP_SUFFIX: 'preview'
 
 permissions:
   contents: read
@@ -22,6 +20,8 @@ permissions:
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 1: Build + Lighthouse Audit (parallel matrix)
+  # Default platform: Cloudflare. Fly.io fallback lives in deploy-flyio-preview.yml
+  # and is triggered only when the project has been re-architected to fly-io.
   # ─────────────────────────────────────────────────────────────────────────────
   build-and-audit:
     name: Build & Audit
@@ -64,7 +64,7 @@ jobs:
         run: npm run build
 
       # ─────────────────────────────────────────────────────────────────────
-      # Kilo + deploy_specialist for Fly.io deployment
+      # Kilo + deploy_specialist for Cloudflare deploy
       # ─────────────────────────────────────────────────────────────────────
       - name: Check for Kilo CLI
         id: check-kilo
@@ -75,84 +75,76 @@ jobs:
             echo "kilo-available=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Deploy via Kilo + deploy_specialist (Fly.io MCP)
+      - name: Deploy via Kilo + deploy_specialist (Cloudflare MCP)
         id: deploy
         if: steps.check-kilo.outputs.kilo-available == 'true'
         env:
           SITE_SLUG: ${{ github.head_ref || github.ref_name }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          # Sanitize branch name for Fly app naming
+          # Sanitize branch name for Cloudflare Workers project naming
           SAFE_BRANCH=$(echo "${{ github.head_ref || github.ref_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | head -c 30)
-          APP_NAME="elyra-${SAFE_BRANCH}"
-          
-          # Build prompt for Kilo deploy_specialist persona
-          PROMPT="Deploy the built site at . to Fly.io as a preview app.
-          
-App name: ${APP_NAME}
-Organization: personal
-Region: lax
-TTL: 7 days
+          PROJECT_NAME="elyra-${SAFE_BRANCH}"
+          PREVIEW_URL="https://${PROJECT_NAME}.${CLOUDFLARE_ACCOUNT_ID}.workers.dev"
 
-Using Fly.io MCP tools:
-1. Create Fly app: fly apps create ${APP_NAME} (org: personal, region: lax)
-   - If app already exists, get existing app
-2. Deploy: fly deploy --remote-only from current directory
-   - Requires fly.toml or Dockerfile in the project directory
-3. Get the deployed app status and .fly.dev URL
+          # Build prompt for Kilo deploy_specialist persona
+          PROMPT="Deploy the built site at . to Cloudflare as a preview Worker.
+
+Project name: ${PROJECT_NAME}
+Account ID: ${CLOUDFLARE_ACCOUNT_ID}
+Substrate: workers (default; switch to workers-containers only if the project declares it in wrangler.toml)
+
+Using Cloudflare MCP tools:
+1. Ensure account-level resources exist (D1, R2, KV, Vectorize bindings per wrangler.toml) — apply infra/cloudflare/ if needed.
+2. Run: wrangler deploy (remote build) from the project directory.
+   - Requires wrangler.toml or wrangler.jsonc at the project root.
+   - All bindings, vars, and Secret Store references must already be declared.
+3. Return the deployment version ID and the *.workers.dev URL.
 
 Return ONLY valid JSON:
 {
   \"success\": true/false,
-  \"app_name\": \"${APP_NAME}\",
-  \"preview_url\": \"https://${APP_NAME}.fly.dev\",
+  \"project_name\": \"${PROJECT_NAME}\",
+  \"preview_url\": \"${PREVIEW_URL}\",
   \"deployed_at\": \"ISO timestamp\",
+  \"version_id\": \"...\",
   \"errors\": []
 }"
 
           # Run Kilo with deploy_specialist persona
           kilo run --persona registry/personas/deploy_specialist.md --format json -- -- "${PROMPT}" || echo '{"success": false}'
-          
-          echo "preview-url=https://${APP_NAME}.fly.dev" >> $GITHUB_OUTPUT
-          echo "staging-url=https://${APP_NAME}.fly.dev" >> $GITHUB_OUTPUT
 
-      # Fallback: direct Fly CLI if Kilo not available
-      - name: Setup Fly CLI (fallback)
-        if: steps.check-kilo.outputs.kilo-available != 'true'
-        uses: superfly/flyctl-actions/setup-flyctl@master
-        with:
-          api-token: ${{ secrets.FLY_API_TOKEN }}
+          echo "preview-url=${PREVIEW_URL}" >> $GITHUB_OUTPUT
+          echo "staging-url=${PREVIEW_URL}" >> $GITHUB_OUTPUT
 
-      - name: Generate Fly app name (fallback)
+      # Fallback: direct wrangler deploy if Kilo not available
+      - name: Setup Wrangler (fallback)
         if: steps.check-kilo.outputs.kilo-available != 'true'
-        id: fly-name
+        run: npm install --no-save wrangler@latest
+
+      - name: Generate Cloudflare project name (fallback)
+        if: steps.check-kilo.outputs.kilo-available != 'true'
+        id: cf-name
         run: |
           SAFE_BRANCH=$(echo "${{ github.head_ref || github.ref_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | head -c 30)
-          echo "app-name=elyra-${SAFE_BRANCH}" >> $GITHUB_OUTPUT
+          echo "project-name=elyra-${SAFE_BRANCH}" >> $GITHUB_OUTPUT
 
-      - name: Deploy to Fly.io Preview (fallback)
+      - name: Deploy to Cloudflare Preview (fallback)
         if: steps.check-kilo.outputs.kilo-available != 'true'
         id: deploy-fallback
-        uses: superfly/flyctl-actions/deploy-flyctl@master
-        with:
-          api-token: ${{ secrets.FLY_API_TOKEN }}
-          args: --remote-only
         env:
-          FLY_APP: ${{ steps.fly-name.outputs.app-name }}
-          FLY_REGION: ${{ env.FLY_REGION }}
-        continue-on-error: true
-
-      - name: Get Fly app status (fallback)
-        if: steps.check-kilo.outputs.kilo-available != 'true'
-        id: fly-status
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          flyctl status --app ${{ steps.fly-name.outputs.app-name }} --json || echo '{}'
+          npx wrangler deploy --name "elyra-${{ steps.cf-name.outputs.project-name }}" --remote
         continue-on-error: true
 
       - name: Set output staging URL (fallback)
         if: steps.check-kilo.outputs.kilo-available != 'true'
         id: staging-url-fallback
         run: |
-          URL="https://${{ steps.fly-name.outputs.app-name }}.fly.dev"
+          URL="https://elyra-${{ steps.cf-name.outputs.project-name }}.${{ vars.CLOUDFLARE_ACCOUNT_ID }}.workers.dev"
           echo "staging-url=$URL" >> $GITHUB_OUTPUT
           echo "preview-url=$URL" >> $GITHUB_OUTPUT
         continue-on-error: true
@@ -161,7 +153,7 @@ Return ONLY valid JSON:
         if: success()
         uses: treosh/lighthouse-ci-action@v11
         with:
-          urls: ${{ steps.deploy.outputs.staging-url || 'https://placeholder.fly.dev' }}
+          urls: ${{ steps.deploy.outputs.staging-url || 'https://placeholder.workers.dev' }}
           budgetPath: ./lighthouse-budget.json
           uploadArtifacts: true
           temporaryPublicStorage: true
@@ -191,7 +183,7 @@ Return ONLY valid JSON:
             const status = ${{ needs.build-and-audit.result }} === 'success' ? '✅ Deployed' : '⚠️ Deploy failed';
 
             const comment = `
-            ## ${status} — Preview Available
+            ## ${status} — Preview Available (Cloudflare)
 
             **Preview URL:** ${previewUrl || 'Pending...'}
             **Branch:** \`${{ github.head_ref || github.ref_name }}\`
@@ -202,7 +194,7 @@ Return ONLY valid JSON:
             | Lighthouse | See artifacts |
 
             ---
-            *This preview will be automatically deleted after 7 days.*
+            *This preview is hosted on Cloudflare Workers. It will be removed when the preview branch is deleted.*
             `;
 
             // Find existing comment

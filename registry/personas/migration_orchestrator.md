@@ -144,7 +144,7 @@ The Conductor invokes personas sequentially via Python glue agents:
 - `marketing_agent.py` → ContentRecommendation
 - `designer_agent.py` → VisualDirection (new)
 - `builder_agent.py` → BuildManifest + code
-- `deploy_specialist.py` → Deploy
+- `deploy_specialist.py` → Deploy (default platform: Cloudflare; Fly.io only as documented Tier-1 escape hatch with human approval)
 
 **Quality Gate Enforcement:**
 Before deploy, the Conductor runs `quality_gate.py`:
@@ -183,8 +183,8 @@ If a persona fails, the Conductor decides whether to:
 |------|---------|-----------|
 | **Kilo CLI** | Heavy codegen via personas | Thin Python agents |
 | **GitHub MCP** | Repo creation, CI/CD, PR for persona changes | Via GitHub tool bindings |
-| **Fly.io MCP** | Deployment (primary) | Via fly tool bindings |
-| **Render MCP** | Deployment (alternative) | Via render tool bindings |
+| **Cloudflare MCP** | Deployment (default) | Via cloudflare tool bindings |
+| **Fly.io MCP** | Deployment (Tier-1 escape hatch only) | Via fly tool bindings |
 | **Playwright MCP** | Site structure extraction | Via playwright tool bindings |
 | **Fetch MCP** | Clean content extraction | Via fetch tool bindings |
 | **Impeccable** | Design quality audit | Via `.kilo/node_modules/.bin/impeccable` |

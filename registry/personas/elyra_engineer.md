@@ -67,6 +67,17 @@ From `BuildManifest.ui_polish_changes`:
 - Whether polish changes indicate a BrandSpec gap (wrong default) or Builder implementation gap
 - Self-critique severity patterns (high severity = systematic Builder issue)
 
+### 5. Deployment-Platform Outcome Analysis
+
+From `BuildManifest.deployment_decisions` and `DeployResult.platform`:
+- `platform` distribution: cloudflare vs fly-io per run
+- Tier-1 trigger frequency by name (long-running-compute, region-pinned-tcp, large-postgres, legacy-runtime) — high frequency on a single trigger means the architect's detection thresholds need tuning
+- Tier-1 override rate (user chose Cloudflare despite triggers): high override rate means the trigger thresholds are too tight
+- Re-architect-to-Fly.io rate vs. approve-Cloudflare-anyway rate
+- Fly.io build failure rate after re-architect (signals that the re-architect contract is producing misconfigured Fly apps)
+
+Surface as a `deployment_outcomes` block in the Elyra Engineer Report (see Output schema). These signals feed the deploy_specialist charter's tier-1 detection rules.
+
 ---
 
 ## Output: Elyra Engineer Report
@@ -100,6 +111,26 @@ From `BuildManifest.ui_polish_changes`:
     "violation_rate": 0.0,
     "common_violations": [],
     "brand_spec_gaps": []
+  },
+  "deployment_outcomes": {
+    "platform_distribution": {"cloudflare": 0, "fly-io": 0},
+    "tier1_trigger_frequency": {
+      "long-running-compute": 0,
+      "region-pinned-tcp": 0,
+      "large-postgres": 0,
+      "legacy-runtime": 0
+    },
+    "tier1_override_rate": 0.0,
+    "rearchitect_to_fly_io_rate": 0.0,
+    "fly_io_build_failure_rate": 0.0,
+    "signals": [
+      {
+        "name": "string",
+        "description": "e.g. 'legacy-runtime triggered in 4 of last 10 runs — consider loosening detection threshold'",
+        "affected_persona": "deploy_specialist | architect_specialist",
+        "severity": "high | medium | low"
+      }
+    ]
   },
   "persona_improvement_candidates": [
     {

@@ -29,6 +29,14 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from memory.gap_ledger import log_gap
+from skills.agentic.json_extract import extract_json, JSONExtractionError
+from skills.agentic.kilo_callbacks import make_timeout_callback
+from skills.agentic.prompt_budget import (
+    compact_site_understanding,
+    compact_content_recommendation,
+    approx_chars,
+)
+from tools.kilo import invoke_kilo_safe
 
 from models.site_schemas import (
     SiteUnderstanding,
@@ -59,11 +67,23 @@ def build_designer_prompt(
     site_slug: str,
     gap_context: Optional[str] = None,
 ) -> str:
-    """Build the prompt that Kilo CLI will execute. When gap_context is provided, inject it as prioritized rework instructions."""
+    """Build the prompt that Kilo CLI will execute.
+
+    Phase 0.6: uses compact views of the upstream artifacts (SiteUnderstanding
+    and ContentRecommendation) so the prompt stays under the 14K persona
+    budget. The full artifacts remain on disk and are addressable by their
+    migration_id / timestamp IDs — the persona can re-read them if it
+    needs per-page detail beyond the summary.
+    """
     persona = PERSONA_PATH.read_text() if PERSONA_PATH.exists() else ""
 
-    site_json = site.model_dump_json(indent=2)
-    rec_json = recommendation.model_dump_json(indent=2)
+    site_compact = compact_site_understanding(site)
+    rec_compact = compact_content_recommendation(recommendation, keep_brand=True)
+
+    # compact_* helpers now produce JSON-safe dicts (Phase 0.6.1).
+    site_json = json.dumps(site_compact, indent=2, default=str)
+    rec_json = json.dumps(rec_compact, indent=2, default=str)
+    schema_json = json.dumps(VisualDirection.model_json_schema(), indent=2)
 
     gap_section = ""
     if gap_context:
@@ -81,23 +101,21 @@ Apply these changes first. Produce a new versioned VisualDirection (_vN.json) re
 Produce a VisualDirection artifact that the Builder will use as the authoritative visual specification.
 {gap_section}
 
-## Input SiteUnderstanding
+## Input SiteUnderstanding (compact view)
 {site_json}
 
-## Input ContentRecommendation (with BrandSpec)
+_Full SiteUnderstanding JSON is available at: `memory/site_understandings/[site_id].json`. Re-read via your tools if you need per-page component detail beyond the summary above._
+
+## Input ContentRecommendation (compact view, with BrandSpec)
 {rec_json}
 
 ## Output
 Your final response must include:
-1. A complete VisualDirection JSON
+1. A complete VisualDirection JSON matching the schema below
 2. Design reasoning traceable to BrandSpec tokens
 
 ## VisualDirection Schema
-Use this exact schema for the VisualDirection:
-{json.dumps(VisualDirection.model_json_schema(), indent=2)}
-
-## BrandSpec for this Site
-{recommendation.brand_spec.model_dump_json(indent=2) if recommendation.brand_spec else '{}'}
+{schema_json}
 
 ## Guidance
 - Derive all decisions from BrandSpec tokens + Stitch output (if available)
@@ -113,17 +131,10 @@ Begin design now."""
 def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]:
     """Extract JSON object from Kilo CLI --format json output.
 
-    Kilo outputs NDJSON events. Find the last text event and extract JSON from it.
-    Returns (json_str, last_text) for debugging.
+    Returns (json_str, last_text) for debugging. Raises JSONExtractionError
+    via the underlying extract_json() when no valid object can be found.
+    Kept as a thin shim for backward compatibility with existing callers.
     """
-    stdout = stdout.strip()
-
-    try:
-        json.loads(stdout)
-        return stdout, None
-    except json.JSONDecodeError:
-        pass
-
     last_text = None
     for line in stdout.splitlines():
         line = line.strip()
@@ -131,40 +142,17 @@ def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]
             continue
         try:
             event = json.loads(line)
-            if event.get("type") == "text":
-                last_text = event["part"].get("text", "")
+            if isinstance(event, dict) and event.get("type") == "text":
+                t = event.get("part", {}).get("text", "")
+                if isinstance(t, str):
+                    last_text = t
         except json.JSONDecodeError:
             continue
-
-    if last_text:
-        last_text = last_text.strip()
-        try:
-            json.loads(last_text)
-            return last_text, last_text
-        except json.JSONDecodeError:
-            pass
-
-        first_brace = last_text.find("{")
-        last_brace = last_text.rfind("}")
-        if first_brace != -1 and last_brace != -1 and last_brace >= first_brace:
-            json_str = last_text[first_brace : last_brace + 1]
-            try:
-                json.loads(json_str)
-                return json_str, last_text
-            except json.JSONDecodeError:
-                pass
-
-    first_brace = stdout.find("{")
-    last_brace = stdout.rfind("}")
-    if first_brace == -1 or last_brace == -1 or last_brace <= first_brace:
-        return None, None
-
-    json_str = stdout[first_brace : last_brace + 1]
     try:
-        json.loads(json_str)
-        return json_str, None
-    except json.JSONDecodeError:
-        return None, None
+        obj = extract_json(stdout)
+        return json.dumps(obj), last_text
+    except JSONExtractionError:
+        return None, last_text
 
 
 def parse_visual_direction(
@@ -248,6 +236,29 @@ def load_content_recommendation(rec_id: str) -> Optional[ContentRecommendation]:
     except Exception as e:
         print(f"[ERROR] Failed to load ContentRecommendation: {e}")
         return None
+
+
+def load_visual_direction(site_slug: str) -> Optional[VisualDirection]:
+    """Load the latest VisualDirection for a given site_slug.
+
+    Used by the Phase 1.1 frontend_architect persona which reads its
+    upstream artifacts from the blackboard. Returns the most recent
+    VisualDirection JSON under memory/visual_specs/<site_slug>/.
+    """
+    spec_dir = VISUAL_SPEC_DIR / site_slug
+    if not spec_dir.exists():
+        return None
+    json_files = sorted(spec_dir.glob("*.json"), reverse=True)
+    for json_file in json_files:
+        try:
+            with open(json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            vd = VisualDirection(**data)
+            if vd.primary_change or vd.rationale:
+                return vd
+        except Exception:
+            continue
+    return None
 
 
 def save_visual_direction(
@@ -346,102 +357,76 @@ def design(site_id: str, rec_id: str, gap_context: Optional[str] = None) -> Opti
         print(f"[BRAND] Motion: {recommendation.brand_spec.motion_philosophy}")
         print(f"[BRAND] Primary: {recommendation.brand_spec.primary_color}")
 
-    try:
-        import platform
-        if platform.system() == "Windows":
-            node_exe = (
-                "C:\\Program Files\\nodejs\\node.exe"
-                if Path("C:\\Program Files\\nodejs\\node.exe").exists()
-                else "node"
-            )
-            kilo_bin_fallback = Path(
-                "C:\\Users\\micha\\AppData\\Roaming\\npm\\node_modules\\@kilocode\\cli\\bin\\kilo"
-            )
-            kilo_bin = kilo_bin_fallback
+    # Phase 0.5: route through invoke_kilo_safe so prompt-size + timeout
+    # guard-rails apply uniformly.
+    result = invoke_kilo_safe(
+        prompt=prompt,
+        context={"site_id": site_id, "rec_id": rec_id, "url": site.url},
+        working_dir=".",
+        persona="ui_designer",
+        timeout=120,
+        on_timeout=make_timeout_callback(
+            persona="ui_designer",
+            migration_id_fn=lambda: site_id,
+            default_timeout_s=120,
+        ),
+    )
 
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".txt", delete=False, encoding="utf-8"
-            ) as f:
-                f.write(prompt)
-                prompt_file = f.name
-
-            try:
-                result = subprocess.run(
-                    [node_exe, str(kilo_bin), "run", "--format", "json", "--auto", "--", f"@{prompt_file}"],
-                    capture_output=True,
-                    encoding="utf-8",
-                    errors="replace",
-                    timeout=600,
-                )
-            finally:
-                try:
-                    os.unlink(prompt_file)
-                except Exception:
-                    pass
-        else:
-            result = subprocess.run(
-                ["kilo", "run", "--format", "json", "--auto", "--", prompt],
-                capture_output=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=600,
+    if not result.success:
+        print(f"[ERROR] Kilo invocation failed: {result.errors}")
+        if any("not found" in e.lower() for e in result.errors):
+            log_gap(
+                migration_id=site_id,
+                gap_type="gate_failure",
+                source_persona="ui_designer",
+                target_persona="ui_designer",
+                description="'kilo' command not found in PATH",
+                suggested_fix="Ensure Kilo CLI is installed and in system PATH",
+                severity="high",
             )
-    except subprocess.TimeoutExpired:
-        print("[ERROR] Kilo CLI timed out after 10 minutes")
-        log_gap(
-            migration_id=site_id,
-            gap_type="gate_failure",
-            source_persona="ui_designer",
-            description="Kilo CLI timed out after 10 minutes during design phase",
-            suggested_fix="Increase timeout or simplify design scope",
-            severity="medium",
-        )
-        return None
-    except FileNotFoundError:
-        print("[ERROR] 'kilo' command not found. Is Kilo CLI installed and in PATH?")
-        log_gap(
-            migration_id=site_id,
-            gap_type="gate_failure",
-            source_persona="ui_designer",
-            description="'kilo' command not found in PATH",
-            suggested_fix="Ensure Kilo CLI is installed and in system PATH",
-            severity="high",
-        )
         return None
 
-    if result.returncode != 0:
-        print(f"[ERROR] Kilo CLI exited with code {result.returncode}")
-        print(f"[STDERR] {result.stderr[:500] if result.stderr else ''}")
-        log_gap(
-            migration_id=site_id,
-            gap_type="gate_failure",
-            source_persona="ui_designer",
-            description=f"Kilo CLI exited with code {result.returncode}: {result.stderr[:200] if result.stderr else 'no stderr'}",
-            suggested_fix="Check Kilo CLI configuration and prompt syntax",
-            severity="high",
-        )
-        return None
-
-    stdout = result.stdout or ""
-
+    stdout = result.summary or ""
     print(f"[KILO] Output received ({len(stdout)} chars)")
 
-    json_str, last_text = extract_json_from_output(stdout)
-    if not json_str:
-        print("[ERROR] Could not extract JSON from Kilo output")
-        lines = result.stdout.splitlines()
+    # Track last_text for debug parity.
+    last_text = None
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+            if isinstance(event, dict) and event.get("type") == "text":
+                t = event.get("part", {}).get("text", "")
+                if isinstance(t, str):
+                    last_text = t
+        except json.JSONDecodeError:
+            continue
+
+    try:
+        data = extract_json(stdout)
+    except JSONExtractionError as e:
+        print(f"[ERROR] Could not extract JSON from Kilo output: {e.reason}")
+        lines = stdout.splitlines()
         print(f"[KILO] Got {len(lines)} NDJSON events")
         if last_text:
             print(f"[TEXT] Last text event: {last_text[:500]}")
+        # Phase 0: silent fallback to "{}" is REMOVED. We log a HIGH-severity
+        # gap with target_persona=ui_designer so the manager routes back here
+        # (instead of producing a useless VisualDirection downstream).
         log_gap(
             migration_id=site_id,
             gap_type="gate_failure",
             source_persona="ui_designer",
-            description="Could not extract VisualDirection JSON from Kilo output",
+            target_persona="ui_designer",
+            description=f"Could not extract VisualDirection JSON from Kilo output: {e.reason}",
             suggested_fix="Check Kilo output format and prompt instructions",
-            severity="medium",
+            severity="high",
         )
         return None
+
+    json_str = json.dumps(data)
 
     stitch_status = "available"
     try:
@@ -449,6 +434,7 @@ def design(site_id: str, rec_id: str, gap_context: Optional[str] = None) -> Opti
             ["npx", "stitch", "status"],
             capture_output=True,
             timeout=10,
+            creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0,
         )
         if result.returncode != 0 or "not authenticated" in result.stderr.lower():
             stitch_status = "unavailable"
@@ -460,23 +446,11 @@ def design(site_id: str, rec_id: str, gap_context: Optional[str] = None) -> Opti
         stitch_status=stitch_status,
         brand_spec=recommendation.brand_spec if recommendation else None,
     )
-    if visual_direction:
-        filepath = save_visual_direction(visual_direction, site_slug)
-        print(f"  [OK] VisualDirection created")
-        print(f"  [OUTPUT] {filepath}")
-        print(f"  [STITCH] {visual_direction.stitch_status}")
-        print(f"  [PRIMARY CHANGE] {visual_direction.primary_change}")
-    else:
-        print("[ERROR] JSON parsed but failed schema validation")
-        log_gap(
-            migration_id=site_id,
-            gap_type="gate_failure",
-            source_persona="ui_designer",
-            description="VisualDirection JSON parsed but failed Pydantic schema validation",
-            suggested_fix="Check that Kilo produces valid VisualDirection JSON per schema",
-            severity="medium",
-        )
-
+    filepath = save_visual_direction(visual_direction, site_slug)
+    print(f"  [OK] VisualDirection created")
+    print(f"  [OUTPUT] {filepath}")
+    print(f"  [STITCH] {visual_direction.stitch_status}")
+    print(f"  [PRIMARY CHANGE] {visual_direction.primary_change or '(fallback)'}")
     return visual_direction
 
 

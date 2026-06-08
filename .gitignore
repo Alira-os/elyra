@@ -43,13 +43,54 @@ elyra_memory.db
 .DS_Store
 Thumbs.db
 
-# Build outputs
+# Build outputs (project-level)
 out/
 .next/
 .cache/
+
+# MCP/tool data
+.playwright-mcp/
+.kilo/
+.kilo/artifacts/
+
+# Elyra artifact directories (two-tier lifecycle)
+memory/artifacts/
+# exception: allow .gitkeep to persist
+memory/artifacts/.gitkeep
+
+# Generated per-site artifacts (built by builder agent)
+sites/*/node_modules/
+sites/*/.next/
+sites/*/out/
+sites/*/.turbo/
+sites/*/tsconfig.tsbuildinfo
+sites/*/next-env.d.ts
+sites/*/package-lock.json
+sites/*/next.config.js
+sites/*/next.config.mjs
+sites/*/eslint.config.mjs
+sites/*/postcss.config.js
+sites/*/postcss.config.mjs
+sites/*/BuildManifest.json
+sites/*/AGENTS.md
+sites/*/CLAUDE.md
+sites/*/README.md
+sites/*/build-manifest.json
+sites/*/brand-spec.json
+sites/*/impeccable-report.json
+sites/*/quality-gate-report.json
+
+# LanceDB vector store (regenerable)
+memory/vector/lancedb_data/
+memory/vector/__pycache__/
+
+# Old/superfluous top-level dirs
+output/
+migration_state/
 
 # Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pino.log

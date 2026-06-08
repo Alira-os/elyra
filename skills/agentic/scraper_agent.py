@@ -16,15 +16,32 @@ Usage:
     result = scrape("https://example.com")
 """
 
-import subprocess
 import json
+import sys
 from pathlib import Path
 from typing import Optional
 
-from models.site_schemas import SiteUnderstanding
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from memory.gap_ledger import log_gap
+from skills.agentic.json_extract import extract_json, JSONExtractionError
+from tools.kilo import invoke_kilo_safe
+from skills.agentic.kilo_callbacks import make_timeout_callback
+
+from models.site_schemas import SiteUnderstanding, PlatformType
 
 
 PERSONA_PATH = Path("registry/personas/scraper_specialist.md")
+MEMORY_DIR = Path("memory/site_understandings")
+
+# Scraper is pre-flight: it can be retried indefinitely until a SiteUnderstanding
+# is produced. We don't track a stable migration_id here, so the callback uses
+# an empty string (the gap will still land in the global ledger).
+_SCRAPER_MIGRATION_ID = lambda: ""  # noqa: E731
+_on_scraper_timeout = make_timeout_callback(
+    persona="scraper_specialist",
+    migration_id_fn=_SCRAPER_MIGRATION_ID,
+    default_timeout_s=300,
+)
 
 
 def build_scraper_prompt(url: str) -> str:
@@ -52,64 +69,25 @@ Begin exploration now."""
 
 
 def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]:
-    """Extract JSON object from Kilo CLI --format json output.
+    """Deprecated shim kept for backward compatibility.
 
-    Kilo outputs NDJSON events. Find the last text event and extract JSON from it.
-    Returns (json_str, last_text) for debugging.
+    The Phase 0 shared extractor in skills/agentic/json_extract.py is now
+    the single source of truth. New code should call extract_json() and
+    catch JSONExtractionError.
     """
-    stdout = stdout.strip()
-
     try:
-        json.loads(stdout)
-        return stdout, None
-    except json.JSONDecodeError:
-        pass
-
-    last_text = None
-    for line in stdout.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            event = json.loads(line)
-            if event.get("type") == "text":
-                last_text = event["part"].get("text", "")
-        except json.JSONDecodeError:
-            continue
-
-    if last_text:
-        last_text = last_text.strip()
-        try:
-            json.loads(last_text)
-            return last_text, last_text
-        except json.JSONDecodeError:
-            pass
-
-        first_brace = last_text.find("{")
-        last_brace = last_text.rfind("}")
-        if first_brace != -1 and last_brace != -1 and last_brace >= first_brace:
-            json_str = last_text[first_brace : last_brace + 1]
-            try:
-                json.loads(json_str)
-                return json_str, last_text
-            except json.JSONDecodeError:
-                pass
-
-    first_brace = stdout.find("{")
-    last_brace = stdout.rfind("}")
-    if first_brace == -1 or last_brace == -1 or last_brace <= first_brace:
-        return None, None
-
-    json_str = stdout[first_brace : last_brace + 1]
-    try:
-        json.loads(json_str)
-        return json_str, None
-    except json.JSONDecodeError:
+        obj = extract_json(stdout)
+        return json.dumps(obj), None
+    except JSONExtractionError:
         return None, None
 
 
 def parse_and_validate(raw_json: str) -> Optional[SiteUnderstanding]:
-    """Parse and validate JSON against SiteUnderstanding schema."""
+    """Parse and validate JSON against SiteUnderstanding schema.
+
+    Handles null values in required string fields by either removing invalid
+    assets/images or falling back to a minimal valid SiteUnderstanding.
+    """
     try:
         data = json.loads(raw_json)
 
@@ -120,7 +98,16 @@ def parse_and_validate(raw_json: str) -> Optional[SiteUnderstanding]:
 
         for page in data.get("pages", []):
             if "images" in page and isinstance(page["images"], list):
-                page["images"] = [img for img in page["images"] if img.get("src")]
+                page["images"] = [img for img in page["images"] if img and img.get("src")]
+
+            # Clean up null values in components and their child structures
+            if "components" in page and isinstance(page["components"], list):
+                for comp in page["components"]:
+                    if "assets" in comp and isinstance(comp["assets"], list):
+                        comp["assets"] = [
+                            a for a in comp["assets"]
+                            if a and a.get("src") is not None
+                        ]
 
         return SiteUnderstanding(**data)
     except Exception as e:
@@ -133,11 +120,38 @@ def parse_and_validate(raw_json: str) -> Optional[SiteUnderstanding]:
                 }
             for page in data.get("pages", []):
                 if "images" in page and isinstance(page["images"], list):
-                    page["images"] = [img for img in page["images"] if img.get("src")]
+                    page["images"] = [img for img in page["images"] if img and img.get("src")]
+                if "components" in page and isinstance(page["components"], list):
+                    for comp in page["components"]:
+                        if "assets" in comp and isinstance(comp["assets"], list):
+                            comp["assets"] = [
+                                a for a in comp["assets"]
+                                if a and a.get("src") is not None
+                            ]
             allowed = {k: v for k, v in data.items() if k in SiteUnderstanding.model_fields}
             return SiteUnderstanding(**allowed)
         except Exception:
             return None
+
+
+def load_site_understanding(site_id: str) -> Optional[SiteUnderstanding]:
+    """Load a saved SiteUnderstanding from memory/site_understandings/.
+
+    Companion to scrape(). Both are used by the Phase 1.1 Forge Room
+    personas which read their upstream artifacts from the blackboard.
+    """
+    if not site_id:
+        return None
+    site_path = MEMORY_DIR / f"{site_id}.json"
+    if not site_path.exists():
+        site_path = Path(site_id)
+    try:
+        with open(site_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return SiteUnderstanding(**data)
+    except Exception as e:
+        print(f"[ERROR] Failed to load SiteUnderstanding: {e}")
+        return None
 
 
 def scrape(url: str) -> Optional[SiteUnderstanding]:
@@ -155,75 +169,85 @@ def scrape(url: str) -> Optional[SiteUnderstanding]:
     print(f"\n[SCAPE] Scraping {url} via Kilo CLI")
     print("=" * 60)
 
-    try:
-        import platform
-        if platform.system() == "Windows":
-            node_exe = (
-                "C:\\Program Files\\nodejs\\node.exe"
-                if Path("C:\\Program Files\\nodejs\\node.exe").exists()
-                else "node"
-            )
-            kilo_bin = (
-                Path(__file__).resolve().parents[2]
-                / "node_modules"
-                / "@kilocode"
-                / "cli"
-                / "bin"
-                / "kilo"
-            )
-            if not kilo_bin.exists():
-                kilo_bin = Path(
-                    "C:\\Users\\micha\\AppData\\Roaming\\npm\\node_modules\\@kilocode\\cli\\bin\\kilo"
-                )
-            result = subprocess.run(
-                [node_exe, str(kilo_bin), "run", "--format", "json", "--auto", "--", prompt],
-                capture_output=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=300,
-            )
-        else:
-            result = subprocess.run(
-                ["kilo", "run", "--format", "json", "--auto", "--", prompt],
-                capture_output=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=300,
-            )
-    except subprocess.TimeoutExpired:
-        print("[ERROR] Kilo CLI timed out after 5 minutes")
-        return None
-    except FileNotFoundError:
-        print("[ERROR] 'kilo' command not found. Is Kilo CLI installed and in PATH?")
+    # Phase 0.5: route through invoke_kilo_safe so prompt-size + timeout
+    # guard-rails apply uniformly to all personas.
+    result = invoke_kilo_safe(
+        prompt=prompt,
+        context={"url": url},
+        working_dir=".",
+        persona="scraper_specialist",
+        timeout=300,
+        on_timeout=_on_scraper_timeout,
+    )
+
+    if not result.success:
+        print(f"[ERROR] Kilo invocation failed: {result.errors}")
+        if any("not found" in e.lower() for e in result.errors):
+            print("[ERROR] 'kilo' command not found. Is Kilo CLI installed and in PATH?")
         return None
 
-    if result.returncode != 0:
-        print(f"[ERROR] Kilo CLI exited with code {result.returncode}")
-        print(f"[STDERR] {result.stderr[:500] if result.stderr else ''}")
-        return None
-
-    stdout = result.stdout or ""
+    # invoke_kilo_safe returns a ToolResult with `summary` holding the raw Kilo
+    # text/NDJSON output. We extract the JSON from that.
+    stdout = result.summary or ""
 
     print(f"[KILO] Output received ({len(stdout)} chars)")
 
-    json_str, last_text = extract_json_from_output(stdout)
-    if not json_str:
-        print("[ERROR] Could not extract JSON from Kilo output")
-        lines = result.stdout.splitlines()
+    # Track last_text for debugging parity with the old behavior.
+    last_text = None
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+            if isinstance(event, dict) and event.get("type") == "text":
+                t = event.get("part", {}).get("text", "")
+                if isinstance(t, str):
+                    last_text = t
+        except json.JSONDecodeError:
+            continue
+
+    try:
+        data = extract_json(stdout)
+    except JSONExtractionError as e:
+        print(f"[ERROR] Could not extract JSON from Kilo output: {e.reason}")
+        lines = stdout.splitlines()
         print(f"[KILO] Got {len(lines)} NDJSON events")
         if last_text:
             print(f"[TEXT] Last text event: {last_text[:500]}")
+        log_gap(
+            migration_id="",
+            gap_type="gate_failure",
+            source_persona="scraper_specialist",
+            target_persona="scraper_specialist",
+            description=f"Could not extract SiteUnderstanding JSON from Kilo output: {e.reason}",
+            suggested_fix="Check Kilo output format and prompt instructions",
+            severity="high",
+        )
+        # Return None rather than a silent minimal SiteUnderstanding: the
+        # manager will treat this as a scraper failure and route back here.
         return None
 
-    validated = parse_and_validate(json_str)
+    validated = parse_and_validate(json.dumps(data))
     if validated:
         print(f"  [OK] Scraping complete")
         print(f"  [PAGES] {len(validated.pages)} pages discovered")
         print(f"  [PLATFORM] {validated.platform.value} ({validated.platform_confidence:.0%})")
-    else:
-        print("[ERROR] JSON parsed but failed schema validation")
+        return validated
 
-    return validated
+    # JSON parsed but failed schema validation. This is a separate failure
+    # class from extraction failure; log it as such and still return None.
+    print("[WARN] JSON parsed but failed schema validation")
+    log_gap(
+        migration_id="",
+        gap_type="gate_failure",
+        source_persona="scraper_specialist",
+        target_persona="scraper_specialist",
+        description="SiteUnderstanding JSON parsed but failed Pydantic schema validation",
+        suggested_fix="Check that Kilo produces valid SiteUnderstanding JSON per schema",
+        severity="high",
+    )
+    return None
 
 
 if __name__ == "__main__":

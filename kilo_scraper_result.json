@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "files_created": [],
+  "files_modified": [],
+  "errors": [],
+  "summary": "Scraped https://merimeesolutions.wixstudio.com/my-site-2 — a single-page Wix Studio site for 'Merimee Digital Solutions' (web design & marketing). Detected platform: Wix Studio (1.0 confidence via wixstudio.com subdomain, 'Built on Wix Studio' badge, static.wixstatic.com media CDN, panorama.wixapps.net errors, and clientWorker.min.js bundling). Discovered 1 page (the home page itself), with a 1-item nav (Home only) plus 5 'Let's Talk' CTA buttons that scroll to the inline contact form. Extracted all 16 images, full visible text (word count ~220), 6-field contact form, LocalBusiness JSON-LD, social links (LinkedIn, GitHub, X), and contact info (email, phone, postal address). Produced a complete SiteUnderstanding JSON with hero, services cards, process steps, portfolio cards, contact form, about, and footer components.",
+  "recovery_suggestion": null
+}

@@ -1,0 +1,303 @@
+{
+  "delta_id": "merimee-digital-solutions-20260603_v1",
+  "parent_brand_spec_version": "20260601_brand_spec_v1",
+  "primary_change": "No visual evolution — BrandSpec fidelity only. Classical motion philosophy implemented with 200ms override; serif-led typographic hierarchy reinforces mission-driven positioning. Single-page Wix anchor architecture preserved in section order while enabling per-route page layouts for the Next.js migration.",
+  "rationale": "Stitch MCP unavailable; preserving source brand tokens exactly. The BrandSpec motion_philosophy='classical' is honored via motion-classical classes throughout, with motion_duration=200ms overriding the classical default of 400ms (per BrandSpec override precedence). Serif heading + sans body pairing is preserved as the core brand signal. No new colors introduced; all deltas trace to existing semantic_tokens.",
+  "impacted_components": [
+    "button",
+    "card",
+    "input",
+    "navigation",
+    "hero",
+    "footer"
+  ],
+  "impacted_pages": [
+    "/",
+    "/about",
+    "/services",
+    "/portfolio",
+    "/contact"
+  ],
+  "color_delta": {
+    "hero_overlay": "var(--color-on-surface)",
+    "hero_overlay_opacity": "0.55",
+    "card_hover_border": "var(--brand-accent)",
+    "form_focus_ring": "var(--brand-accent)",
+    "footer_surface": "var(--color-surface)"
+  },
+  "typography_delta": {
+    "hero_h1_size": "5xl",
+    "hero_h1_weight": "bold",
+    "hero_h1_tracking": "tight",
+    "section_h2_size": "3xl",
+    "section_h2_weight": "semibold",
+    "eyebrow_label_size": "sm",
+    "eyebrow_label_weight": "semibold",
+    "eyebrow_label_tracking": "widest",
+    "eyebrow_label_transform": "uppercase",
+    "body_lead_size": "lg"
+  },
+  "motion_delta": {
+    "active_philosophy": "classical",
+    "duration_override_ms": 200,
+    "easing": "ease-out",
+    "modal_spring": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+    "hover_scale": 1.02,
+    "translate_offset_px": -2,
+    "reduced_motion": "required"
+  },
+  "designer_notes": [
+    "Preserve Merriweather serif headings at all levels — core brand signal for authority and timelessness.",
+    "Hero overlay uses --color-on-surface at 0.55 alpha to ensure WCAG AA contrast on hero background image regardless of underlying photo brightness.",
+    "Service card icons (web-design, mobile-apps, brand-messaging, build-interest) sit on --color-primary-container (#EEF2FF) tiles for subtle, classical accent.",
+    "All CTAs use motion-classical with 200ms (BrandSpec override of classical default 400ms) — restrained, not flashy.",
+    "Portfolio gallery uses card.elevated variant on hover; --shadow-md elevation + 1.02 scale via motion-classical.",
+    "Form inputs use input.filled variant on focus with --brand-accent focus ring (WCAG-compliant 3px ring at 15% alpha).",
+    "Dark mode: full_tokens strategy is already declared in BrandSpec; ensure --brand-background, --brand-text, --color-surface, --color-on-surface all flip in [data-theme='dark'].",
+    "prefers-reduced-motion is mandatory: all motion-classical transforms collapse to opacity-only fades.",
+    "Footer uses footer_surface semantic token to softly separate from page background without introducing a new color."
+  ],
+  "created_by": "ui_designer",
+  "created_at": "2026-06-03T19:35:49-04:00",
+  "stitch_status": "unavailable",
+  "schema_version": "1.1",
+  "page_layouts": {
+    "/": {
+      "grid_system": "mixed",
+      "spacing_philosophy": "spacious",
+      "section_order": [
+        "hero",
+        "services",
+        "process",
+        "portfolio",
+        "contact",
+        "about",
+        "footer"
+      ],
+      "motion_priority": [
+        "opacity",
+        "translateY",
+        "scale"
+      ],
+      "component_variants_priority": [
+        "primary",
+        "elevated",
+        "outlined"
+      ],
+      "section_grids": {
+        "hero": "single-column",
+        "services": "four-column",
+        "process": "three-column",
+        "portfolio": "five-column",
+        "contact": "single-column",
+        "about": "two-column",
+        "footer": "four-column"
+      }
+    },
+    "/about": {
+      "grid_system": "single-column",
+      "spacing_philosophy": "spacious",
+      "section_order": [
+        "hero",
+        "bio",
+        "values",
+        "process",
+        "cta"
+      ],
+      "motion_priority": [
+        "opacity",
+        "translateY"
+      ],
+      "component_variants_priority": [
+        "primary",
+        "outlined"
+      ]
+    },
+    "/services": {
+      "grid_system": "two-column",
+      "spacing_philosophy": "balanced",
+      "section_order": [
+        "hero",
+        "services-grid",
+        "process",
+        "cta"
+      ],
+      "motion_priority": [
+        "opacity",
+        "scale"
+      ],
+      "component_variants_priority": [
+        "primary",
+        "elevated"
+      ]
+    },
+    "/portfolio": {
+      "grid_system": "three-column",
+      "spacing_philosophy": "balanced",
+      "section_order": [
+        "hero",
+        "gallery",
+        "case-studies",
+        "cta"
+      ],
+      "motion_priority": [
+        "opacity",
+        "scale",
+        "translateY"
+      ],
+      "component_variants_priority": [
+        "elevated",
+        "primary"
+      ]
+    },
+    "/contact": {
+      "grid_system": "two-column",
+      "spacing_philosophy": "spacious",
+      "section_order": [
+        "hero",
+        "form",
+        "info",
+        "footer"
+      ],
+      "motion_priority": [
+        "opacity",
+        "translateY"
+      ],
+      "component_variants_priority": [
+        "primary",
+        "filled"
+      ]
+    }
+  },
+  "typography_hierarchy": {
+    "/": {
+      "h1": {
+        "size": "5xl",
+        "weight": "bold",
+        "tracking": "tight",
+        "family": "heading"
+      },
+      "h2": {
+        "size": "3xl",
+        "weight": "semibold",
+        "tracking": "normal",
+        "family": "heading"
+      },
+      "h3": {
+        "size": "2xl",
+        "weight": "semibold",
+        "tracking": "normal",
+        "family": "heading"
+      },
+      "h4": {
+        "size": "xl",
+        "weight": "medium",
+        "tracking": "normal",
+        "family": "heading"
+      },
+      "body": {
+        "size": "base",
+        "weight": "regular",
+        "family": "body"
+      },
+      "body_lead": {
+        "size": "lg",
+        "weight": "regular",
+        "family": "body"
+      },
+      "eyebrow": {
+        "size": "sm",
+        "weight": "semibold",
+        "tracking": "widest",
+        "transform": "uppercase",
+        "family": "body"
+      }
+    },
+    "/about": {
+      "h1": {
+        "size": "4xl",
+        "weight": "bold",
+        "tracking": "tight",
+        "family": "heading"
+      },
+      "h2": {
+        "size": "2xl",
+        "weight": "semibold",
+        "tracking": "normal",
+        "family": "heading"
+      },
+      "body_lead": {
+        "size": "lg",
+        "weight": "regular",
+        "family": "body"
+      }
+    },
+    "/services": {
+      "h1": {
+        "size": "4xl",
+        "weight": "bold",
+        "tracking": "tight",
+        "family": "heading"
+      },
+      "h2": {
+        "size": "2xl",
+        "weight": "semibold",
+        "tracking": "normal",
+        "family": "heading"
+      },
+      "h3": {
+        "size": "xl",
+        "weight": "semibold",
+        "tracking": "normal",
+        "family": "heading"
+      }
+    },
+    "/portfolio": {
+      "h1": {
+        "size": "4xl",
+        "weight": "bold",
+        "tracking": "tight",
+        "family": "heading"
+      },
+      "h2": {
+        "size": "2xl",
+        "weight": "semibold",
+        "tracking": "normal",
+        "family": "heading"
+      }
+    },
+    "/contact": {
+      "h1": {
+        "size": "4xl",
+        "weight": "bold",
+        "tracking": "tight",
+        "family": "heading"
+      },
+      "h2": {
+        "size": "2xl",
+        "weight": "semibold",
+        "tracking": "normal",
+        "family": "heading"
+      }
+    }
+  },
+  "motion_class_map": {
+    "card_hover": "motion-classical",
+    "button_hover": "motion-classical",
+    "button_active": "motion-classical",
+    "link_hover": "motion-classical",
+    "nav_link_hover": "motion-classical",
+    "modal_open": "motion-classical",
+    "modal_close": "motion-classical",
+    "form_field_focus": "motion-classical",
+    "hero_image_load": "motion-classical",
+    "section_enter": "motion-classical",
+    "gallery_item_hover": "motion-classical",
+    "service_card_hover": "motion-classical"
+  },
+  "reference_images": [
+    "https://static.wixstatic.com/media/nsplsh_793767677065754d315177~mv2_d_5077_3808_s_4_2.jpg/v1/fill/w_2044,h_1084,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/Image%20by%20Simon%20Berger.jpg",
+    "https://static.wixstatic.com/media/b2a22f_57701b22e6f242d69037cbe5d515967b~mv2.png/v1/fill/w_125,h_125,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Black%20on%20White.png",
+    "https://static.wixstatic.com/media/b2a22f_73893a9e3989420f8da8462c49dc3590~mv2.jpg/v1/fill/w_147,h_221,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/CHRISTIAN-STREILI-R62_1301.jpg"
+  ]
+}

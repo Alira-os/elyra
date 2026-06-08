@@ -136,23 +136,39 @@ export async function sendContactEmail(data: {
 
 ---
 
-### 4. Database Decisions (SQLite + LanceDB)
+### 4. Database Decisions (Cloudflare-native by default, SQLite legacy)
 
-Elyra uses **SQLite** for structured relational data and **LanceDB** for vector memory. Guide the Builder on when to use which.
+Elyra's default backend substrate is **Cloudflare Workers + D1 (SQLite at the edge)** for structured data, **KV** for low-latency key-value reads, **R2** for object storage (images, uploads, exports), and **Vectorize** for vector search. This is the data layer expressed as Cloudflare bindings in `wrangler.toml`. A project that needs real serverful Postgres (analytics >10GB, PostGIS, pgvector-at-scale, existing client Postgres) keeps Cloudflare as the platform and binds **Neon or Supabase Postgres via Hyperdrive** — see `deploy_specialist.md` Platform Policy. SQLite + LanceDB are kept as a legacy note for projects that have not yet migrated to Cloudflare-native data.
 
-**SQLite (structured data):**
+**D1 (structured relational data, default):**
 - Form submissions (contact entries, newsletter signups)
 - User preferences or settings
-- Any data with defined schema and relational integrity needs
+- Any data with defined schema and relational integrity needs that fits in a single SQLite DB (D1 caps at 10GB/DB)
+- Accessed from Workers via `env.DB.prepare(...).bind(...).all()`
 
-**LanceDB (vector memory):**
+**KV (low-latency key-value, default):**
+- Cached responses, feature flags, session data
+- Per-route cache layers in front of D1
+- NOT for transactional data — use D1 for that
+
+**R2 (object storage, default):**
+- User uploads, exported files, large image archives
+- Zero-egress — same-region reads to Workers are free
+- Accessed from Workers via `env.ASSETS.put(...) / .get(...)`
+
+**Vectorize (vector search, default):**
 - Page content embeddings for similarity search
-- Historical memory of scraped/transformed content
-- Not for transactional records — use SQLite for that
+- RAG memory for agentic features
+- Not for transactional records — use D1 for that
 
-**Schema design principles:**
+**External Postgres via Hyperdrive (when serverful Postgres is required):**
+- Bind a Neon or Supabase Postgres to the Worker as `env.HYPERDRIVE`
+- Workers query it through Hyperdrive's connection pooling and caching
+- This is the preferred path for analytics, PostGIS, pgvector-at-scale — do NOT switch the whole stack to Fly.io just for the DB
+
+**Schema design principles (D1):**
 ```sql
--- SQLite: Contact submissions
+-- D1: Contact submissions
 CREATE TABLE contact_submissions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
@@ -169,10 +185,11 @@ CREATE INDEX idx_contact_created ON contact_submissions(created_at);
 ```
 
 **Key guidance:**
-- Use `better-sqlite3` for synchronous SQLite operations in Next.js API routes
+- Use D1's `D1Database` prepared-statement API for type-safe SQL
 - Define schemas as TypeScript interfaces alongside the SQL
 - Add `created_at` timestamps to all tables for auditing
 - Use soft deletes or archive strategies for form data if privacy is a concern
+- For migrations beyond a single DB (D1's 10GB cap, multi-region read replicas), escalate to external Postgres via Hyperdrive — never silently bloat D1
 
 ---
 
@@ -183,32 +200,64 @@ This is critical: the Builder must note `deployment_readiness` in the `BuildMani
 **Your role:** Flag backend items that affect deployment readiness:
 
 **Checklist for deployment readiness:**
-- [ ] All environment variables documented (`RESEND_API_KEY`, database path, etc.)
+- [ ] All environment variables documented (Workers vars + Secret Store entries)
+- [ ] All Cloudflare bindings referenced in code are declared in `wrangler.toml` (D1, KV, R2, Vectorize, Hyperdrive)
 - [ ] API routes return appropriate HTTP status codes
 - [ ] Error responses do not leak stack traces or raw error messages
 - [ ] Form validation happens server-side (Zod) — not just client-side
-- [ ] Rate limiting is considered on public endpoints
-- [ ] SQLite database file is in a persistent location (not `/tmp`)
-- [ ] LanceDB index path is configured for deployment (not local-only)
-- [ ] `next.config.js` has appropriate security headers
+- [ ] Rate limiting is considered on public endpoints (use Cloudflare's rate-limiting rules or an upstash/ratelimit binding)
+- [ ] D1 migrations are checked into the repo under `migrations/` and applied via `wrangler d1 migrations apply`
+- [ ] R2 buckets and KV namespaces are provisioned via `infra/cloudflare/` Terraform before deploy
+- [ ] External Postgres (if any) is reachable from Workers via Hyperdrive binding — connection string lives in Workers Secret Store, never in the repo
+- [ ] `next.config.js` (or framework equivalent) has appropriate security headers
 - [ ] CORS is configured correctly if API routes are called from other origins
 
-**BuildManifest output example:**
+**BuildManifest output example (default Cloudflare path):**
 ```json
 {
   "deployment_readiness": {
+    "platform": "cloudflare",
+    "substrate": "workers",
     "api_routes": ["contact", "subscribe"],
     "form_handlers": ["ContactForm"],
     "email_provider": "resend",
-    "database": "sqlite",
-    "vector_store": "lancedb",
-    "env_vars_needed": ["RESEND_API_KEY", "DATABASE_PATH"],
+    "database": "d1",
+    "vector_store": "vectorize",
+    "object_storage": "r2",
+    "external_postgres": null,
+    "bindings_declared": ["DB", "CACHE", "ASSETS", "VECTORS"],
+    "secret_keys": ["RESEND_API_KEY"],
     "rate_limiting": true,
     "security_headers": true,
     "notes": [
       "Form validation is server-side (Zod) on all endpoints",
-      "SQLite DB persisted to ./data directory",
-      "Rate limiting applied to /api/contact (upstash/ratelimit)"
+      "D1 migrations under migrations/; apply via wrangler d1 migrations apply",
+      "Rate limiting applied to /api/contact via Cloudflare rate-limit rule"
+    ]
+  }
+}
+```
+
+**BuildManifest output example (Fly.io fallback after re-architect):**
+```json
+{
+  "deployment_readiness": {
+    "platform": "fly-io",
+    "substrate": "fly-machines",
+    "api_routes": ["contact", "subscribe"],
+    "form_handlers": ["ContactForm"],
+    "email_provider": "resend",
+    "database": "fly-postgres",
+    "vector_store": null,
+    "object_storage": "fly-volume",
+    "external_postgres": null,
+    "bindings_declared": [],
+    "secret_keys": ["RESEND_API_KEY", "DATABASE_URL"],
+    "rate_limiting": true,
+    "security_headers": true,
+    "notes": [
+      "Re-architected from Cloudflare default after Tier-1 trigger: <name>",
+      "Fly Postgres attached via DATABASE_URL secret; volume mounted at /data"
     ]
   }
 }

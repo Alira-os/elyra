@@ -14,78 +14,107 @@ Pattern: Kilo CLI + persona + Pydantic validation + save to memory.
 
 import json
 import logging
-import subprocess
 import sys
-import os
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from memory.gap_ledger import log_gap
+from skills.agentic.json_extract import extract_json, JSONExtractionError
+from skills.agentic.kilo_callbacks import make_timeout_callback
+from tools.kilo import invoke_kilo_safe
 
 logging.basicConfig(level=logging.INFO, format='[github_strategy] %(message)s')
 logger = logging.getLogger(__name__)
 
 SCRIPT_DIR = Path(__file__).parent
-ELYRA_ROOT = SCRIPT_DIR.parent
-KILO_CLI = ELYRA_ROOT / "tools" / "kilo.py"
+# skills/agentic/ -> skills/ -> elyra/
+ELYRA_ROOT = SCRIPT_DIR.parent.parent
+# (KILO_CLI constant removed in Phase 0.5 — _run_kilo_persona now calls
+# invoke_kilo_safe() in-process instead of spawning a Python subprocess.)
 PERSONA_PATH = ELYRA_ROOT / "registry" / "personas" / "deploy_specialist.md"
 OUTPUT_DIR = ELYRA_ROOT / "memory" / "github_repos"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _run_kilo_persona(prompt: str, persona_path: Path, timeout: int = 120) -> dict:
+def _extract_json_from_text(text: str) -> Optional[str]:
+    """Deprecated shim — kept only for one in-file caller.
+
+    Use extract_json() from skills.agentic.json_extract.
+    """
+    try:
+        return json.dumps(extract_json(text))
+    except JSONExtractionError:
+        return None
+
+
+def _run_kilo_persona(prompt: str, persona_path: Path, timeout: int = 120, migration_id: str = "") -> dict:
     """
     Run Kilo CLI with deploy_specialist persona for GitHub operations.
 
     Kilo has GitHub MCP connected natively. We build structured prompts
     and parse JSON output — Kilo handles the MCP tool invocations.
 
+    Phase 0.5: now uses invoke_kilo_safe() in-process rather than
+    spawning a Python subprocess. This is faster, surfaces prompt-size
+    and timeout guard-rails uniformly, and attributes timeouts to the
+    gap ledger with the same schema as the other personas.
+
     Args:
         prompt: Task prompt for the persona
-        persona_path: Path to persona markdown
+        persona_path: Path to persona markdown (embedded into the prompt)
         timeout: Seconds before timeout (default 120)
+        migration_id: Migration ID for gap attribution (may be empty)
 
     Returns:
         Parsed JSON response or {"error": ...}
     """
-    args = [
-        sys.executable, str(KILO_CLI),
-        "run",
-        "--persona", str(persona_path),
-        "--format", "json",
-        "--"
-    ]
+    # Embed the persona into the prompt (matches the pattern used by the
+    # other personas: scraper, architect, marketing, designer, builder).
+    persona_md = persona_path.read_text() if persona_path.exists() else ""
+    full_prompt = f"{persona_md}\n\n{prompt}"
 
+    result = invoke_kilo_safe(
+        prompt=full_prompt,
+        context={"persona_path": str(persona_path), "migration_id": migration_id},
+        working_dir=str(ELYRA_ROOT),
+        persona="deploy_specialist",
+        timeout=timeout,
+        on_timeout=make_timeout_callback(
+            persona="deploy_specialist",
+            migration_id_fn=lambda: migration_id,
+            default_timeout_s=timeout,
+        ),
+    )
+
+    if not result.success:
+        return {"error": result.errors[0] if result.errors else "kilo_invocation_failed"}
+
+    output = result.summary or ""
     try:
-        result = subprocess.run(
-            args,
-            input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=timeout
-        )
+        parsed = extract_json(output)
+    except JSONExtractionError as e:
+        logger.warning(f"JSONExtractionError: {e.reason}")
+        return {"error": f"JSON parse failed: {e.reason}", "raw": output[:200]}
 
-        if result.returncode != 0:
-            logger.error(f"Kilo CLI error: {result.stderr}")
-            return {"error": result.stderr, "stdout": result.stdout}
+    if not isinstance(parsed, dict):
+        return {"error": "extracted value is not a dict", "raw": output[:200]}
 
-        output = result.stdout.strip()
+    # Legacy: if the parsed result is a ToolResult-shaped success wrapper
+    # with a summary containing a nested action, unwrap it (parity with
+    # the old behavior that did this manually).
+    if parsed.get("success") is True and "action" not in parsed:
+        summary = parsed.get("summary", "")
+        if isinstance(summary, str):
+            try:
+                inner = extract_json(summary)
+                if isinstance(inner, dict) and "action" in inner:
+                    return inner
+            except JSONExtractionError:
+                pass
 
-        # Try to parse as JSON
-        try:
-            return json.loads(output)
-        except json.JSONDecodeError as e:
-            logger.warning(f"JSON parse error: {e}. Raw output: {output[:200]}")
-            return {"error": "JSON parse failed", "raw": output}
-
-    except subprocess.TimeoutExpired:
-        logger.error("Kilo CLI timed out")
-        return {"error": "timeout"}
-    except FileNotFoundError:
-        logger.error(f"Kilo CLI not found at {KILO_CLI}")
-        return {"error": f"Kilo CLI not found at {KILO_CLI}"}
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        return {"error": str(e)}
+    return parsed
 
 
 def create_github_repo(
@@ -248,6 +277,63 @@ def save_repo_spec(migration_id: str, spec: dict, output_path: Optional[Path] = 
         json.dump(spec, f, indent=2)
     logger.info(f"Saved repo spec to {path}")
     return path
+
+
+def create_structured_migration_issue(
+    migration_id: str,
+    url: str,
+    platform: str,
+    issue_body: str
+) -> dict:
+    """
+    Create a GitHub issue for a failed migration.
+
+    Uses Kilo with deploy_specialist persona to create the issue via GitHub MCP.
+
+    Args:
+        migration_id: Unique migration identifier
+        url: Source site URL
+        platform: Platform (wix, wordpress, etc.)
+        issue_body: Pre-formatted issue body text
+
+    Returns:
+        dict with success, issue_url, issue_number
+    """
+    logger.info(f"Creating GitHub issue for migration {migration_id}")
+
+    prompt = f"""You are the GitHub Strategy specialist for Elyra.
+
+Create a GitHub issue in the Alira-os/elyra repository to track a failed migration.
+
+**Migration ID:** {migration_id}
+**Source URL:** {url}
+**Platform:** {platform}
+
+**Issue Body:**
+{issue_body}
+
+**Steps to perform using GitHub MCP tools:**
+1. Create a new issue in Alira-os/elyra with the provided title and body
+2. Use appropriate labels: "migration-failure", "automated"
+3. Set the issue title to: "[Migration Failed] {migration_id} - {platform}"
+
+**Output format (JSON only, no markdown):**
+{{
+  "success": true/false,
+  "issue_url": "https://github.com/Alira-os/elyra/issues/XXX",
+  "issue_number": 123,
+  "message": "What was done or what error occurred"
+}}
+
+Return ONLY valid JSON. No markdown code blocks, no explanation outside the JSON."""
+
+    result = _run_kilo_persona(prompt, PERSONA_PATH, timeout=120)
+
+    if "error" in result:
+        logger.error(f"Kilo GitHub issue creation failed: {result['error']}")
+        return {"success": False, "error": result["error"], "message": "Kilo CLI failed to create issue"}
+
+    return result
 
 
 def load_repo_spec(migration_id: str, output_path: Optional[Path] = None) -> Optional[dict]:

@@ -1,0 +1,258 @@
+{
+  "source_url": "https://merimeesolutions.wixstudio.com/my-site-2",
+  "source_understanding_id": "20260601_104145",
+  "source_architecture_id": "20260524_005030",
+  "site_name": "Merimee Digital Solutions",
+  "overall_content_strategy": "preserve-and-modernize",
+  "tone_of_voice": {
+    "voice": "professional",
+    "pitch": "A values-driven professional voice that speaks to mission-driven entrepreneurs and institutions seeking beautifully simple digital solutions, blending classical elegance with modern clarity.",
+    "example_phrases": [
+      "Showcase Your Mission",
+      "Don't resign yourself to mediocrity. Let's be great together.",
+      "help present the good purposes of your company or institution in a beautifully simple manner"
+    ]
+  },
+  "brand_spec": {
+    "primary_color": "#1E293B",
+    "secondary_color": "#475569",
+    "accent_color": "#6366F1",
+    "background_color": "#FFFFFF",
+    "text_color": "#1E293B",
+    "semantic_tokens": {
+      "surface": "#F8FAFC",
+      "on-surface": "#1E293B",
+      "primary-container": "#EEF2FF",
+      "muted": "#64748B",
+      "border": "#E2E8F0"
+    },
+    "font_family_heading": "Merriweather, serif",
+    "font_family_body": "Source Sans 3, sans-serif",
+    "font_size_base": "16px",
+    "type_scale": {
+      "xs": "12px",
+      "sm": "14px",
+      "base": "16px",
+      "lg": "18px",
+      "xl": "20px",
+      "2xl": "24px",
+      "3xl": "30px",
+      "4xl": "36px",
+      "5xl": "48px"
+    },
+    "spacing_scale": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px",
+      "2xl": "48px",
+      "3xl": "64px"
+    },
+    "border_radius": "0.375rem",
+    "shadow_scale": {
+      "sm": "0 1px 2px rgba(0,0,0,0.05)",
+      "md": "0 4px 6px rgba(0,0,0,0.07)",
+      "lg": "0 10px 15px rgba(0,0,0,0.1)"
+    },
+    "motion_philosophy": "classical",
+    "motion_duration": "200ms",
+    "motion_easing": "ease-out",
+    "component_variants": {
+      "button": [
+        "primary",
+        "secondary",
+        "ghost"
+      ],
+      "card": [
+        "default",
+        "elevated",
+        "outlined"
+      ],
+      "input": [
+        "default",
+        "filled"
+      ]
+    },
+    "dark_mode_strategy": "full_tokens",
+    "notes": "Brand derived from classical liberal arts educational context - restrained elegance over flashiness. Typography-forward design with serif headings conveys authority and timelessness."
+  },
+  "page_strategies": [
+    {
+      "route": "/",
+      "page_type": "home",
+      "content_approach": "preserve",
+      "headline_recommendation": "Showcase Your Mission with Digital Excellence",
+      "body_recommendation": "Maintain the mission-forward hero and service card layout. Preserve the personal bio section that establishes credibility through Michael Merimee's classical liberal arts background. Keep the portfolio gallery showcasing client work.",
+      "cta_recommendation": "Let's Talk → Start a Conversation",
+      "seo_enhancement": "Add structured data for localBusiness schema. Expand meta description to include 'classical liberal arts web design' as differentiator. Target keywords: 'mission-driven web design', 'simplified digital solutions', 'Catholic school website design'.",
+      "notes": "Critical page - preserves all major content blocks. Single-page anchor architecture should be converted to section-based routing in Next.js."
+    },
+    {
+      "route": "/about",
+      "page_type": "about",
+      "content_approach": "expand",
+      "headline_recommendation": "About Michael Merimee & Merimee Digital Solutions",
+      "body_recommendation": "Expand the current bio section into a dedicated About page. Include detailed background on classical liberal arts education (Wyoming Catholic College), career in Catholic publishing, and the mission philosophy behind the business. Add credentials, values statement, and process overview.",
+      "cta_recommendation": "Work With Me → Schedule a Consultation",
+      "seo_enhancement": "Create dedicated About page targeting 'about web designer', 'Christian web developer', 'Catholic website design'. Add personal origin story content for E-E-A-T signals.",
+      "notes": "New page - split from single-page architecture. Currently buried in home page 'Get to Know Me' section."
+    },
+    {
+      "route": "/services",
+      "page_type": "services",
+      "content_approach": "expand",
+      "headline_recommendation": "How I Help You Achieve Your Mission",
+      "body_recommendation": "Expand the current 4-card service layout into dedicated service pages or a cohesive services section. Add case study snippets for each service type referencing portfolio work. Include process breakdown: Schedule a Call → Craft a Plan → Realize Your Vision.",
+      "cta_recommendation": "Explore Services → See How We Can Work Together",
+      "seo_enhancement": "Create service-specific pages targeting 'web design services', 'mobile app development', 'brand messaging services', 'digital advertising'. Add before/after portfolio examples.",
+      "notes": "Currently handled via anchor navigation on single page - should become standalone route with expanded content."
+    },
+    {
+      "route": "/portfolio",
+      "page_type": "portfolio",
+      "content_approach": "expand",
+      "headline_recommendation": "Featured Work & Success Stories",
+      "body_recommendation": "Expand the current gallery with actual case study pages for Holy Rollers, Chesterton Academy of Akron, Parker Eidle, Alena Carter, and Bonfire Media. Include challenge/solution/results format. Add testimonials where available.",
+      "cta_recommendation": "View Our Work → See More Projects",
+      "seo_enhancement": "Create individual case study pages with unique meta descriptions. Target 'Holy Rollers website', 'Chesterton Academy web redesign' as long-tail keywords.",
+      "notes": "Currently 5 external links with minimal context. High opportunity for internal content expansion."
+    },
+    {
+      "route": "/contact",
+      "page_type": "contact",
+      "content_approach": "preserve",
+      "headline_recommendation": "Let's Talk - Start a Conversation",
+      "body_recommendation": "Preserve the personal, low-pressure contact approach. Maintain the conversational form fields. Add response time expectation and alternative contact methods (calendar booking link suggestion).",
+      "cta_recommendation": "Send a Message → I'll Respond Within 48 Hours",
+      "seo_enhancement": "Add contact page schema. Include physical address if available (phone 440-876-8036 provided). Add Google Maps embed consideration.",
+      "notes": "Currently 'Let's Talk' form section - should be dedicated /contact route for SEO."
+    }
+  ],
+  "variants": [
+    {
+      "variant_id": "A",
+      "tone_of_voice": {
+        "voice": "professional",
+        "pitch": "Warm, mission-driven professional voice that honors the founder's classical liberal arts roots while speaking to values-aligned clients seeking simplicity and purpose.",
+        "example_phrases": [
+          "Showcase Your Mission",
+          "Let's put together an effective plan for realizing your goals and creating something beautiful",
+          "Help present the good purposes of your company in a beautifully simple manner"
+        ]
+      },
+      "content_approaches": [
+        "preserve original voice",
+        "gradual modernization of typography and layout",
+        "maintain personal tone",
+        "respect brand heritage"
+      ],
+      "recommended_pages": [
+        "/",
+        "/about",
+        "/contact"
+      ],
+      "headline_templates": [
+        "Showcase Your Mission with {Service}",
+        "{Service} for Mission-Driven Organizations",
+        "Your Vision, Realized: {Service}"
+      ],
+      "body_templates": [
+        "For organizations and businesses who care about presenting their purpose beautifully. Merimee Digital Solutions simplifies web design, apps, and marketing so you can focus on your mission.",
+        "Michael Merimee brings classical liberal arts values to digital work - creating platforms that reflect the beauty and purpose of the organizations they represent."
+      ],
+      "cta_variations": [
+        "Let's Talk → Start Your Journey",
+        "Schedule a Call → Begin the Conversation",
+        "Work Together → Let's Create Something Beautiful"
+      ],
+      "competitive_positioning": "Positions Merimee as a boutique, values-aligned alternative to commodity web shops. The classical education background and Catholic publishing experience create a distinct positioning in the market for mission-driven clients.",
+      "differentiation_points": [
+        "Classical liberal arts educated founder with unique perspective",
+        "Mission-over-metrics approach",
+        "Catholic and values-driven client base (Chesterton Academy, Holy Rollers)",
+        "Personal, relationship-focused engagement"
+      ],
+      "rationale": "This variant preserves the existing brand voice that has already resonated with the target audience (Catholic schools, mission-driven organizations). The personal, purpose-oriented messaging ('Showcase Your Mission', 'Let's be great together') represents genuine brand equity that should not be disrupted."
+    },
+    {
+      "variant_id": "B",
+      "tone_of_voice": {
+        "voice": "authoritative",
+        "pitch": "Bold, modern professional voice that repositions classical values as timeless competitive advantages in an age of disposable digital work.",
+        "example_phrases": [
+          "Digital Solutions That Endure",
+          "Where Classical Values Meet Modern Technology",
+          "Build Something That Lasts"
+        ]
+      },
+      "content_approaches": [
+        "reposition classical roots as differentiator",
+        "bold typography and layout choices",
+        "modernize all messaging",
+        "lead with confidence"
+      ],
+      "recommended_pages": [
+        "/",
+        "/services",
+        "/portfolio"
+      ],
+      "headline_templates": [
+        "Classical Excellence in Digital Design",
+        "Timeless Design for Modern Missions",
+        "Where Purpose Meets Precision"
+      ],
+      "body_templates": [
+        "Merimee Digital Solutions brings a rare combination: classical liberal arts thinking and cutting-edge web technology. For organizations who refuse mediocrity and demand digital presence that matches their mission.",
+        "From Catholic schools to creative agencies, we build websites that endure - not just in design, but in impact."
+      ],
+      "cta_variations": [
+        "Build Something Great → Get Started",
+        "Start Your Project → See What's Possible",
+        "Partner With Us → Elevate Your Digital Presence"
+      ],
+      "competitive_positioning": "Reposition classical liberal arts background as a market differentiator - positions against generic web agencies by emphasizing depth, values, and long-term thinking over quick-turnaround commodity work.",
+      "differentiation_points": [
+        "Founder's classical education as credential",
+        "Catholic publishing industry experience",
+        "'Refuse mediocrity' positioning against commodity web shops",
+        "'Timeless' design philosophy vs trend-chasing"
+      ],
+      "rationale": "This variant recognizes an opportunity to more explicitly leverage the classical liberal arts background as a market differentiator. While Variant A preserves, Variant B elevates the unique positioning of the founder's educational background. Better for SEO and broader market appeal while still respecting brand DNA."
+    }
+  ],
+  "chosen_variant": "A",
+  "final_rationale": "Variant A was chosen because the existing brand voice has proven resonance with the target audience - the Catholic school (Chesterton Academy) and mission-driven organizations (Holy Rollers) in the portfolio represent exactly the clients the brand should continue attracting. The personal, warm tone ('Let's Talk', 'I'd Love to Hear From You') creates a distinctive positioning against commodity web shops. While Variant B offers compelling SEO and positioning opportunities, the risk of alienating existing brand advocates outweighs the potential gains. The 'preserve-and-modernize' approach allows for typography and layout improvements without disrupting the genuine personal voice that Michael Merimee has established. This maintains client trust during the Wix-to-Next.js migration while setting up for iterative brand refinement post-launch.",
+  "brand_preservation_notes": [
+    "Personal, conversational tone ('Let's Talk', 'I'd Love to Hear From You') must be preserved - this is the brand's authentic voice",
+    "Michael Merimee's classical liberal arts background and Catholic publishing career are credibility signals that differentiate the brand",
+    "Mission-forward messaging ('Showcase Your Mission', 'Don't resign yourself to mediocrity') resonates with the existing audience and should remain",
+    "Service focus on 'simplified' solutions is a core value proposition - do not overcommercialize",
+    "Client names and portfolio work (Holy Rollers, Chesterton Academy, etc.) demonstrate brand credibility and should be featured prominently",
+    "Contact approach is relationship-first, not transaction-first - preserve the low-pressure, personal inquiry style"
+  ],
+  "seo_content_opportunities": [
+    "Create About page targeting 'Christian web developer', 'Catholic school website design' - E-E-A-T signals from classical education background",
+    "Expand Portfolio into case studies targeting industry-specific keywords",
+    "Add blog section with insights on 'mission-driven web design', 'simplified digital marketing'",
+    "Target 'Wyoming Catholic College alumni web designer' as long-tail - unique differentiator",
+    "Create service-specific landing pages for 'web design Akron', 'Catholic school web redesign' geographic + vertical targeting",
+    "Add FAQ schema and Q&A content addressing common questions from the target audience",
+    "Consider 'testimonial' content from existing clients (Holy Rollers, Chesterton Academy) for trust signals"
+  ],
+  "reasoning_trace": [
+    "Analyzed SiteUnderstanding: single-page Wix site, 298 words of text content, 4 service cards, 5 portfolio links, personal bio section",
+    "Identified brand personality: professional + warm + inspirational, rooted in classical liberal arts values",
+    "Noted target audience signals: Catholic schools, mission-driven organizations, entrepreneurs seeking purpose-aligned partners",
+    "Observed competitive positioning: 'simplified' solutions vs commodity web shops, personal relationship-focused approach",
+    "Cross-referenced with SiteArchitecture: Next.js + Tailwind migration target, static export, Fly.io deployment",
+    "Developed Variant A (preserve-and-modernize): maintains existing voice, gradual typography/layout improvements",
+    "Developed Variant B (bold-refresh): repositions classical education as explicit differentiator, bolder messaging",
+    "Evaluated both variants against brand signals: existing audience (Catholic schools, Holy Rollers) responds to personal, authentic voice",
+    "Selected Variant A: brand equity in authentic personal tone outweighs Variant B's broader market appeal potential",
+    "Produced page-level strategies: home (preserve), about (expand from bio), services (expand from anchor nav), portfolio (expand with case studies), contact (preserve)",
+    "Set BrandSpec motion_philosophy to 'classical' matching the liberal arts heritage - restrained, elegant, typography-forward",
+    "Ensured dark_mode_strategy is 'full_tokens' for accessibility and brand consistency across devices",
+    "Finalized ContentRecommendation with preservation-focused overall_strategy and specific page execution guidance"
+  ]
+}

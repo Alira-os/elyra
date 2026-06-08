@@ -44,7 +44,8 @@ logging.basicConfig(level=logging.INFO, format='[promotion_pipeline] %(message)s
 logger = logging.getLogger(__name__)
 
 SCRIPT_DIR = Path(__file__).parent
-ELYRA_ROOT = SCRIPT_DIR.parent
+# promotion_pipeline.py lives at elyra/ root
+ELYRA_ROOT = SCRIPT_DIR
 KILO_CLI = ELYRA_ROOT / "tools" / "kilo.py"
 PERSONA_PATH = ELYRA_ROOT / "registry" / "personas" / "deploy_specialist.md"
 MEMORY_DIR = ELYRA_ROOT / "memory" / "promotions"

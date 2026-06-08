@@ -1,0 +1,87 @@
+{
+  "delta_id": "vd-20260608-merimee-001",
+  "parent_brand_spec_version": "1.0",
+  "primary_change": "No visual evolution — BrandSpec fidelity only",
+  "rationale": "Content strategy is preserve-and-modernize. BrandSpec already encodes the classical, restrained, typography-forward personality appropriate for Merimee's mission-driven, faith-aligned clientele. Introducing visual deltas would risk alienating existing brand advocates (Chesterton Academy, Holy Rollers) without compensating upside. The migration modernizes execution (CSS custom properties, fluid layout, prefers-reduced-motion, full dark mode) while preserving brand identity exactly. Stitch MCP unavailable in this run; decisions derived directly from BrandSpec tokens and motion philosophy.",
+  "impacted_components": [
+    "button",
+    "card",
+    "input",
+    "section",
+    "container",
+    "modal"
+  ],
+  "impacted_pages": [
+    "/"
+  ],
+  "color_delta": null,
+  "typography_delta": null,
+  "motion_delta": {
+    "default_class": "motion-classical",
+    "rationale": "BrandSpec motion_philosophy=classical. Duration 200ms ease-out for micro-interactions; 400ms cubic-bezier(0.34, 1.56, 0.64, 1) spring for modals. All motion respects prefers-reduced-motion."
+  },
+  "designer_notes": [
+    "Single page discovered; VisualDirection scoped to '/' route only.",
+    "Hero should be typography-only with optional subtle gradient on --color-primary-container; defer hero photography until brand refinement phase.",
+    "Indigo accent (#6366F1) reserved for CTAs, focus rings, and active states — do not apply to large surface areas.",
+    "All focus indicators use 2px solid var(--brand-accent) with 2px offset; never outline:none without replacement.",
+    "Touch targets minimum 44px (WCAG 2.5.5).",
+    "Dark mode tokens defined in BrandSpec (full_tokens); default theme is light, data-theme='dark' toggles inversion.",
+    "Merriweather for all headings including h1-h6; Source Sans 3 for body, labels, captions.",
+    "Card hover uses motion-classical (scale 1.02 + shadow-md); button hover uses motion-subtle (opacity 0.9) — restraint matters for classical brand voice.",
+    "Container max-widths: 640 / 768 / 1024 / 1280 with padding escalating 16/16/24/32 px.",
+    "Spacing philosophy on home is 'spacious' — section vertical padding uses --space-3xl (64px) on desktop, --space-2xl (48px) on mobile."
+  ],
+  "created_by": "ui_designer",
+  "created_at": "2026-06-08T12:32:54-04:00",
+  "stitch_status": "unavailable",
+  "schema_version": "1.1",
+  "page_layouts": {
+    "/": {
+      "grid_system": "single-column",
+      "spacing_philosophy": "spacious",
+      "section_order": ["hero", "services", "testimonials", "cta"],
+      "motion_priority": ["opacity", "translateY", "scale"],
+      "component_variants_priority": ["primary", "elevated", "default"],
+      "container_max_widths": {
+        "sm": "640px",
+        "md": "768px",
+        "lg": "1024px",
+        "xl": "1280px"
+      },
+      "section_padding": {
+        "vertical_desktop": "var(--space-3xl)",
+        "vertical_mobile": "var(--space-2xl)",
+        "horizontal_desktop": "var(--space-8)",
+        "horizontal_mobile": "var(--space-4)"
+      }
+    }
+  },
+  "typography_hierarchy": {
+    "/": {
+      "h1": { "size": "5xl", "weight": "bold", "tracking": "tight", "line_height": "1.1" },
+      "h2": { "size": "4xl", "weight": "semibold", "tracking": "normal", "line_height": "1.2" },
+      "h3": { "size": "3xl", "weight": "semibold", "tracking": "normal", "line_height": "1.3" },
+      "h4": { "size": "2xl", "weight": "medium", "tracking": "normal", "line_height": "1.4" },
+      "h5": { "size": "xl", "weight": "medium", "tracking": "normal", "line_height": "1.5" },
+      "h6": { "size": "lg", "weight": "medium", "tracking": "normal", "line_height": "1.5" },
+      "body": { "size": "base", "weight": "normal", "tracking": "normal", "line_height": "1.6" },
+      "body_large": { "size": "lg", "weight": "normal", "tracking": "normal", "line_height": "1.6" },
+      "small": { "size": "sm", "weight": "normal", "tracking": "normal", "line_height": "1.5" },
+      "caption": { "size": "xs", "weight": "normal", "tracking": "normal", "line_height": "1.4" }
+    }
+  },
+  "motion_class_map": {
+    "card_hover": "motion-classical",
+    "card_active": "motion-subtle",
+    "button_hover": "motion-subtle",
+    "button_active": "motion-subtle",
+    "modal_open": "motion-classical",
+    "modal_close": "motion-classical",
+    "section_reveal": "motion-monastic",
+    "link_hover": "motion-subtle",
+    "input_focus": "motion-subtle",
+    "dropdown_open": "motion-classical"
+  },
+  "reference_images": []
+}

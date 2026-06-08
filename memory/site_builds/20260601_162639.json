@@ -1,0 +1,378 @@
+{
+  "migration_id": "merimee-20260601-162102",
+  "source_url": "https://merimeesolutions.wixstudio.com/my-site-2",
+  "source_understanding_id": "20260524_004901",
+  "source_architecture_id": "20260524_005030",
+  "source_recommendation_id": "20260601_104145",
+  "chosen_variant": "A",
+  "brand_spec": {
+    "primary_color": "#1E293B",
+    "secondary_color": "#475569",
+    "accent_color": "#6366F1",
+    "background_color": "#FFFFFF",
+    "text_color": "#1E293B",
+    "semantic_tokens": {
+      "surface": "#F8FAFC",
+      "on-surface": "#1E293B",
+      "primary-container": "#EEF2FF",
+      "muted": "#64748B",
+      "border": "#E2E8F0"
+    },
+    "font_family_heading": "Merriweather, serif",
+    "font_family_body": "Source Sans 3, sans-serif",
+    "font_size_base": "16px",
+    "type_scale": {
+      "xs": "12px",
+      "sm": "14px",
+      "base": "16px",
+      "lg": "18px",
+      "xl": "20px",
+      "2xl": "24px",
+      "3xl": "30px",
+      "4xl": "36px",
+      "5xl": "48px"
+    },
+    "spacing_scale": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px",
+      "2xl": "48px",
+      "3xl": "64px"
+    },
+    "border_radius": "0.375rem",
+    "shadow_scale": {
+      "sm": "0 1px 2px rgba(0,0,0,0.05)",
+      "md": "0 4px 6px rgba(0,0,0,0.07)",
+      "lg": "0 10px 15px rgba(0,0,0,0.1)"
+    },
+    "motion_philosophy": "classical",
+    "motion_duration": "200ms",
+    "motion_easing": "ease-out",
+    "component_variants": {
+      "button": [
+        "primary",
+        "secondary",
+        "ghost"
+      ],
+      "card": [
+        "default",
+        "elevated",
+        "outlined"
+      ],
+      "input": [
+        "default",
+        "filled"
+      ]
+    },
+    "dark_mode_strategy": "full_tokens",
+    "notes": "Brand derived from classical liberal arts educational context - restrained elegance over flashiness. Typography-forward design with serif headings conveys authority and timelessness."
+  },
+  "visual_direction": {
+    "delta_id": "vd-merimee-20260523-232220",
+    "parent_brand_spec_version": "20260523-230422",
+    "primary_change": "Typography refinement - editorial feel through refined serif headings paired with Source Sans 3 body text. Classical motion philosophy applied to all interactive components with subtle scale(1.02) hover states. Services section upgraded to elevated card treatment for visual hierarchy.",
+    "rationale": "The BrandSpec defines a classical liberal arts brand personality requiring refined, contemplative aesthetics. Lora serif headings convey established credibility and warmth appropriate for mission-driven organizations. The 'classical' motion_philosophy (400ms ease-out with subtle spring) is applied consistently across all components. Source Sans 3 body ensures readability while maintaining the warm, accessible tone. The 0.25rem border_radius and subtle shadow_scale preserve the professional, understated refinement. BrandSpec fidelity maintained - no new colors or tokens introduced.",
+    "impacted_components": [
+      "hero",
+      "service-cards",
+      "process-steps",
+      "portfolio-gallery",
+      "contact-form",
+      "about-section",
+      "footer"
+    ],
+    "impacted_pages": [
+      "/"
+    ],
+    "color_delta": null,
+    "typography_delta": {
+      "/": {
+        "h1": {
+          "size": "4xl",
+          "weight": "700",
+          "tracking": "-0.02em",
+          "line_height": "1.1"
+        },
+        "h2": {
+          "size": "3xl",
+          "weight": "600",
+          "tracking": "-0.01em",
+          "line_height": "1.2"
+        },
+        "h3": {
+          "size": "xl",
+          "weight": "600",
+          "tracking": "normal",
+          "line_height": "1.3"
+        },
+        "body": {
+          "size": "base",
+          "weight": "400",
+          "line_height": "1.7"
+        },
+        "caption": {
+          "size": "sm",
+          "weight": "500",
+          "tracking": "0.02em",
+          "text_transform": "uppercase"
+        }
+      }
+    },
+    "motion_delta": {
+      "philosophy": "classical",
+      "duration": "400ms",
+      "easing": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+      "hover_scale": "1.02",
+      "component_map": {
+        "card_hover": "motion-classical",
+        "card_elevated_hover": "motion-classical",
+        "button_primary_hover": "motion-classical",
+        "button_secondary_hover": "motion-monastic",
+        "link_hover": "motion-subtle",
+        "form_input_focus": "motion-subtle",
+        "modal_open": "motion-classical"
+      }
+    },
+    "designer_notes": [
+      "BrandSpec 'classical' motion philosophy (400ms ease-out with cubic-bezier spring) applied to all interactive elements for cohesive experience",
+      "Service cards use elevated card variant with larger shadow on hover to create visual hierarchy in the services grid",
+      "Portfolio gallery items use motion-subtle (opacity fade) to avoid competing with case study content",
+      "Contact form inputs feature subtle border-color transition matching motion_philosophy duration",
+      "All colors trace to BrandSpec tokens - primary_color #1E293B for headings, accent_color #7C3AED for interactive accents",
+      "Footer social links use ghost button styling with motion-subtle for understated presence",
+      "Dark mode will use [data-theme=\"dark\"] with inverted BrandSpec tokens via full_tokens strategy"
+    ],
+    "created_by": "ui_designer",
+    "created_at": "2026-05-23T23:22:20-04:00",
+    "stitch_status": "unavailable",
+    "schema_version": "1.1",
+    "page_layouts": {
+      "/": {
+        "grid_system": "three-column",
+        "spacing_philosophy": "balanced",
+        "section_order": [
+          "hero",
+          "services",
+          "process",
+          "portfolio",
+          "contact",
+          "about",
+          "footer"
+        ],
+        "section_layouts": {
+          "hero": {
+            "layout": "full-width",
+            "columns": "single",
+            "vertical_alignment": "center",
+            "background_style": "image-overlay"
+          },
+          "services": {
+            "layout": "grid",
+            "columns": 4,
+            "column_span": "equal",
+            "responsive_columns": {
+              "640": 2,
+              "1024": 4
+            }
+          },
+          "process": {
+            "layout": "grid",
+            "columns": 3,
+            "responsive_columns": {
+              "640": 1,
+              "1024": 3
+            }
+          },
+          "portfolio": {
+            "layout": "grid",
+            "columns": 5,
+            "responsive_columns": {
+              "640": 1,
+              "768": 2,
+              "1024": 3,
+              "1280": 5
+            }
+          },
+          "contact": {
+            "layout": "centered",
+            "max_width": "640px"
+          },
+          "about": {
+            "layout": "two-column",
+            "columns": {
+              "portrait": "auto",
+              "content": "1fr"
+            },
+            "vertical_alignment": "center",
+            "responsive_layout": {
+              "768": "stacked"
+            }
+          },
+          "footer": {
+            "layout": "single",
+            "alignment": "center"
+          }
+        },
+        "motion_priority": [
+          "opacity",
+          "translateY"
+        ],
+        "component_variants_priority": [
+          "elevated",
+          "primary"
+        ]
+      }
+    },
+    "typography_hierarchy": {
+      "/": {
+        "h1": {
+          "size": "4xl",
+          "weight": "bold",
+          "tracking": "tight",
+          "font_family": "Lora, Georgia, serif"
+        },
+        "h2": {
+          "size": "3xl",
+          "weight": "semibold",
+          "tracking": "normal",
+          "font_family": "Lora, Georgia, serif"
+        },
+        "h3": {
+          "size": "xl",
+          "weight": "semibold",
+          "tracking": "normal",
+          "font_family": "Lora, Georgia, serif"
+        },
+        "h4": {
+          "size": "lg",
+          "weight": "600",
+          "tracking": "normal",
+          "font_family": "Source Sans 3, system-ui, sans-serif"
+        },
+        "body": {
+          "size": "base",
+          "weight": "400",
+          "line_height": "1.7",
+          "font_family": "Source Sans 3, system-ui, sans-serif"
+        },
+        "button": {
+          "size": "base",
+          "weight": "600",
+          "tracking": "normal",
+          "font_family": "Source Sans 3, system-ui, sans-serif"
+        }
+      }
+    },
+    "motion_class_map": {
+      "card_hover": "motion-classical",
+      "card_elevated_hover": "motion-classical",
+      "button_primary_hover": "motion-classical",
+      "button_secondary_hover": "motion-monastic",
+      "button_ghost_hover": "motion-subtle",
+      "link_hover": "motion-subtle",
+      "form_input_focus": "motion-subtle",
+      "form_input_hover": "motion-subtle",
+      "image_gallery_item_hover": "motion-subtle",
+      "footer_link_hover": "motion-subtle"
+    },
+    "reference_images": [
+      "https://static.wixstatic.com/media/nsplsh_793767677065754d315177~mv2_d_5077_3808_s_4_2.jpg/v1/fill/w_2044,h_1084,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/Image%20by%20Simon%20Berger.jpg"
+    ]
+  },
+  "output_dir": "sites/merimee-digital-solutions/",
+  "ui_polish_version": "v1",
+  "ui_polish_changes": [
+    {
+      "file": "sites/merimee-digital-solutions/app/globals.css",
+      "change": "Added motion-classical, motion-subtle, motion-monastic CSS classes for component animation variants",
+      "reason": "VisualDirection.motion_class_map defines motion classes for different interaction types - ensures consistent motion philosophy across components",
+      "brand_spec_reference": "motion_philosophy: classical, motion_delta.component_map"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/app/globals.css",
+      "change": "Added card-hover and card-elevated hover utility classes with scale(1.02) transform",
+      "reason": "VisualDirection.motion_delta.hover_scale is 1.02 - applies classical motion to card interactions",
+      "brand_spec_reference": "motion_delta.hover_scale: 1.02, motion_philosophy: classical"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/app/globals.css",
+      "change": "Added prefers-reduced-motion media query to disable animations",
+      "reason": "Accessibility requirement - motion should be disabled for users who prefer reduced motion",
+      "brand_spec_reference": "motion_philosophy: classical (accessibility compliance)"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/components/Services.tsx",
+      "change": "Applied card-elevated variant to service cards with larger shadow on hover",
+      "reason": "VisualDirection.impacted_components includes service-cards with elevated treatment for visual hierarchy",
+      "brand_spec_reference": "component_variants.card: elevated, shadow_scale.lg"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/components/Portfolio.tsx",
+      "change": "Applied motion-subtle to portfolio items for understated presence",
+      "reason": "VisualDirection.designer_notes: 'Portfolio gallery items use motion-subtle (opacity fade) to avoid competing with case study content'",
+      "brand_spec_reference": "motion_class_map.image_gallery_item_hover: motion-subtle"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/components/Contact.tsx",
+      "change": "Applied motion-subtle to form inputs for focus transitions",
+      "reason": "VisualDirection.motion_class_map.form_input_focus: motion-subtle, designer_notes: 'Contact form inputs feature subtle border-color transition'",
+      "brand_spec_reference": "motion_class_map.form_input_focus: motion-subtle"
+    },
+    {
+      "file": "sites/merimee-digital-solutions/app/globals.css",
+      "change": "Kept cubic-bezier(0.34, 1.56, 0.64, 1) spring easing despite impeccable detect warning",
+      "reason": "VisualDirection.motion_delta.easing explicitly specifies cubic-bezier(0.34, 1.56, 0.64, 1) as the classical spring easing. This is intentional brand design choice, not bounce animation antipattern.",
+      "brand_spec_reference": "motion_delta.easing: cubic-bezier(0.34, 1.56, 0.64, 1)"
+    }
+  ],
+  "self_critique": {
+    "visual_weight_issues": [
+      "Hero section text could be larger on desktop for more impact",
+      "Portfolio thumbnails are low-res (49x34px from source) - may appear pixelated on high-DPI displays"
+    ],
+    "typography_hierarchy_suggestions": [
+      "Consider adding a caption/eyebrow style above h1 in hero for visual depth",
+      "H4 headings in component use Source Sans 3 while H1-H3 use Lora - this is intentional per VisualDirection but could benefit from more differentiation"
+    ],
+    "emotional_resonance_gaps": [
+      "Personal bio section could include more warmth through spacing and typography variation",
+      "Contact form success state could be more celebratory to match the 'Let's Talk' conversational tone"
+    ],
+    "brand_token_violations": [
+      "Impeccable detect flagged cubic-bezier(0.34, 1.56, 0.64, 1) as bounce easing - this is a false positive; the VisualDirection explicitly specifies this spring easing as the classical motion characteristic"
+    ],
+    "motion_philosophy_alignment": "aligned",
+    "severity": "low",
+    "recommended_action": "None - acceptable trade-off. The classical spring easing is explicitly specified in VisualDirection and represents intentional brand design. Portfolio thumbnails are preserved from source CDN to maintain authenticity."
+  },
+  "lighthouse_scores": {
+    "performance": 0,
+    "accessibility": 0,
+    "best_practices": 0,
+    "seo": 0
+  },
+  "overall_quality_score": 0.0,
+  "build_timestamp": "2026-06-01T16:21:02-04:00",
+  "personas_used": [
+    "builder_specialist",
+    "impeccable"
+  ],
+  "deployment_readiness": {
+    "has_package_json": true,
+    "has_next_config": true,
+    "has_tailwind_config": true,
+    "has_typescript": true,
+    "has_components": true,
+    "has_forms": true,
+    "forms_wired": "partial - console.log submission, needs Resend integration",
+    "dark_mode_css_vars": true,
+    "reduced_motion_support": true,
+    "accessibility_focus_states": true
+  },
+  "rework_log": [],
+  "iteration_history": [],
+  "final_state": "BuildManifest generated with all provenance. Site files written to sites/merimee-digital-solutions/. Code applies BrandSpec tokens as CSS custom properties, VisualDirection typography hierarchy, and classical motion philosophy. Impeccable detect run - 2 warnings flagged (bounce easing false positive per VisualDirection). Polish changes logged with brand_spec_reference.",
+  "completed_at": "2026-06-01T16:21:02-04:00"
+}

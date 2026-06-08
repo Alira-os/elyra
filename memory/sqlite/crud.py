@@ -2,7 +2,8 @@ import sqlite3
 import json
 import uuid
 from datetime import datetime
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Any
 
 
 class Database:
@@ -437,3 +438,206 @@ class SessionStateCRUD:
             return cursor.rowcount > 0
         finally:
             conn.close()
+
+
+class ArtifactCRUD:
+    """CRUD operations for the artifacts table with mandatory provenance."""
+
+    def __init__(self, db: Database):
+        self.db = db
+
+    def _init_schema(self) -> None:
+        """Ensure the artifacts schema is loaded."""
+        schema_path = Path(__file__).parent / "artifacts.sql"
+        if not schema_path.exists():
+            return
+        with self.db._get_connection() as conn:
+            with open(schema_path, "r", encoding="utf-8") as f:
+                conn.executescript(f.read())
+            conn.commit()
+
+    def save_artifact(
+        self,
+        artifact_id: str,
+        migration_id: str,
+        stage: str,
+        persona_set: list[str],
+        decision_context: str,
+        artifact_type: str,
+        path: str,
+        metadata: Optional[dict] = None,
+        embedding_vector_id: Optional[str] = None,
+        tags: Optional[list[str]] = None,
+        scratch_source: Optional[str] = None,
+    ) -> str:
+        """Save an artifact with full provenance."""
+        conn = self.db._get_connection()
+        try:
+            conn.execute("""
+                INSERT INTO artifacts (
+                    id, migration_id, stage, persona_set, decision_context,
+                    artifact_type, path, metadata, embedding_vector_id, tags,
+                    scratch_source, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                artifact_id,
+                migration_id,
+                stage,
+                json.dumps(persona_set),
+                decision_context,
+                artifact_type,
+                path,
+                json.dumps(metadata or {}, default=str),
+                embedding_vector_id,
+                json.dumps(tags or []),
+                scratch_source,
+                datetime.now().isoformat(),
+            ))
+            conn.commit()
+        finally:
+            conn.close()
+        return artifact_id
+
+    def get_artifact(self, artifact_id: str) -> Optional[dict]:
+        """Get a single artifact by ID."""
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM artifacts WHERE id = ?",
+                (artifact_id,)
+            )
+            row = cursor.fetchone()
+            if row:
+                columns = self.db._get_columns(cursor)
+                d = self.db._row_to_dict(row, columns)
+                return self._deserialize_artifact(d)
+            return None
+        finally:
+            conn.close()
+
+    def query_by_migration(
+        self,
+        migration_id: str,
+        artifact_type: Optional[str] = None,
+        stage: Optional[str] = None,
+        tag: Optional[str] = None,
+        limit: int = 20,
+    ) -> list[dict]:
+        """Query artifacts by migration ID."""
+        conditions = ["migration_id = ?"]
+        params: list[Any] = [migration_id]
+
+        if artifact_type:
+            conditions.append("artifact_type = ?")
+            params.append(artifact_type)
+        if stage:
+            conditions.append("stage = ?")
+            params.append(stage)
+        if tag:
+            conditions.append("tags LIKE ?")
+            params.append(f'%"{tag}"%')
+
+        query = f"""
+            SELECT * FROM artifacts
+            WHERE {' AND '.join(conditions)}
+            ORDER BY created_at DESC LIMIT ?
+        """
+        params.append(limit)
+
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(query, params)
+            columns = self.db._get_columns(cursor)
+            rows = cursor.fetchall()
+            return [self._deserialize_artifact(self.db._row_to_dict(row, columns)) for row in rows]
+        finally:
+            conn.close()
+
+    def query_by_persona(self, persona: str, limit: int = 20) -> list[dict]:
+        """Query artifacts by persona in persona_set."""
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM artifacts WHERE persona_set LIKE ? ORDER BY created_at DESC LIMIT ?",
+                (f'%"{persona}"%', limit)
+            )
+            columns = self.db._get_columns(cursor)
+            rows = cursor.fetchall()
+            return [self._deserialize_artifact(self.db._row_to_dict(row, columns)) for row in rows]
+        finally:
+            conn.close()
+
+    def query_by_type(self, artifact_type: str, limit: int = 20) -> list[dict]:
+        """Query artifacts by type."""
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM artifacts WHERE artifact_type = ? ORDER BY created_at DESC LIMIT ?",
+                (artifact_type, limit)
+            )
+            columns = self.db._get_columns(cursor)
+            rows = cursor.fetchall()
+            return [self._deserialize_artifact(self.db._row_to_dict(row, columns)) for row in rows]
+        finally:
+            conn.close()
+
+    def query_by_tag(self, tag: str, limit: int = 20) -> list[dict]:
+        """Query artifacts that have a specific tag."""
+        conn = self.db._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT * FROM artifacts WHERE tags LIKE ? ORDER BY created_at DESC LIMIT ?",
+                (f'%"{tag}"%', limit)
+            )
+            columns = self.db._get_columns(cursor)
+            rows = cursor.fetchall()
+            return [self._deserialize_artifact(self.db._row_to_dict(row, columns)) for row in rows]
+        finally:
+            conn.close()
+
+    def query_by_stage(self, stage: str, migration_id: Optional[str] = None, limit: int = 20) -> list[dict]:
+        """Query artifacts by stage."""
+        conn = self.db._get_connection()
+        try:
+            if migration_id:
+                cursor = conn.execute(
+                    "SELECT * FROM artifacts WHERE stage = ? AND migration_id = ? ORDER BY created_at DESC LIMIT ?",
+                    (stage, migration_id, limit)
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT * FROM artifacts WHERE stage = ? ORDER BY created_at DESC LIMIT ?",
+                    (stage, limit)
+                )
+            columns = self.db._get_columns(cursor)
+            rows = cursor.fetchall()
+            return [self._deserialize_artifact(self.db._row_to_dict(row, columns)) for row in rows]
+        finally:
+            conn.close()
+
+    def get_recent(self, limit: int = 20, artifact_type: Optional[str] = None) -> list[dict]:
+        """Get most recently created artifacts."""
+        conn = self.db._get_connection()
+        try:
+            if artifact_type:
+                cursor = conn.execute(
+                    "SELECT * FROM artifacts WHERE artifact_type = ? ORDER BY created_at DESC LIMIT ?",
+                    (artifact_type, limit)
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT * FROM artifacts ORDER BY created_at DESC LIMIT ?",
+                    (limit,)
+                )
+            columns = self.db._get_columns(cursor)
+            rows = cursor.fetchall()
+            return [self._deserialize_artifact(self.db._row_to_dict(row, columns)) for row in rows]
+        finally:
+            conn.close()
+
+    def _deserialize_artifact(self, d: dict) -> dict:
+        """Deserialize JSON fields in an artifact row."""
+        d["persona_set"] = self.db._safe_json_loads(d.get("persona_set")) or []
+        d["tags"] = self.db._safe_json_loads(d.get("tags")) or []
+        d["metadata"] = self.db._safe_json_loads(d.get("metadata")) or {}
+        return d

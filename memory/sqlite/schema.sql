@@ -73,22 +73,21 @@ CREATE TABLE IF NOT EXISTS content_recommendations (
 
 CREATE INDEX IF NOT EXISTS idx_recommendations_migration ON content_recommendations(migration_id);
 
--- Structured artifacts (JSON blobs for lessons, anti-patterns)
-CREATE TABLE IF NOT EXISTS artifacts (
+-- Migration: rename conflicting artifacts table (added 2026-05-23)
+-- The old artifacts table has incompatible schema (no stage, content vs path)
+-- This must run BEFORE the new artifacts table is created.
+-- Uses a harmless error swallowed by "PRAGMA ignore_statement_errors=ON" approach
+-- via Python-side exception handling. Only rename if both tables would collide.
+CREATE TABLE IF NOT EXISTS artifacts_v0_deprecated (
     id TEXT PRIMARY KEY,
     migration_id TEXT,
-    artifact_type TEXT NOT NULL,  -- lesson, anti_pattern, routing_insight, deploy_result
-    content TEXT NOT NULL,  -- JSON content
-    embedding_vector_id TEXT,  -- reference to LanceDB vector ID
-    tags TEXT,  -- JSON array of searchable tags
-    source_persona TEXT,  -- which persona generated this
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (migration_id) REFERENCES migrations(id)
+    artifact_type TEXT,
+    content TEXT,
+    embedding_vector_id TEXT,
+    tags TEXT,
+    source_persona TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE INDEX IF NOT EXISTS idx_artifacts_migration ON artifacts(migration_id);
-CREATE INDEX IF NOT EXISTS idx_artifacts_type ON artifacts(artifact_type);
-CREATE INDEX IF NOT EXISTS idx_artifacts_tags ON artifacts(tags);
 
 -- Debate outputs
 CREATE TABLE IF NOT EXISTS debate_outputs (

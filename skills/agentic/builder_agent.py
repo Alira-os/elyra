@@ -30,7 +30,15 @@ from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from memory.gap_ledger import log_gap
-
+from skills.agentic.json_extract import extract_json, JSONExtractionError
+from skills.agentic.kilo_callbacks import make_timeout_callback
+from skills.agentic.prompt_budget import (
+    compact_site_understanding,
+    compact_site_architecture,
+    compact_content_recommendation,
+    compact_visual_direction,
+)
+from tools.kilo import invoke_kilo_safe
 from models.site_schemas import (
     SiteUnderstanding,
     SiteArchitecture,
@@ -67,17 +75,29 @@ def build_builder_prompt(
     recommendation: ContentRecommendation,
     site_slug: str,
     visual_direction: Optional[VisualDirection] = None,
+    gap_context: Optional[str] = None,
 ) -> str:
-    """Build the prompt that Kilo CLI will execute."""
+    """Build the prompt that Kilo CLI will execute.
+
+    Phase 0.6: uses compact views of all upstream artifacts. The builder
+    has the largest prompt budget (30K) because it's the convergence
+    point — it needs to know stack, content, and design simultaneously
+    to write code. But it doesn't need per-page component detail; the
+    Builder operates at the page/structure level, not the field level.
+    """
     persona = PERSONA_PATH.read_text() if PERSONA_PATH.exists() else ""
 
-    site_json = site.model_dump_json(indent=2)
-    arch_json = architecture.model_dump_json(indent=2)
-    rec_json = recommendation.model_dump_json(indent=2)
+    site_compact = compact_site_understanding(site)
+    arch_compact = compact_site_architecture(architecture)
+    rec_compact = compact_content_recommendation(recommendation, keep_brand=True)
+    site_json = json.dumps(site_compact, indent=2, default=str)
+    arch_json = json.dumps(arch_compact, indent=2, default=str)
+    rec_json = json.dumps(rec_compact, indent=2, default=str)
 
     vd_section = ""
     if visual_direction:
-        vd_json = visual_direction.model_dump_json(indent=2)
+        vd_compact = compact_visual_direction(visual_direction)
+        vd_json = json.dumps(vd_compact, indent=2, default=str)
         vd_section = f"""
 
 ## Input VisualDirection (from UI Designer)
@@ -118,10 +138,10 @@ Apply these changes first. Re-run `impeccable detect` as the final step and ensu
 Build a complete, production-ready site implementation from the following artifacts.
 {gap_section}
 
-## Input SiteUnderstanding
+## Input SiteUnderstanding (compact view)
 {site_json}
 
-## Input SiteArchitecture
+## Input SiteArchitecture (compact view)
 {arch_json}
 
 ## Input ContentRecommendation (with chosen variant + brand_spec)
@@ -130,6 +150,8 @@ Build a complete, production-ready site implementation from the following artifa
 The chosen variant is already decided. Apply it fully. Apply the brand_spec as the design system contract.
 Run the polish pass after initial generation. Log every polish change with reason + brand_spec_reference.
 Run a structured self-critique after polish.
+
+_Full upstream JSON is available at `memory/site_understandings/`, `memory/site_architectures/`, `memory/site_recommendations/`, and `memory/visual_specs/<slug>/` — re-read via your tools if you need per-page component detail._
 
 ## Output
 Your final response must include:
@@ -157,17 +179,10 @@ Begin building now."""
 def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]:
     """Extract JSON object from Kilo CLI --format json output.
 
-    Kilo outputs NDJSON events. Find the last text event and extract JSON from it.
-    Returns (json_str, last_text) for debugging.
+    Returns (json_str, last_text) for debugging. Returns (None, last_text)
+    on extraction failure — callers MUST treat None as a hard error.
+    Kept as a thin shim for backward compatibility.
     """
-    stdout = stdout.strip()
-
-    try:
-        json.loads(stdout)
-        return stdout, None
-    except json.JSONDecodeError:
-        pass
-
     last_text = None
     for line in stdout.splitlines():
         line = line.strip()
@@ -175,40 +190,17 @@ def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]
             continue
         try:
             event = json.loads(line)
-            if event.get("type") == "text":
-                last_text = event["part"].get("text", "")
+            if isinstance(event, dict) and event.get("type") == "text":
+                t = event.get("part", {}).get("text", "")
+                if isinstance(t, str):
+                    last_text = t
         except json.JSONDecodeError:
             continue
-
-    if last_text:
-        last_text = last_text.strip()
-        try:
-            json.loads(last_text)
-            return last_text, last_text
-        except json.JSONDecodeError:
-            pass
-
-        first_brace = last_text.find("{")
-        last_brace = last_text.rfind("}")
-        if first_brace != -1 and last_brace != -1 and last_brace >= first_brace:
-            json_str = last_text[first_brace : last_brace + 1]
-            try:
-                json.loads(json_str)
-                return json_str, last_text
-            except json.JSONDecodeError:
-                pass
-
-    first_brace = stdout.find("{")
-    last_brace = stdout.rfind("}")
-    if first_brace == -1 or last_brace == -1 or last_brace <= first_brace:
-        return None, None
-
-    json_str = stdout[first_brace : last_brace + 1]
     try:
-        json.loads(json_str)
-        return json_str, None
-    except json.JSONDecodeError:
-        return None, None
+        obj = extract_json(stdout)
+        return json.dumps(obj), last_text
+    except JSONExtractionError:
+        return None, last_text
 
 
 def parse_build_manifest(raw_json: str) -> Optional[BuildManifest]:
@@ -327,7 +319,7 @@ def list_site_understandings() -> list[Path]:
     return sorted(MEMORY_DIR.glob("*.json"), reverse=True)
 
 
-def build(site_id: str, arch_id: str, rec_id: str, gap_context: Optional[str] = None) -> Optional[BuildManifest]:
+def build(site_id: str, arch_id: str, rec_id: str, gap_context: Optional[str] = None) -> tuple[Optional[BuildManifest], str]:
     """
     Main entry point: load all three artifacts -> build prompt -> call kilo run ->
     parse manifest + write code files.
@@ -335,6 +327,9 @@ def build(site_id: str, arch_id: str, rec_id: str, gap_context: Optional[str] = 
     When gap_context is supplied (from MigrationManager route_back), the
     prompt includes prioritized rework instructions. Builder always runs
     `impeccable detect` as its final step and emits the report.
+
+    Returns:
+        (BuildManifest or None, site_slug used for the build)
 
     Args:
         site_id: timestamp ID of the SiteUnderstanding
@@ -348,17 +343,17 @@ def build(site_id: str, arch_id: str, rec_id: str, gap_context: Optional[str] = 
     site = load_site_understanding(site_id)
     if not site:
         print(f"[ERROR] Could not load SiteUnderstanding for: {site_id}")
-        return None
+        return None, ""
 
     architecture = load_site_architecture(arch_id)
     if not architecture:
         print(f"[ERROR] Could not load SiteArchitecture for: {arch_id}")
-        return None
+        return None, ""
 
     recommendation = load_content_recommendation(rec_id)
     if not recommendation:
         print(f"[ERROR] Could not load ContentRecommendation for: {rec_id}")
-        return None
+        return None, ""
 
     site_name = recommendation.site_name or site.name or "unnamed"
     site_slug = get_site_slug(site_name)
@@ -386,118 +381,78 @@ def build(site_id: str, arch_id: str, rec_id: str, gap_context: Optional[str] = 
         print(f"[BRAND] Primary: {recommendation.brand_spec.primary_color}")
     print(f"[VARIANT] Chosen: {recommendation.chosen_variant}")
 
-    try:
-        import platform
-        if platform.system() == "Windows":
-            node_exe = (
-                "C:\\Program Files\\nodejs\\node.exe"
-                if Path("C:\\Program Files\\nodejs\\node.exe").exists()
-                else "node"
+    # Phase 0.5: route through invoke_kilo_safe so prompt-size + timeout
+    # guard-rails apply uniformly. Builder is the heaviest persona (600s
+    # budget, often 13K+ char prompts) — this is exactly where the
+    # prompt-size refusal has paid off.
+    result = invoke_kilo_safe(
+        prompt=prompt,
+        context={"site_id": site_id, "arch_id": arch_id, "rec_id": rec_id, "url": site.url},
+        working_dir=".",
+        persona="builder",
+        timeout=600,
+        on_timeout=make_timeout_callback(
+            persona="builder",
+            migration_id_fn=lambda: site_id,
+            default_timeout_s=600,
+        ),
+    )
+
+    if not result.success:
+        print(f"[ERROR] Kilo invocation failed: {result.errors}")
+        if any("not found" in e.lower() for e in result.errors):
+            log_gap(
+                migration_id=site_id,
+                gap_type="gate_failure",
+                source_persona="builder",
+                target_persona="builder",
+                description="'kilo' command not found in PATH",
+                suggested_fix="Ensure Kilo CLI is installed and in system PATH",
+                severity="high",
             )
-            kilo_bin_local = (
-                Path(__file__).resolve().parents[2]
-                / "node_modules"
-                / "@kilocode"
-                / "cli"
-                / "bin"
-                / "kilo"
-            )
-            kilo_bin_fallback = Path(
-                "C:\\Users\\micha\\AppData\\Roaming\\npm\\node_modules\\@kilocode\\cli\\bin\\kilo"
-            )
-            kilo_bin = kilo_bin_fallback
+        return None, ""
 
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".txt", delete=False, encoding="utf-8"
-            ) as f:
-                f.write(prompt)
-                prompt_file = f.name
-
-            try:
-                result = subprocess.run(
-                    [node_exe, str(kilo_bin), "run", "--format", "json", "--auto", "--", f"@{prompt_file}"],
-                    capture_output=True,
-                    encoding="utf-8",
-                    errors="replace",
-                    timeout=600,
-                )
-            finally:
-                try:
-                    os.unlink(prompt_file)
-                except Exception:
-                    pass
-        else:
-            result = subprocess.run(
-                ["kilo", "run", "--format", "json", "--auto", "--", prompt],
-                capture_output=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=600,
-            )
-    except subprocess.TimeoutExpired:
-        print("[ERROR] Kilo CLI timed out after 10 minutes")
-        log_gap(
-            migration_id=site_id,
-            gap_type="gate_failure",
-            source_persona="builder",
-            description="Kilo CLI timed out after 10 minutes",
-            suggested_fix="Increase timeout or simplify build scope",
-            severity="high",
-        )
-        return None
-    except FileNotFoundError:
-        print("[ERROR] 'kilo' command not found. Is Kilo CLI installed and in PATH?")
-        log_gap(
-            migration_id=site_id,
-            gap_type="gate_failure",
-            source_persona="builder",
-            description="'kilo' command not found in PATH",
-            suggested_fix="Ensure Kilo CLI is installed and in system PATH",
-            severity="high",
-        )
-        return None
-
-    if result.returncode != 0:
-        print(f"[ERROR] Kilo CLI exited with code {result.returncode}")
-        print(f"[STDERR] {result.stderr[:500] if result.stderr else ''}")
-        log_gap(
-            migration_id=site_id,
-            gap_type="gate_failure",
-            source_persona="builder",
-            description=f"Kilo CLI exited with code {result.returncode}: {result.stderr[:200] if result.stderr else 'no stderr'}",
-            suggested_fix="Check Kilo CLI configuration and prompt syntax",
-            severity="high",
-        )
-        return None
-
-    stdout = result.stdout or ""
-
+    stdout = result.summary or ""
     print(f"[KILO] Output received ({len(stdout)} chars)")
 
-    json_str, last_text = extract_json_from_output(stdout)
-    if not json_str:
-        print("[ERROR] Could not extract JSON from Kilo output")
-        lines = result.stdout.splitlines()
+    # Track last_text + dump per-event sizes for debug parity.
+    last_text = None
+    lines = stdout.splitlines()
+    for i, line in enumerate(lines):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+            if isinstance(event, dict) and event.get("type") == "text":
+                t = event.get("part", {}).get("text", "")
+                if isinstance(t, str):
+                    last_text = t
+                    print(f"  [TEXT_EVENT {i}] len={len(t)} start={t[:100]}")
+        except json.JSONDecodeError:
+            continue
+
+    try:
+        data = extract_json(stdout)
+    except JSONExtractionError as e:
+        print(f"[ERROR] Could not extract JSON from Kilo output: {e.reason}")
         print(f"[KILO] Got {len(lines)} NDJSON events")
         if last_text:
             print(f"[TEXT] Last text event: {last_text[:500]}")
+        # Phase 0: high-severity gap with target_persona=builder so the
+        # manager safety-rail routes back here instead of aborting.
         log_gap(
             migration_id=site_id,
             gap_type="gate_failure",
             source_persona="builder",
-            description="Could not extract BuildManifest JSON from Kilo output",
+            target_persona="builder",
+            description=f"Could not extract BuildManifest JSON from Kilo output: {e.reason}",
             suggested_fix="Check Kilo output format and prompt instructions",
             severity="high",
         )
-        for i, line in enumerate(lines):
-            try:
-                event = json.loads(line.strip())
-                if event.get("type") == "text":
-                    text = event.get("part", {}).get("text", "")
-                    print(f"  [TEXT_EVENT {i}] len={len(text)} start={text[:100]}")
-            except:
-                pass
-        return None
+        return None, ""
+
+    json_str = json.dumps(data)
 
     manifest = parse_build_manifest(json_str)
     if manifest:
@@ -530,7 +485,7 @@ def build(site_id: str, arch_id: str, rec_id: str, gap_context: Optional[str] = 
             severity="high",
         )
 
-    return manifest
+    return manifest, site_slug
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
-from memory.sqlite.crud import Database, MigrationCRUD, DebateCRUD, HeuristicCRUD, SessionStateCRUD
+from memory.sqlite.crud import Database, MigrationCRUD, DebateCRUD, HeuristicCRUD, SessionStateCRUD, ArtifactCRUD
 from memory.vector.lessons import LessonStore, SemanticMatch
+from memory.artifact_store import ArtifactStore, Artifact, ArtifactType, WorkflowStage, ArtifactMetadata, ArtifactProvenance, log_lesson as artifact_log_lesson
 from typing import Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -33,7 +34,98 @@ class Memory:
         self.debates = DebateCRUD(self.db)
         self.heuristics = HeuristicCRUD(self.db)
         self.sessions = SessionStateCRUD(self.db)
+        self.artifacts = ArtifactCRUD(self.db)
         self.lessons = LessonStore()
+        self.artifact_store = ArtifactStore(db_path)
+
+    def log_artifact(
+        self,
+        migration_id: str,
+        stage: WorkflowStage,
+        persona_set: list[str],
+        decision_context: str,
+        artifact_type: ArtifactType,
+        path: str,
+        metadata: Optional[dict] = None,
+        tags: Optional[list[str]] = None,
+    ) -> str:
+        """Log a structured artifact with mandatory provenance."""
+        import uuid
+        artifact_id = str(uuid.uuid4())
+        self.artifacts.save_artifact(
+            artifact_id=artifact_id,
+            migration_id=migration_id,
+            stage=stage.value,
+            persona_set=persona_set,
+            decision_context=decision_context,
+            artifact_type=artifact_type.value,
+            path=path,
+            metadata=metadata,
+            tags=tags,
+        )
+        return artifact_id
+
+    def log_lesson(
+        self,
+        migration_id: str,
+        lesson: dict,
+        tags: list[str],
+        stage: WorkflowStage = WorkflowStage.COMPLETE,
+        persona_set: Optional[list[str]] = None,
+        decision_context: str = "",
+    ) -> str:
+        """Log a lesson from a migration (Debate Arena output)."""
+        return self.artifact_store.log_lesson(
+            migration_id=migration_id,
+            lesson=lesson,
+            tags=tags,
+            stage=stage,
+            persona_set=persona_set,
+            decision_context=decision_context,
+        )
+
+    def query_artifacts(
+        self,
+        migration_id: Optional[str] = None,
+        artifact_type: Optional[ArtifactType] = None,
+        stage: Optional[WorkflowStage] = None,
+        tag: Optional[str] = None,
+        limit: int = 20,
+    ) -> list[dict]:
+        """Query artifacts with optional filters."""
+        at = artifact_type.value if artifact_type else None
+        st = stage.value if stage else None
+        rows = self.artifacts.query_by_migration(
+            migration_id=migration_id or "",
+            artifact_type=at,
+            stage=st,
+            tag=tag,
+            limit=limit,
+        )
+        return rows
+
+    def promote_artifacts_from_scratch(
+        self,
+        session_id: str,
+        migration_id: str,
+        stage: WorkflowStage,
+        persona_set: list[str],
+        decision_context: str,
+        artifact_type: ArtifactType,
+        files: list[str],
+        tags: Optional[list[str]] = None,
+    ) -> list[Artifact]:
+        """Move artifacts from scratch to persistent storage."""
+        return self.artifact_store.promote_from_scratch(
+            session_id=session_id,
+            migration_id=migration_id,
+            stage=stage,
+            persona_set=persona_set,
+            decision_context=decision_context,
+            artifact_type=artifact_type,
+            files=files,
+            tags=tags,
+        )
 
     def query_similar_sites(self, platform: str, task_type: str) -> list[dict]:
         """
