@@ -350,8 +350,8 @@ def test_design_retries_on_extraction_failure(monkeypatch):
     from models.site_schemas import SiteArchitecture, SiteUnderstanding
 
     valid = {
-        "migration_id": "m1",
-        "site_slug": "example",
+        "migration_id": "",
+        "site_slug": "",
         "contracts": [],
         "data_architecture_summary": "Static site.",
         "reasoning_trace": [],
@@ -389,7 +389,7 @@ def test_design_retries_on_extraction_failure(monkeypatch):
     assert result.site_slug == "example-test"
     assert calls["n"] == 2, f"expected 2 Kilo calls (initial + retry), got {calls['n']}"
     # The retry should use the terse re-emit prompt.
-    assert "Re-emit" in calls["prompts"][1] or "Re-emit" in calls["prompts"][1]
+    assert "Re-emit" in calls["prompts"][1]
     # The retry should use the 120s timeout (consistent with architect).
     assert calls["timeouts"][1] == 120
 
