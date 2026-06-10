@@ -197,18 +197,21 @@ def _parse_kilo_output(stdout: str, returncode: int) -> ToolResult:
     # is 5-10KB) mid-string, producing "no JSON found" extraction
     # failures. 16KB comfortably covers all persona outputs while
     # staying well below any memory pressure. The invoke_kilo_safe
-    # Output capture limit (advisory). The cap exists to bound memory
-    # usage on long Kilo runs; the *real* artifact is recovered from
-    # the on-disk scratch dir + the post-run validator. Most persona
-    # outputs are <8KB; this 512KB ceiling accommodates even a
-    # 60K-prompt-then-60K-output scenario with headroom. Bump it if
-    # Kilo's response format ever changes.
+    # Output capture limit. The cap exists to bound memory usage
+    # on long Kilo runs; the *real* artifact is recovered from the
+    # on-disk scratch dir + the post-run validator. Most persona
+    # outputs are <8KB; this 64K ceiling covers all observed persona
+    # outputs with 4× headroom while still bounding runaway Kilo
+    # responses (a tool-call loop that produces megabytes of output).
+    # Phase 0.8: this is a real cap, not advisory. If a persona's
+    # output genuinely exceeds 64K, the validator will catch the
+    # truncated JSON and the extraction-retry path will fix it.
     return ToolResult(
         success=success,
         files_created=list(set(files_created)),  # Deduplicate
         files_modified=list(set(files_modified)),
         errors=[] if success else [f"Return code: {returncode}"],
-        summary=final_text[:512_000] if final_text else "No output",
+        summary=final_text[:65_536] if final_text else "No output",
         recovery_suggestion=None if success else "Check Kilo output for errors"
     )
 
@@ -527,22 +530,32 @@ def invoke_kilo_simple(prompt: str, working_dir: str = ".", timeout: int = 300) 
 
 _MIN_KILO_TIMEOUT = 30
 _MAX_KILO_TIMEOUT = 600
-# Phase 0.8 (operational quality): the prompt-size guard was REMOVED.
-# The legacy code refused to invoke Kilo when the prompt exceeded
-# _PROMPT_REFUSE_CHARS (40K) — but the actual failure mode was a
-# Kilo CLI truncation bug (2000-char summary cap) which has since
-# been fixed. The "refuse to invoke" gate was a heuristic that
-# blocked legitimate large prompts (e.g. the frontend architect
-# legitimately needs ~35K to converge all upstream artifacts).
+
+# Prompt-size guard rails (Phase 0.8). Evidence-based values:
 #
-# The new policy is ADVISORY: we log the size for observability, but
-# the actual constraint is the LLM/Kilo. If a persona consistently
-# produces 60K+ prompts, that means the prompt builder needs work,
-# not that we should refuse the call.
-_PROMPT_WARN_CHARS = 64_000  # Soft warn — log only.
-# The "refuse" threshold is now effectively infinity. The variable is
-# kept for backward compat (callers can read it for diagnostics).
-_PROMPT_REFUSE_CHARS = 10_000_000  # 10M chars — never triggered in practice.
+#   Measured persona prompt sizes (compact artifacts, merimee site):
+#     scraper       :  22,088 chars
+#     architect     :  18,953 chars
+#     marketing     :  18,220 chars
+#     designer      :   5,362 chars
+#     frontend      :  26,314 chars  (largest — convergence point)
+#     devops        :   8,137 chars
+#     data_engineer :   6,995 chars
+#     backend       :  13,429 chars
+#     integration   :  10,189 chars
+#
+#   So 32K is comfortably above all observed personas with ~20%
+#   headroom. 64K is 2x max observed, large enough to accommodate
+#   future personas or larger sites. 256K is the absolute upper
+#   bound — anything past that is a runaway (binary file dump,
+#   unbounded scrape, etc.) that should be refused, not retried.
+#
+#   These caps are *real* — they prevent the cost/quality blow-ups
+#   of running an unbounded prompt against an LLM, while still
+#   admitting the legitimate 26-35K prompts the convergence-point
+#   personas produce.
+_PROMPT_WARN_CHARS = 32_000  # Soft warn (log + advisory gap)
+_PROMPT_REFUSE_CHARS = 256_000  # Hard refuse (catches true runaways)
 
 
 def invoke_kilo_safe(
@@ -581,20 +594,50 @@ def invoke_kilo_safe(
     safe_timeout = max(_MIN_KILO_TIMEOUT, min(int(timeout), _MAX_KILO_TIMEOUT))
     prompt_size = len(prompt or "")
 
-    # Phase 0.8: prompt-size is now ADVISORY only. The previous
-    # hard-refuse at _PROMPT_REFUSE_CHARS blocked legitimate large
-    # prompts and forced the manager loop to short-circuit. The
-    # actual fix is in the prompt builders (compact views + lean
-    # schemas); if a persona's prompt blows past _PROMPT_WARN_CHARS,
-    # we log it for observability but proceed.
+    # Phase 0.8 (corrected): prompt-size is *bounded* but not
+    # arbitrary. Warn when the prompt exceeds the largest observed
+    # persona (~26K); refuse only when the prompt is so large it
+    # indicates a true runaway (a binary file dump, an unbounded
+    # scrape, a forgotten f-string interpolation, etc.).
+    if prompt_size > _PROMPT_REFUSE_CHARS:
+        # Hard refuse: this is a runaway. The persona builder is
+        # producing a prompt that the LLM cannot handle well
+        # (quality degrades past 30-50K tokens for most tasks) and
+        # that costs 5-10x a normal prompt. Refuse and surface the
+        # error so the persona's prompt builder can be fixed.
+        msg = (
+            f"Refusing to invoke Kilo: prompt is {prompt_size} chars "
+            f"(> hard refuse {_PROMPT_REFUSE_CHARS}). This is a "
+            f"runaway — the persona prompt builder is producing a "
+            f"prompt that the LLM cannot handle well. "
+            f"Reduce persona scope; check for binary files or "
+            f"unbounded data in the prompt."
+        )
+        print(f"[KILO_SAFE][{persona}] {msg}")
+        if on_timeout is not None:
+            try:
+                on_timeout(0.0, prompt_size, persona)
+            except Exception:
+                pass
+        return ToolResult(
+            success=False,
+            errors=[msg],
+            summary="Prompt too large for Kilo",
+            recovery_suggestion=(
+                "Reduce persona scope. Check the prompt builder "
+                f"in skills/agentic/{persona}.py for untruncated schema "
+                f"dumps, binary files, or unbounded data."
+            ),
+        )
+
     if prompt_size > _PROMPT_WARN_CHARS:
+        # Soft warn: this is a sign the prompt builder needs attention
+        # but the call can proceed. We log a "low" severity gap so the
+        # gap ledger has a paper trail.
         print(
             f"[KILO_SAFE][{persona}] INFO prompt is {prompt_size} chars "
-            f"(> {_PROMPT_WARN_CHARS}); consider compacting."
+            f"(> soft warn {_PROMPT_WARN_CHARS}); consider compacting."
         )
-        # Emit a soft gap so the gap ledger shows when a persona
-        # has a bloated prompt — this is a sign the prompt builder
-        # needs attention, not a hard failure.
         try:
             from memory.gap_ledger import log_gap
             log_gap(
@@ -611,16 +654,6 @@ def invoke_kilo_safe(
             )
         except Exception:
             pass
-
-    # The _PROMPT_REFUSE_CHARS variable is kept for diagnostics but
-    # no longer blocks invocation. The actual constraint is the LLM
-    # and the Kilo CLI's own input handling.
-    if prompt_size > _PROMPT_REFUSE_CHARS:
-        # Should not be reachable now (~10M chars). Log defensively.
-        print(
-            f"[KILO_SAFE][{persona}] WARN: prompt is {prompt_size} chars, "
-            f"exceeding diagnostic threshold {_PROMPT_REFUSE_CHARS}."
-        )
 
     t0 = time.time()
     try:
