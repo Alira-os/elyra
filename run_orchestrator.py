@@ -34,6 +34,15 @@ def main():
     path_parts = [p for p in parsed.path.strip("/").split("/") if p]
     site_name = path_parts[-1] if path_parts else "unnamed"
 
+    # Phase 0.8: detect whether this URL has been migrated before. The
+    # orchestrator's skip-checks are per-migration (timestamp IDs in
+    # flat dirs), so a brand-new URL will find the LATEST artifact
+    # which is for some other site. We set `force_preflight=True` to
+    # re-run all planning personas from scratch for any new URL.
+    from pathlib import Path
+    visual_dir = Path("memory/visual_specs") / site_name
+    is_fresh_site = not (visual_dir.exists() and any(visual_dir.glob("*.json")))
+
     task_context = {
         "url": url,
         "platform": platform,
@@ -41,6 +50,12 @@ def main():
         "site_name": site_name,
         "migration_id": datetime.now().strftime("%Y%m%d_%H%M%S"),
         "task_type": "portfolio",
+        # Phase 0.8: force the pre-flight to re-run all planning
+        # personas for a fresh site slug (or any time the runner is
+        # invoked). This is the safe default — the persona prompt
+        # is cheap, and re-running ensures all artifacts are coherent
+        # for the new URL.
+        "force_preflight": True,
     }
 
     print(f"[ELYRA] Starting migration for {url}")

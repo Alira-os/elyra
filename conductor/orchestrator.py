@@ -519,17 +519,68 @@ class MigrationManager:
             # long registry name ("scraper_specialist"); the disk layout
             # doesn't care which we use.
             short = persona_short
-            if short == "scraper" and self._get_latest_artifact_id("site_understandings"):
+            # Phase 0.8: the skip-check now respects the current migration.
+            # If task_context has a `force_preflight` flag, run all
+            # personas from scratch (used for fresh URLs that have no
+            # prior artifacts for THIS slug).
+            # Otherwise, check whether the current site_slug already has
+            # artifacts; if so, skip. We do this by checking
+            # visual_specs/<site_slug>/ (a per-slug subdir) for the
+            # designer's output, which is the cheapest signal that all
+            # four planning personas already produced something for this
+            # site.
+            force = task_context.get("force_preflight", False)
+            designer_already_ran = (
+                not force
+                and short == "designer"
+                and (Path("memory/visual_specs") / site_slug).exists()
+                and any((Path("memory/visual_specs") / site_slug).glob("*.json"))
+            )
+            scraper_already_ran = (
+                not force
+                and short == "scraper"
+                and bool(self._get_latest_artifact_id("site_understandings"))
+            )
+            architect_already_ran = (
+                not force
+                and short == "architect"
+                and bool(self._get_latest_artifact_id("site_architectures"))
+            )
+            marketing_already_ran = (
+                not force
+                and short == "marketing"
+                and bool(self._get_latest_artifact_id("site_recommendations"))
+            )
+            if (designer_already_ran or scraper_already_ran
+                or architect_already_ran or marketing_already_ran):
+                # We've already produced an artifact for this site in
+                # a prior run. Skip. (The 4 vars above are mutually
+                # exclusive by design: each persona has its own short
+                # name so exactly one of them is True per iteration.)
                 continue
-            if short == "architect" and self._get_latest_artifact_id("site_architectures"):
-                continue
-            if short == "marketing" and self._get_latest_artifact_id("site_recommendations"):
-                continue
-            if short == "designer":
-                # designer saves to memory/visual_specs/<site_slug>/, so check there
-                visual_dir = Path("memory/visual_specs") / site_slug
-                if visual_dir.exists() and any(visual_dir.glob("*.json")):
-                    continue
+            # Legacy path: be conservative for the case where the user's
+            # orchestrator pass *only* produces designer output (so the
+            # other planning artifacts are missing). If we already
+            # have a visual_spec for this slug, the others are likely
+            # stale. We still want the scraper to run if site_understandings
+            # is for a different URL. The fresh-new-URL case is covered
+            # by the migration_id being new — but the storage doesn't
+            # track per-migration IDs for the planning artifacts (they
+            # use timestamp IDs in flat dirs). Best-effort heuristic:
+            # if the latest site_understanding's url matches the current
+            # URL, skip; otherwise run.
+            if short == "scraper" and not force:
+                latest_su = self._get_latest_artifact_id("site_understandings")
+                if latest_su:
+                    su_path = Path("memory/site_understandings") / f"{latest_su}.json"
+                    if su_path.exists():
+                        try:
+                            import json
+                            su_data = json.loads(su_path.read_text())
+                            if su_data.get("url") == url:
+                                continue  # Same URL; safe to skip.
+                        except Exception:
+                            pass
 
             # Retry loop. Each attempt re-invokes the same persona, surfaces
             # the new gap (with target_persona) into the in-process list,
