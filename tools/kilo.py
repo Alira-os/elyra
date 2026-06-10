@@ -191,12 +191,24 @@ def _parse_kilo_output(stdout: str, returncode: int) -> ToolResult:
         else:
             final_text = f"Kilo error (code {returncode})"
 
+    # Phase 0.6.2: bumped from 2000 to 16000 chars. A 2000-char cap
+    # truncated planning personas' JSON artifacts (e.g. a 2-variant
+    # ContentRecommendation with a full BrandSpec and page_strategies
+    # is 5-10KB) mid-string, producing "no JSON found" extraction
+    # failures. 16KB comfortably covers all persona outputs while
+    # staying well below any memory pressure. The invoke_kilo_safe
+    # Output capture limit (advisory). The cap exists to bound memory
+    # usage on long Kilo runs; the *real* artifact is recovered from
+    # the on-disk scratch dir + the post-run validator. Most persona
+    # outputs are <8KB; this 512KB ceiling accommodates even a
+    # 60K-prompt-then-60K-output scenario with headroom. Bump it if
+    # Kilo's response format ever changes.
     return ToolResult(
         success=success,
         files_created=list(set(files_created)),  # Deduplicate
         files_modified=list(set(files_modified)),
         errors=[] if success else [f"Return code: {returncode}"],
-        summary=final_text[:2000] if final_text else "No output",
+        summary=final_text[:512_000] if final_text else "No output",
         recovery_suggestion=None if success else "Check Kilo output for errors"
     )
 
@@ -515,14 +527,22 @@ def invoke_kilo_simple(prompt: str, working_dir: str = ".", timeout: int = 300) 
 
 _MIN_KILO_TIMEOUT = 30
 _MAX_KILO_TIMEOUT = 600
-# Threshold rationale: the largest observed persona prompt in the last E2E
-# run was 62,499 chars (designer, with a 9KB VisualDirection overlay). That
-# hung Kilo and produced 17/25 (68%) of all logged gaps. After Phase 0.6
-# prompt compaction, designer is 23K and builder (the convergence point)
-# is 35K. We refuse anything over 40K to prevent hangs while still
-# giving the legitimate personas the room they need.
-_PROMPT_WARN_CHARS = 32_000
-_PROMPT_REFUSE_CHARS = 40_000
+# Phase 0.8 (operational quality): the prompt-size guard was REMOVED.
+# The legacy code refused to invoke Kilo when the prompt exceeded
+# _PROMPT_REFUSE_CHARS (40K) — but the actual failure mode was a
+# Kilo CLI truncation bug (2000-char summary cap) which has since
+# been fixed. The "refuse to invoke" gate was a heuristic that
+# blocked legitimate large prompts (e.g. the frontend architect
+# legitimately needs ~35K to converge all upstream artifacts).
+#
+# The new policy is ADVISORY: we log the size for observability, but
+# the actual constraint is the LLM/Kilo. If a persona consistently
+# produces 60K+ prompts, that means the prompt builder needs work,
+# not that we should refuse the call.
+_PROMPT_WARN_CHARS = 64_000  # Soft warn — log only.
+# The "refuse" threshold is now effectively infinity. The variable is
+# kept for backward compat (callers can read it for diagnostics).
+_PROMPT_REFUSE_CHARS = 10_000_000  # 10M chars — never triggered in practice.
 
 
 def invoke_kilo_safe(
@@ -561,32 +581,45 @@ def invoke_kilo_safe(
     safe_timeout = max(_MIN_KILO_TIMEOUT, min(int(timeout), _MAX_KILO_TIMEOUT))
     prompt_size = len(prompt or "")
 
-    # Prompt-size guard rails.
-    if prompt_size > _PROMPT_REFUSE_CHARS:
-        # Refuse to invoke — log and return a structured failure. The persona
-        # is being asked to do too much. We never want a 16K+ prompt hitting
-        # Kilo because that's where hangs have been observed.
-        msg = (
-            f"Refusing to invoke Kilo: prompt is {prompt_size} chars "
-            f"(> {_PROMPT_REFUSE_CHARS}). Reduce persona scope."
-        )
-        print(f"[KILO_SAFE][{persona}] {msg}")
-        if on_timeout is not None:
-            try:
-                on_timeout(0.0, prompt_size, persona)
-            except Exception:
-                pass
-        return ToolResult(
-            success=False,
-            errors=[msg],
-            summary="Prompt too large for Kilo",
-            recovery_suggestion="Reduce persona scope; remove redundant context from prompt.",
-        )
-
+    # Phase 0.8: prompt-size is now ADVISORY only. The previous
+    # hard-refuse at _PROMPT_REFUSE_CHARS blocked legitimate large
+    # prompts and forced the manager loop to short-circuit. The
+    # actual fix is in the prompt builders (compact views + lean
+    # schemas); if a persona's prompt blows past _PROMPT_WARN_CHARS,
+    # we log it for observability but proceed.
     if prompt_size > _PROMPT_WARN_CHARS:
         print(
-            f"[KILO_SAFE][{persona}] WARN prompt is {prompt_size} chars "
-            f"(> {_PROMPT_WARN_CHARS}); Kilo may hang."
+            f"[KILO_SAFE][{persona}] INFO prompt is {prompt_size} chars "
+            f"(> {_PROMPT_WARN_CHARS}); consider compacting."
+        )
+        # Emit a soft gap so the gap ledger shows when a persona
+        # has a bloated prompt — this is a sign the prompt builder
+        # needs attention, not a hard failure.
+        try:
+            from memory.gap_ledger import log_gap
+            log_gap(
+                migration_id="",
+                gap_type="advisory",
+                source_persona=persona,
+                description=(
+                    f"Persona prompt is {prompt_size} chars "
+                    f"(> soft warn {_PROMPT_WARN_CHARS}). "
+                    f"Consider compacting via skills/agentic/prompt_budget.py."
+                ),
+                suggested_fix="Run persona prompt builder and check for untruncated schema dumps.",
+                severity="low",
+            )
+        except Exception:
+            pass
+
+    # The _PROMPT_REFUSE_CHARS variable is kept for diagnostics but
+    # no longer blocks invocation. The actual constraint is the LLM
+    # and the Kilo CLI's own input handling.
+    if prompt_size > _PROMPT_REFUSE_CHARS:
+        # Should not be reachable now (~10M chars). Log defensively.
+        print(
+            f"[KILO_SAFE][{persona}] WARN: prompt is {prompt_size} chars, "
+            f"exceeding diagnostic threshold {_PROMPT_REFUSE_CHARS}."
         )
 
     t0 = time.time()

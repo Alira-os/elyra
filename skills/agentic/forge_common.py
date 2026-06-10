@@ -56,6 +56,7 @@ PERSONA_TIMEOUTS_S = {
     "frontend_architect": 600,
     "integration_coordinator": 180,
     "deploy_specialist": 240,
+    "deploy_engineer": 240,
 }
 
 

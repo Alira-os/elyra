@@ -44,9 +44,38 @@ _on_scraper_timeout = make_timeout_callback(
 )
 
 
-def build_scraper_prompt(url: str) -> str:
-    """Build the prompt that Kilo CLI will execute."""
+def build_scraper_prompt(url: str, retry_mode: bool = False) -> str:
+    """Build the prompt that Kilo CLI will execute.
+
+    Args:
+        url: Target URL.
+        retry_mode: If True, produce a tightened prompt used only when the
+            first invocation failed to produce parseable JSON. Skips the
+            full schema dump and short-circuits exploration so Kilo emits
+            a JSON-only response.
+    """
     persona = PERSONA_PATH.read_text() if PERSONA_PATH.exists() else ""
+
+    if retry_mode:
+        # Tightened retry: no schema dump, no exploration, just "emit JSON
+        # exactly matching the schema you already received in the previous
+        # turn." The orchestrator passes the prior prompt as context, so
+        # Kilo retains the schema.
+        return f"""{persona}
+
+## Task (RETRY — previous attempt did not return parseable JSON)
+Re-emit the SiteUnderstanding for: {url}
+
+Your previous response could not be parsed as JSON. This time:
+
+1. Do NOT call any tools — you already have all the information you need.
+2. Output a single ```json fenced code block containing one valid JSON
+   object that matches the SiteUnderstanding schema you were given.
+3. NO prose, NO commentary, NO markdown headings, NO `text` events before
+   the fence. The first and only text event MUST be the fenced JSON.
+4. If you truly have no information, emit `{{}}` inside the fence.
+
+Begin now."""
 
     schema_json = json.dumps(SiteUnderstanding.model_json_schema(), indent=2)
 
@@ -154,6 +183,89 @@ def load_site_understanding(site_id: str) -> Optional[SiteUnderstanding]:
         return None
 
 
+def _try_extract_from_tool_result(result) -> tuple[Optional[dict], Optional[str]]:
+    """Try to extract a JSON dict from a ToolResult, returning (data, last_text).
+
+    The returned `last_text` is the body of the last NDJSON `text` event
+    (or None) — useful for debug logging on failure.
+
+    Strategy:
+      1. Standard extractor over the raw stdout (handles ToolResult wrapper,
+         fenced blocks, embedded JSON).
+      2. If that fails, re-extract from the last `text` event body alone —
+         rescues the case where ToolResult.summary was truncated to the
+         first 2000 chars but the actual JSON lives in the final text event.
+      3. If still failing and we saw NDJSON events, re-extract from the
+         concatenation of all text bodies.
+
+    Returns (None, last_text) when nothing parseable is found. Importantly,
+    if extract_json returns a *Kilo NDJSON event* (e.g. {"type": "text",
+    "part": {...}}) rather than a real artifact, we reject it and fall
+    through to the next strategy — the bare event isn't a SiteUnderstanding.
+    """
+    stdout = result.summary or ""
+
+    # Walk NDJSON events to capture the last text body.
+    last_text: Optional[str] = None
+    text_bodies: list[str] = []
+    saw_event = False
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(event, dict):
+            continue
+        saw_event = True
+        if event.get("type") == "text":
+            part = event.get("part") or {}
+            if isinstance(part, dict):
+                t = part.get("text")
+                if isinstance(t, str) and t:
+                    last_text = t
+                    text_bodies.append(t)
+
+    def _is_ndjson_event(d: dict) -> bool:
+        """A Kilo NDJSON event wrapper, not a real artifact."""
+        return (
+            isinstance(d.get("type"), str)
+            and d.get("type") in ("text", "tool_use", "step_finish", "init")
+            and isinstance(d.get("part"), dict)
+        )
+
+    # Strategy 1: standard extractor over the raw stdout.
+    try:
+        d = extract_json(stdout)
+        if not _is_ndjson_event(d):
+            return d, last_text
+    except JSONExtractionError:
+        pass
+
+    # Strategy 2: re-extract from the last text event body alone.
+    if last_text and last_text != stdout:
+        try:
+            d = extract_json(last_text)
+            if not _is_ndjson_event(d):
+                return d, last_text
+        except JSONExtractionError:
+            pass
+
+    # Strategy 3: extract from the concatenation of all text bodies.
+    if saw_event and text_bodies:
+        joined = "\n".join(text_bodies)
+        try:
+            d = extract_json(joined)
+            if not _is_ndjson_event(d):
+                return d, last_text
+        except JSONExtractionError:
+            pass
+
+    return None, last_text
+
+
 def scrape(url: str) -> Optional[SiteUnderstanding]:
     """
     Main entry point: build prompt -> call kilo run -> parse JSON.
@@ -163,6 +275,13 @@ def scrape(url: str) -> Optional[SiteUnderstanding]:
     - Binds Playwright + Fetch MCP tools (from kilocode/.mcp.json)
     - Runs ReAct loop: think -> tool -> observe -> repeat
     - Returns text/JSON output
+
+    Reliability behavior:
+      - Extracts JSON from the full NDJSON event stream, not just the
+        2000-char `summary` cap (which has hidden the JSON artifact in
+        past runs).
+      - On extraction failure, issues a single tightened-prompt retry
+        that asks Kilo to re-emit the JSON without further tool calls.
     """
     prompt = build_scraper_prompt(url)
 
@@ -186,46 +305,35 @@ def scrape(url: str) -> Optional[SiteUnderstanding]:
             print("[ERROR] 'kilo' command not found. Is Kilo CLI installed and in PATH?")
         return None
 
-    # invoke_kilo_safe returns a ToolResult with `summary` holding the raw Kilo
-    # text/NDJSON output. We extract the JSON from that.
-    stdout = result.summary or ""
+    print(f"[KILO] Output received ({(result.summary or '').__len__()} chars)")
 
-    print(f"[KILO] Output received ({len(stdout)} chars)")
+    # Try extraction on the first response. If that fails, fall through to
+    # a tightened-prompt retry.
+    data, _last_text = _try_extract_from_tool_result(result)
+    if data is None:
+        print("[RETRY] Initial output not parseable; retrying with JSON-only prompt")
+        retry_result = invoke_kilo_safe(
+            prompt=build_scraper_prompt(url, retry_mode=True),
+            context={"url": url, "previous_prompt_chars": len(prompt)},
+            working_dir=".",
+            persona="scraper_specialist",
+            timeout=300,
+            on_timeout=_on_scraper_timeout,
+        )
+        if retry_result.success:
+            data, _last_text = _try_extract_from_tool_result(retry_result)
 
-    # Track last_text for debugging parity with the old behavior.
-    last_text = None
-    for line in stdout.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            event = json.loads(line)
-            if isinstance(event, dict) and event.get("type") == "text":
-                t = event.get("part", {}).get("text", "")
-                if isinstance(t, str):
-                    last_text = t
-        except json.JSONDecodeError:
-            continue
-
-    try:
-        data = extract_json(stdout)
-    except JSONExtractionError as e:
-        print(f"[ERROR] Could not extract JSON from Kilo output: {e.reason}")
-        lines = stdout.splitlines()
-        print(f"[KILO] Got {len(lines)} NDJSON events")
-        if last_text:
-            print(f"[TEXT] Last text event: {last_text[:500]}")
+    if data is None:
+        print(f"[ERROR] Could not extract JSON from Kilo output after retry")
         log_gap(
             migration_id="",
             gap_type="gate_failure",
             source_persona="scraper_specialist",
             target_persona="scraper_specialist",
-            description=f"Could not extract SiteUnderstanding JSON from Kilo output: {e.reason}",
+            description="Could not extract SiteUnderstanding JSON from Kilo output (after retry)",
             suggested_fix="Check Kilo output format and prompt instructions",
             severity="high",
         )
-        # Return None rather than a silent minimal SiteUnderstanding: the
-        # manager will treat this as a scraper failure and route back here.
         return None
 
     validated = parse_and_validate(json.dumps(data))

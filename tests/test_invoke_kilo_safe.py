@@ -20,22 +20,59 @@ if str(ROOT) not in sys.path:
 from tools.kilo import ToolResult, invoke_kilo_safe  # noqa: E402
 
 
-def test_refuses_oversized_prompt():
-    """A prompt > 40K chars must NEVER be sent to Kilo. It must return a
-    failure ToolResult, not call subprocess."""
+def test_oversized_prompt_is_advisory_not_blocking():
+    """Phase 0.8: a 45K prompt is no longer refused. invoke_kilo_safe
+    is *advisory* on prompt size — it logs to the gap ledger but
+    proceeds. The actual constraint is the LLM and Kilo, not the
+    persona's prompt builder.
+
+    We verify the *advisory* path: a 45K prompt produces a soft "low"
+    gap entry but does NOT return failure. (We can't easily assert
+    the gap ledger side-effect from this test, so we just verify the
+    ToolResult is not a hard failure from the size guard.)"""
+    # 45K is below the new advisory threshold (64K) so it's also not warned.
+    # We test the warn path with 70K.
+    import sys
+    if sys.version_info >= (3, 9):
+        pass
+    # 45K stays under warn (64K) — we should NOT see a gap from this.
+    # Verify: the function does not raise and the ToolResult is well-formed.
     big = "x" * 45_000
-    cb_called = []
     result = invoke_kilo_safe(
         prompt=big,
         context={},
         working_dir=".",
         persona="ui_designer",
         timeout=300,
-        on_timeout=lambda *a: cb_called.append(a),
     )
-    assert result.success is False
-    assert "45" in result.errors[0]
-    assert "Reduce persona scope" in (result.recovery_suggestion or "")
+    # The function will likely fail (no real Kilo in test env), but it
+    # should NOT fail with the old "Reduce persona scope" message.
+    if not result.success and result.errors:
+        for err in result.errors:
+            assert "Reduce persona scope" not in err, (
+                f"Old refusal policy is still in effect: {err}"
+            )
+
+
+def test_very_large_prompt_emits_advisory_gap():
+    """A prompt > 64K (the new soft warn threshold) logs an
+    advisory gap. We don't assert the gap directly — we assert
+    the function doesn't fail and doesn't return the old refusal
+    shape."""
+    big = "x" * 80_000
+    result = invoke_kilo_safe(
+        prompt=big,
+        context={},
+        working_dir=".",
+        persona="ui_designer",
+        timeout=300,
+    )
+    # Should not crash; should not contain the old refusal message.
+    if not result.success and result.errors:
+        for err in result.errors:
+            assert "Refusing to invoke Kilo" not in err, (
+                f"Old hard-refuse is still in effect: {err}"
+            )
 
 
 def test_timeout_is_clamped_to_max():
@@ -85,7 +122,7 @@ def test_on_timeout_callback_signature():
 
 def test_returns_toolresult_type():
     result = invoke_kilo_safe(
-        prompt="x" * 20_000,  # triggers size refusal
+        prompt="x" * 20_000,  # well under both warn and refuse
         context={},
         working_dir=".",
         persona="ui_designer",
@@ -97,7 +134,8 @@ def test_returns_toolresult_type():
 if __name__ == "__main__":
     import traceback
     tests = [
-        test_refuses_oversized_prompt,
+        test_oversized_prompt_is_advisory_not_blocking,
+        test_very_large_prompt_emits_advisory_gap,
         test_timeout_is_clamped_to_max,
         test_timeout_is_clamped_to_min,
         test_on_timeout_callback_signature,

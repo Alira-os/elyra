@@ -69,21 +69,25 @@ def build_designer_prompt(
 ) -> str:
     """Build the prompt that Kilo CLI will execute.
 
-    Phase 0.6: uses compact views of the upstream artifacts (SiteUnderstanding
-    and ContentRecommendation) so the prompt stays under the 14K persona
-    budget. The full artifacts remain on disk and are addressable by their
-    migration_id / timestamp IDs — the persona can re-read them if it
-    needs per-page detail beyond the summary.
+    Phase 0.7: drops the inlined Pydantic JSON schema (Kilo can infer
+    VisualDirection fields from the explicit field list below) and the
+    "Re-read from disk" pointer text, which together were ~3KB of pure
+    noise. The compact site+rec views are still JSON-serialized as
+    concrete examples Kilo can copy from. Full artifacts remain on disk
+    at memory/site_understandings/<id>.json and
+    memory/site_recommendations/<id>.json — the persona can re-read them
+    if it needs per-page detail beyond the summary.
+
+    The persona markdown has been trimmed to its contractual essentials
+    (no CSS examples — Kilo already knows CSS).
     """
     persona = PERSONA_PATH.read_text() if PERSONA_PATH.exists() else ""
 
     site_compact = compact_site_understanding(site)
     rec_compact = compact_content_recommendation(recommendation, keep_brand=True)
 
-    # compact_* helpers now produce JSON-safe dicts (Phase 0.6.1).
     site_json = json.dumps(site_compact, indent=2, default=str)
     rec_json = json.dumps(rec_compact, indent=2, default=str)
-    schema_json = json.dumps(VisualDirection.model_json_schema(), indent=2)
 
     gap_section = ""
     if gap_context:
@@ -104,26 +108,25 @@ Produce a VisualDirection artifact that the Builder will use as the authoritativ
 ## Input SiteUnderstanding (compact view)
 {site_json}
 
-_Full SiteUnderstanding JSON is available at: `memory/site_understandings/[site_id].json`. Re-read via your tools if you need per-page component detail beyond the summary above._
-
 ## Input ContentRecommendation (compact view, with BrandSpec)
 {rec_json}
 
-## Output
-Your final response must include:
-1. A complete VisualDirection JSON matching the schema below
-2. Design reasoning traceable to BrandSpec tokens
+## Output Contract
+Return a single JSON object with these fields (all optional except primary_change + rationale + stitch_status):
+- primary_change (string, required) — one-sentence headline of the visual evolution
+- rationale (string, required) — why this evolution, traceable to BrandSpec tokens
+- stitch_status (string, required) — "available" | "unavailable" | "partial"
+- impacted_components (string[]) — component_ids affected
+- impacted_pages (string[]) — route paths affected
+- color_delta (object|null) — DELTA only, never repeat BrandSpec fields
+- typography_delta (object|null) — DELTA only
+- motion_delta (object|null) — DELTA only
+- designer_notes (string[]) — short bullets for the human reviewer
+- created_at (string, ISO 8601) — when this direction was produced
 
-## VisualDirection Schema
-{schema_json}
+If Stitch MCP is unavailable, still emit a valid artifact using the fallback contract in the persona above. Never return `{{}}`.
 
-## Guidance
-- Derive all decisions from BrandSpec tokens + Stitch output (if available)
-- Every color must trace to a BrandSpec token (no hardcoded hex)
-- Every motion class must match the motion_philosophy value
-- For each page route, specify grid_system, spacing_philosophy, section_order
-- Map all component interactions to motion classes matching the motion_philosophy
-- Store output in: memory/visual_specs/{site_slug}/[timestamp].json
+Write the JSON to memory/visual_specs/{site_slug}/[timestamp].json AND a companion REVIEW.md.
 
 Begin design now."""
 
@@ -153,6 +156,89 @@ def extract_json_from_output(stdout: str) -> tuple[Optional[str], Optional[str]]
         return json.dumps(obj), last_text
     except JSONExtractionError:
         return None, last_text
+
+
+def _collect_last_text(stdout: str) -> Optional[str]:
+    """Collect the last 'text' event payload from a Kilo NDJSON stream."""
+    last_text = None
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(event, dict) and event.get("type") == "text":
+            t = event.get("part", {}).get("text", "")
+            if isinstance(t, str) and t:
+                last_text = t
+    return last_text
+
+
+def lenient_parse_visual_direction(raw_text: str) -> Optional[dict]:
+    """Best-effort extraction of VisualDirection fields from arbitrary Kilo text.
+
+    Used as a *last* fallback when Kilo's structured output is unparseable
+    (e.g. truncated mid-JSON, fenced but missing a brace, or plain prose
+    describing the design rather than emitting it). We scan the text for
+    VisualDirection-shaped fields and return whatever we can find.
+
+    Returns a dict ready to feed into VisualDirection(**dict), or None if
+    nothing useful can be recovered.
+    """
+    if not raw_text:
+        return None
+
+    # Strategy 1: try extract_json on the whole text (may have been
+    # already attempted; cheap to retry).
+    try:
+        return extract_json(raw_text)
+    except JSONExtractionError:
+        pass
+
+    # Strategy 2: try a fenced ```json block (Kilo often wraps JSON).
+    fence_re = re.compile(r"```(?:json)?\s*([\s\S]*?)\s*```", re.IGNORECASE)
+    for match in fence_re.finditer(raw_text):
+        candidate = (match.group(1) or "").strip()
+        if not candidate:
+            continue
+        try:
+            obj = json.loads(candidate)
+            if isinstance(obj, dict):
+                return obj
+        except (json.JSONDecodeError, ValueError):
+            continue
+
+    # Strategy 3: field-by-field salvage. Search the prose for keys
+    # that look like VisualDirection fields. This is deliberately
+    # conservative — we only recover fields whose values we can isolate.
+    out: dict = {}
+    patterns = {
+        "primary_change": re.compile(
+            r'"primary_change"\s*:\s*"((?:[^"\\]|\\.)*)"', re.DOTALL
+        ),
+        "rationale": re.compile(
+            r'"rationale"\s*:\s*"((?:[^"\\]|\\.)*)"', re.DOTALL
+        ),
+        "stitch_status": re.compile(
+            r'"stitch_status"\s*:\s*"((?:[^"\\]|\\.)*)"'
+        ),
+    }
+    for field_name, pat in patterns.items():
+        m = pat.search(raw_text)
+        if m:
+            out[field_name] = m.group(1)
+
+    # If we got at least primary_change OR rationale, return what we
+    # have — parse_visual_direction() will fill the rest from the
+    # BrandSpec-fidelity fallback.
+    if out.get("primary_change") or out.get("rationale"):
+        if "stitch_status" not in out:
+            out["stitch_status"] = "unavailable"
+        return out
+
+    return None
 
 
 def parse_visual_direction(
@@ -357,24 +443,63 @@ def design(site_id: str, rec_id: str, gap_context: Optional[str] = None) -> Opti
         print(f"[BRAND] Motion: {recommendation.brand_spec.motion_philosophy}")
         print(f"[BRAND] Primary: {recommendation.brand_spec.primary_color}")
 
-    # Phase 0.5: route through invoke_kilo_safe so prompt-size + timeout
-    # guard-rails apply uniformly.
-    result = invoke_kilo_safe(
-        prompt=prompt,
-        context={"site_id": site_id, "rec_id": rec_id, "url": site.url},
-        working_dir=".",
-        persona="ui_designer",
-        timeout=120,
-        on_timeout=make_timeout_callback(
-            persona="ui_designer",
-            migration_id_fn=lambda: site_id,
-            default_timeout_s=120,
-        ),
-    )
+    # Phase 0.7: 120s → 300s. The designer is the largest in-chain
+    # persona prompt and the most likely to need a real LLM round-trip;
+    # 4 of the 35 logged gaps were timeouts at 120s.
+    _DESIGNER_TIMEOUT = 300
+    _DESIGNER_MAX_RETRIES = 2  # retries ON TOP of the initial attempt
 
-    if not result.success:
-        print(f"[ERROR] Kilo invocation failed: {result.errors}")
-        if any("not found" in e.lower() for e in result.errors):
+    stdout = ""
+    last_text = None
+    invoke_failed = False
+    last_errors: list[str] = []
+    json_str: Optional[str] = None
+
+    for attempt in range(_DESIGNER_MAX_RETRIES + 1):
+        result = invoke_kilo_safe(
+            prompt=prompt,
+            context={"site_id": site_id, "rec_id": rec_id, "url": site.url},
+            working_dir=".",
+            persona="ui_designer",
+            timeout=_DESIGNER_TIMEOUT,
+            on_timeout=make_timeout_callback(
+                persona="ui_designer",
+                migration_id_fn=lambda: site_id,
+                default_timeout_s=_DESIGNER_TIMEOUT,
+            ),
+        )
+
+        if not result.success:
+            print(f"[ERROR] Kilo invocation failed (attempt {attempt + 1}): {result.errors}")
+            last_errors = result.errors
+            invoke_failed = True
+            break  # don't retry infra-level failures
+
+        stdout = result.summary or ""
+        last_text = _collect_last_text(stdout)
+        print(f"[KILO] Output received (attempt {attempt + 1}, {len(stdout)} chars)")
+
+        # Happy path: parse and we're done.
+        try:
+            data = extract_json(stdout)
+            json_str = json.dumps(data)
+            break
+        except JSONExtractionError as e:
+            print(
+                f"[WARN] JSON extraction failed (attempt {attempt + 1}): {e.reason}"
+            )
+            if last_text:
+                print(f"[TEXT] Last text event (first 500): {last_text[:500]}")
+            if attempt < _DESIGNER_MAX_RETRIES:
+                print(f"[RETRY] Re-invoking Kilo ({attempt + 2}/{_DESIGNER_MAX_RETRIES + 1})")
+                continue
+            # Out of retries. Fall through to lenient_parse below.
+            json_str = None
+            break
+
+    # Handle infra-level failure.
+    if invoke_failed:
+        if any("not found" in e.lower() for e in last_errors):
             log_gap(
                 migration_id=site_id,
                 gap_type="gate_failure",
@@ -386,47 +511,51 @@ def design(site_id: str, rec_id: str, gap_context: Optional[str] = None) -> Opti
             )
         return None
 
-    stdout = result.summary or ""
-    print(f"[KILO] Output received ({len(stdout)} chars)")
-
-    # Track last_text for debug parity.
-    last_text = None
-    for line in stdout.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            event = json.loads(line)
-            if isinstance(event, dict) and event.get("type") == "text":
-                t = event.get("part", {}).get("text", "")
-                if isinstance(t, str):
-                    last_text = t
-        except json.JSONDecodeError:
-            continue
-
-    try:
-        data = extract_json(stdout)
-    except JSONExtractionError as e:
-        print(f"[ERROR] Could not extract JSON from Kilo output: {e.reason}")
-        lines = stdout.splitlines()
-        print(f"[KILO] Got {len(lines)} NDJSON events")
-        if last_text:
-            print(f"[TEXT] Last text event: {last_text[:500]}")
-        # Phase 0: silent fallback to "{}" is REMOVED. We log a HIGH-severity
-        # gap with target_persona=ui_designer so the manager routes back here
-        # (instead of producing a useless VisualDirection downstream).
-        log_gap(
-            migration_id=site_id,
-            gap_type="gate_failure",
-            source_persona="ui_designer",
-            target_persona="ui_designer",
-            description=f"Could not extract VisualDirection JSON from Kilo output: {e.reason}",
-            suggested_fix="Check Kilo output format and prompt instructions",
-            severity="high",
-        )
-        return None
-
-    json_str = json.dumps(data)
+    # Lenient fallback: when all retries fail, try to salvage any
+    # partial VisualDirection fields from the raw Kilo output. This
+    # converts a "could not extract JSON" hard failure into a degraded
+    # VisualDirection that still has primary_change / rationale set.
+    if json_str is None:
+        salvage_source = last_text or stdout
+        salvaged = lenient_parse_visual_direction(salvage_source)
+        if salvaged:
+            print(
+                f"[LENIENT] Recovered {len(salvaged)} VisualDirection fields "
+                f"from Kilo output (primary_change set: {bool(salvaged.get('primary_change'))})"
+            )
+            json_str = json.dumps(salvaged)
+            log_gap(
+                migration_id=site_id,
+                gap_type="degraded_artifact",
+                source_persona="ui_designer",
+                target_persona="ui_designer",
+                description=(
+                    f"Designer output required lenient_parse; recovered "
+                    f"{list(salvaged.keys())} from unparseable Kilo response"
+                ),
+                suggested_fix=(
+                    "Inspect Kilo output — likely truncated or wrapped in "
+                    "markdown that broke the JSON fence"
+                ),
+                severity="medium",
+            )
+        else:
+            print(f"[ERROR] Could not extract JSON from Kilo output (any attempt)")
+            lines = stdout.splitlines()
+            print(f"[KILO] Got {len(lines)} NDJSON events")
+            # Phase 0: silent fallback to "{}" is REMOVED. We log a HIGH-severity
+            # gap with target_persona=ui_designer so the manager routes back here
+            # (instead of producing a useless VisualDirection downstream).
+            log_gap(
+                migration_id=site_id,
+                gap_type="gate_failure",
+                source_persona="ui_designer",
+                target_persona="ui_designer",
+                description="Could not extract VisualDirection JSON from Kilo output",
+                suggested_fix="Check Kilo output format and prompt instructions",
+                severity="high",
+            )
+            return None
 
     stitch_status = "available"
     try:

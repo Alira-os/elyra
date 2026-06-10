@@ -30,8 +30,11 @@ one `DataContract` per logical entity (e.g. `BlogPost`, `Product`,
   `cms`; sites with a real DB use `database`; pure-file sites use
   `file`.
 - **`fields`**: a list of `{name, type, required, notes}` dicts. Use
-  lowercase field names. `required` is `"true"` or `"false"`. `notes`
-  is a free-form hint.
+  lowercase field names. **`required` MUST be the string `"true"` or
+  `"false"` (with quotes) — never a Python boolean, never `null`. This
+  is the single most common validation error.** **`type`** is a
+  free-form string (`"string"`, `"markdown"`, `"date"`, `"number"`,
+  `"url"`, `"image"`, `"enum"`, etc.). `notes` is a free-form hint.
 - **`relationships`**: a list of other contract names this one
   references (e.g. `BlogPost -> Author`).
 - **`cms_sync`**: if `kind="cms"`, describe how this model is populated

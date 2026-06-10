@@ -149,15 +149,42 @@ Run a structured self-critique after polish.
 
 _Full upstream JSON is available at `memory/site_understandings/`, `memory/site_architectures/`, `memory/site_recommendations/`, `memory/visual_specs/<slug>/`, `memory/data_contracts/`, `memory/api_contracts/`, and `memory/deploy_specs/` — re-read via your tools if you need per-page component detail._
 
-## Output
-Your final response must include:
-1. A complete BuildManifest JSON matching the schema below
-2. All generated code files written to `sites/{site_slug}/`
+## Output Contract (CRITICAL)
+Output ONLY a single valid JSON object matching the `BuildManifest` schema below.
+- No markdown fences. No prose. No commentary. No code samples in the response.
+- All schema fields are optional with defaults — populate only what you have evidence for.
+- At minimum, set `output_dir` (e.g. `"sites/{site_slug}/"`), `build_timestamp` (ISO-8601), `personas_used` (include `"frontend_architect"`), and `overall_quality_score` (0-100).
+- The orchestrator will run your JSON through Pydantic. Anything outside the JSON object is dropped.
 
-## BuildManifest Schema
+Code-writing is a SIDE EFFECT: use your file tools to write actual files under `sites/{site_slug}/`, but your response itself is the BuildManifest JSON describing what you did.
+
+Minimal required-shape example (not exhaustive):
+```json
+{{
+  "output_dir": "sites/{site_slug}/",
+  "build_timestamp": "2026-06-08T18:16:46-04:00",
+  "personas_used": ["frontend_architect"],
+  "overall_quality_score": 0,
+  "ui_polish_version": "v1",
+  "ui_polish_changes": [],
+  "self_critique": {{
+    "visual_weight_issues": [],
+    "typography_hierarchy_suggestions": [],
+    "emotional_resonance_gaps": [],
+    "brand_token_violations": [],
+    "motion_philosophy_alignment": "aligned",
+    "severity": "low",
+    "recommended_action": "None - acceptable trade-off"
+  }},
+  "lighthouse_scores": {{}},
+  "deployment_readiness": {{}}
+}}
+```
+
+## BuildManifest Schema (authoritative)
 {schema_json}
 
-## Code Output
+## Code Output (side effect, not your response)
 Write all generated files to the directory: `sites/{site_slug}/`
 Key files to generate (per the architecture's `target_stack`):
 - pages for each route in the architecture
@@ -195,14 +222,17 @@ def design_frontend(
         deploy_spec=deploy_spec,
         gap_context=gap_context,
     )
+
     # Frontend architect is the heaviest prompt (everything converges
-    # here). The forge_common helper's timeout guard-rails apply.
-    json_str, _last_text = invoke_kilo_for_persona(
+    # here). The forge_common helper's timeout guard-rails apply. We
+    # also do one bounded retry on Pydantic validation failure — the
+    # previous "first try or give up" path wasted the 600s budget on
+    # near-misses that a corrective re-prompt can usually fix.
+    json_str = _invoke_with_validation_retry(
         persona=persona,
         prompt=prompt,
-        context={"migration_id": migration_id, "site_slug": site_slug},
         migration_id=migration_id,
-        timeout_s=PERSONA_TIMEOUTS_S[persona],
+        site_slug=site_slug,
     )
     if json_str is None:
         return None, site_slug
@@ -213,10 +243,14 @@ def design_frontend(
         allowed = {k: v for k, v in data.items() if k in BuildManifest.model_fields}
         manifest = BuildManifest(**allowed)
     except Exception as e:
+        # _invoke_with_validation_retry already gave Kilo one chance to
+        # fix this; the only way we land here is a second failure
+        # (which is the abort condition documented in the persona
+        # markdown). Log and bail.
         make_failed_invocation_gap(
             migration_id=migration_id,
             persona=persona,
-            description=f"BuildManifest JSON parsed but failed Pydantic validation: {e}",
+            description=f"BuildManifest JSON parsed but failed Pydantic validation after retry: {e}",
         )
         return None, site_slug
 
@@ -225,3 +259,97 @@ def design_frontend(
         manifest.output_dir = f"sites/{site_slug}/"
 
     return manifest, site_slug
+
+
+def _invoke_with_validation_retry(
+    *,
+    persona: str,
+    prompt: str,
+    migration_id: str,
+    site_slug: str,
+) -> Optional[str]:
+    """Call Kilo once; on Pydantic-validation failure, re-prompt with
+    the precise error and try once more. Returns the JSON string on
+    success, or None if extraction OR validation failed twice.
+
+    Why a one-shot retry: in the legacy personas, the dominant
+    failure mode for the convergence persona was "Kilo produced a
+    JSON object that was 90% correct — wrong field name, a string
+    where a number was expected, etc." A focused corrective prompt
+    ("here is the exact validation error; fix it") usually succeeds
+    in a single follow-up. Two retries were considered and rejected
+    because the 600s budget is already at its hard cap.
+    """
+    json_str, _last_text = invoke_kilo_for_persona(
+        persona=persona,
+        prompt=prompt,
+        context={"migration_id": migration_id, "site_slug": site_slug},
+        migration_id=migration_id,
+        timeout_s=PERSONA_TIMEOUTS_S[persona],
+    )
+    if json_str is None:
+        return None
+
+    if _try_validate_manifest(json_str) is not None:
+        return json_str
+
+    # First attempt failed validation. Build a corrective follow-up
+    # that shows the exact error and re-issues the OUTPUT-ONLY
+    # contract so the model doesn't drift into prose.
+    err = _validation_error_for(json_str) or "unknown Pydantic validation error"
+    corrective = (
+        f"{prompt}\n\n"
+        f"## CORRECTION (previous response failed validation)\n"
+        f"Your previous JSON output failed Pydantic validation:\n"
+        f"```\n{err}\n```\n\n"
+        f"Re-emit a single corrected JSON object that satisfies the schema. "
+        f"Remember: OUTPUT ONLY the JSON object. No markdown fences, no prose. "
+        f"Reuse the same shape you produced, but fix the failing field(s).\n"
+    )
+    json_str2, _ = invoke_kilo_for_persona(
+        persona=persona,
+        prompt=corrective,
+        context={"migration_id": migration_id, "site_slug": site_slug, "retry": True},
+        migration_id=migration_id,
+        timeout_s=PERSONA_TIMEOUTS_S[persona],
+    )
+    if json_str2 is None:
+        return None
+    if _try_validate_manifest(json_str2) is not None:
+        return json_str2
+    return None
+
+
+def _try_validate_manifest(json_str: str) -> Optional[BuildManifest]:
+    """Parse + validate a JSON string against BuildManifest. Returns
+    the manifest on success, or None on any failure. Never raises."""
+    try:
+        data = json.loads(json_str)
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    allowed = {k: v for k, v in data.items() if k in BuildManifest.model_fields}
+    try:
+        return BuildManifest(**allowed)
+    except Exception:
+        return None
+
+
+def _validation_error_for(json_str: str) -> Optional[str]:
+    """Return the Pydantic ValidationError string for a JSON string
+    that fails BuildManifest validation, or None if parsing itself
+    failed. Truncated to 800 chars to keep the corrective prompt
+    from doubling in size."""
+    try:
+        data = json.loads(json_str)
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    allowed = {k: v for k, v in data.items() if k in BuildManifest.model_fields}
+    try:
+        BuildManifest(**allowed)
+    except Exception as e:
+        return str(e)[:800]
+    return None
