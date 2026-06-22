@@ -6,6 +6,8 @@
 
 ---
 
+> **Start here for the agent vs. tool model:** [`AGENTS.md`](../AGENTS.md). This document is the *why*; `AGENTS.md` is the *what* (decision rule, directory layout, worked example). If they ever disagree, `AGENTS.md` wins.
+
 ## Executive Summary
 
 Elyra is an AI-native website creation and migration engine that takes a fundamentally different approach from traditional automation: instead of a rigid pipeline, Elyra uses a **Guided Dynamic Orchestration** pattern where a meta-agent (Conductor) intelligently routes between specialized personas, learns from every interaction, and compounds in capability over time.

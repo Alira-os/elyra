@@ -1,0 +1,573 @@
+{
+  "url": "https://highlandtreeservices.com/",
+  "platform": "wordpress",
+  "platform_confidence": 0.99,
+  "site_name": "Highland Tree Services",
+  "total_pages_discovered": 53,
+  "pages": [
+    {
+      "url": "https://highlandtreeservices.com/",
+      "canonical_url": "https://highlandtreeservices.com/",
+      "title": "Tree Services in Ann Arbor, MI and Washtenaw County Area",
+      "page_type": ["home"],
+      "template_id": "front-page-v1",
+      "meta_description": "Highland Tree Services handles all tree service and tree care needs in Ann Arbor and all Washtenaw County, MI areas.",
+      "headings": {
+        "h1": ["Ann Arbor Family Company Providing Tree Services in Washtenaw County, MI"],
+        "h2": ["Our Tree Services in Ann Arbor", "Why Choose Highland Tree Services?", "What our clients say"],
+        "h3": ["Tree Removal", "Tree Pruning / Trimming", "Shrub Removal / Trimming", "Stump Removal / Grinding", "24/7 Emergency Tree Service", "Land Clearing", "Tree / Bush Planting", "Storm Damage Cleanup", "Fallen Tree Cleanup", "30+ Years of Combined Experience", "BBB Accredited", "TCIA & ISA Member", "Discounts Available for Veterans & Seniors", "Locally-Owned & Operated", "Weekend Appointments By Request", "SwissMountainElder", "Leslie G.", "Angela S.", "Kevin R.", "Irene H.", "Sinclair H."]
+      },
+      "components": [
+        {"type": "header", "order": 0, "content": {"logo": "Highland Tree Services Logo", "phone": "(734) 999-3880", "address": "1300 W Joy Rd, Ann Arbor, MI 48105", "badges": "24-Hour Tree Service"}, "assets": [{"src": "https://highlandtreeservices.com/wp-content/uploads/2024/12/Highlan-Tree-Services-Logo.png", "alt": "Highland Tree Services Logo", "role": "logo"}], "text_content": "CLICK TO GET A FREE QUOTE | CLICK TO CALL US NOW (734) 999-3880 | 24-Hour Tree Service | Highland Tree Services 1300 W Joy Rd, Ann Arbor, MI 48105"},
+        {"type": "hero", "order": 1, "content": {"eyebrow": "HIGHLAND TREE SERVICES", "headline": "Ann Arbor Family Company Providing Tree Services in Washtenaw County, MI", "subheadline": "We are a family-owned tree service in Ann Arbor providing professional tree removal, tree trimming, storm damage cleanup, and full tree care."}, "cta_text": ["GET A FREE QUOTE"], "text_content": "HIGHLAND TREE SERVICES Ann Arbor Family Company Providing Tree Services in Washtenaw County, MI We are a family-owned tree service in Ann Arbor providing professional tree removal, tree trimming, storm damage cleanup, and full tree care. Our experienced team focuses on safety, reliable service, and a spotless cleanup. You can trust us to handle your trees with care and get the job done right the first time. GET A FREE QUOTE"},
+        {"type": "cards", "order": 2, "content": {"section_label": "What We Offer", "section_heading": "Our Tree Services in Ann Arbor"}, "layout": {"columns": 4, "gap": "24px"}, "cards": [
+          {"title": "Tree Removal", "summary": "Highland Tree Services provides safe and efficient tree removal solutions tailored to your property’s needs.", "link": "/tree-removal/"},
+          {"title": "Tree Pruning / Trimming", "summary": "Enhance the beauty and health of your trees with our expert pruning and tree trimming services.", "link": "/tree-pruning-trimming/"},
+          {"title": "Shrub Removal / Trimming", "summary": "Transform your landscape with professional shrub removal.", "link": "/shrub-removal-trimming/"},
+          {"title": "Stump Removal / Grinding", "summary": "Say goodbye to unsightly stumps with our advanced stump removal and grinding services.", "link": "/stump-removal-grinding/"},
+          {"title": "24/7 Emergency Tree Service", "summary": "Highland Tree Services is ready around the clock to handle tree emergencies.", "link": "/emergency-tree-service-washtenaw-county-mi/"},
+          {"title": "Land Clearing", "summary": "Prepare your property for new developments or restore open spaces.", "link": "/land-clearing/"},
+          {"title": "Tree / Bush Planting", "summary": "Bring life to your property with our tree and bush planting services.", "link": "/tree-bush-planting/"},
+          {"title": "Storm Damage Cleanup", "summary": "Restore your property after severe weather.", "link": "/storm-damage-cleanup/"},
+          {"title": "Fallen Tree Cleanup", "summary": "Highland Tree Services offers fast and reliable fallen tree cleanup.", "link": "/fallen-tree-cleanup/"}
+        ], "text_content": "Tree Removal | Tree Pruning / Trimming | Shrub Removal / Trimming | Stump Removal / Grinding | 24/7 Emergency Tree Service | Land Clearing | Tree / Bush Planting | Storm Damage Cleanup | Fallen Tree Cleanup"},
+        {"type": "text_block", "order": 3, "content": {"eyebrow": "ABOUT HIGHLAND TREE SERVICES", "headline": "Tree Company in Washtenaw & Livingston, Michigan", "body": "Highland Tree Services provides expert tree care throughout Washtenaw and Livingston counties. Based in Ann Arbor, we proudly serve nearby communities such as Dexter, Ypsilanti, Chelsea, Saline, Whitmore Lake, Brighton, and South Lyon. Our services cover everything from safe tree removal and precision tree trimming to stump grinding, storm damage cleanup, hazardous tree removal, cabling and bracing, and full land or lot clearing."}, "assets": [{"src": "https://highlandtreeservices.com/wp-content/uploads/2024/12/About-highland-tree-services.png", "alt": "Commercial Tree Service", "role": "about"}], "bullets": ["5 Star Rated", "Specialized Equipment", "Competitive Pricing", "Family-Owned & Operated"], "text_content": "ABOUT HIGHLAND TREE SERVICES | Tree Company in Washtenaw & Livingston, Michigan | 5 Star Rated, Specialized Equipment, Competitive Pricing, Family-Owned & Operated"},
+        {"type": "gallery", "order": 4, "content": {"heading": "Our Work"}, "assets": [{"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/6.jpg", "alt": "Project photo", "role": "gallery"}, {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/101-1.jpg", "alt": "Project photo", "role": "gallery"}, {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/103.jpg", "alt": "Project photo", "role": "gallery"}, {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/104.jpg", "alt": "Project photo", "role": "gallery"}, {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/106.jpg", "alt": "Project photo", "role": "gallery"}, {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/107.jpg", "alt": "Project photo", "role": "gallery"}, {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/98.jpg", "alt": "Project photo", "role": "gallery"}, {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/68.jpg", "alt": "A tree fell on a roof after a storm.", "role": "gallery"}, {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/95.jpg", "alt": "Project photo", "role": "gallery"}, {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/77.jpg", "alt": "Project photo", "role": "gallery"}], "cta_text": ["VIEW GALLERY"], "text_content": "VIEW GALLERY"},
+        {"type": "cards", "order": 5, "content": {"heading": "Why Choose Highland Tree Services?", "cards": [
+          {"title": "30+ Years of Combined Experience", "body": "With over 30 years of combined experience, Highland Tree Services brings unparalleled expertise to every project."},
+          {"title": "BBB Accredited", "body": "As a BBB-accredited company, Highland Tree Services upholds the highest standards of integrity, trust, and customer satisfaction."},
+          {"title": "TCIA & ISA Member", "body": "Highland Tree Services is proud to be a member of the Tree Care Industry Association (TCIA) and the International Society of Arboriculture (ISA)."},
+          {"title": "Discounts Available for Veterans & Seniors", "body": "We honor our veterans and seniors with exclusive discounts on our tree services."},
+          {"title": "Locally-Owned & Operated", "body": "As a locally owned and operated business based in Ann Arbor, Highland Tree Services understands the unique tree care needs of Washtenaw and Livingston County communities."},
+          {"title": "Weekend Appointments By Request", "body": "For your convenience, Highland Tree Services offers weekend appointments by request."}
+        ]}, "text_content": "30+ Years of Combined Experience | BBB Accredited | TCIA & ISA Member | Discounts Available for Veterans & Seniors | Locally-Owned & Operated | Weekend Appointments By Request"},
+        {"type": "testimonials", "order": 6, "content": {"eyebrow": "TESTIMONIALS", "heading": "What our clients say", "reviews": [
+          {"author": "SwissMountainElder", "body": "Charlie is a man of his word, if he’ll be there by 9, expect to see him at 8:55. The crew did everything we asked for, AND cleaned up everything, AND not only did he know everything I asked about, but the total price was below his original bid. Check them out for all your tree needs."},
+          {"author": "Leslie G.", "body": "Charlie and his crew were life savers! They came by right after a big storm and quickly helped clear fallen trees, trim damaged limbs and left my yard looking great! They were very professional and reasonably priced."},
+          {"author": "Angela S.", "body": "Extremely professional and efficient. So happy with the completed project and how quickly they were able to get it done. Can’t recommend Charlie and his crew enough!"},
+          {"author": "Kevin R.", "body": "After a recent ice storm, Charlie and his family offered to clean up my tree damage. They were quick to start and worked diligently to finish. I found all of them to be professional, friendly and hard working."},
+          {"author": "Irene H.", "body": "Highland Tree Services is a professional tree service that gives excellent service. Their pricing is competitive. Charley and his crew are as meticulous as we are about our landscaping."},
+          {"author": "Sinclair H.", "body": "Highly recommend! From my first call to completed job (20+ trees trimmed or downed) was less than 2 weeks. Charlie was very professional, responsive and totally hands on."}
+        ]}, "cta_text": ["SEE ALL REVIEWS"], "text_content": "TESTIMONIALS | What our clients say | SwissMountainElder, Leslie G., Angela S., Kevin R., Irene H., Sinclair H. | SEE ALL REVIEWS"},
+        {"type": "cta", "order": 7, "content": {"heading": "You Can Trust The Experts At Highland Tree Services"}, "assets": [{"src": "https://highlandtreeservices.com/wp-content/uploads/2024/12/badges.png", "alt": "Accreditation badges", "role": "badge"}], "text_content": "You Can Trust The Experts At Highland Tree Services"},
+        {"type": "form", "order": 8, "content": {"heading": "Get A Free Estimate", "subheadline": "Fill out the form below, and we’ll get back to you.", "service_area_heading": "Our Service Area", "service_area_body": "We Proudly Serve Ann Arbor & Surrounding Areas in Washtenaw & Livingston counties, MI"}, "layout": {"columns": 2, "gap": "32px"}, "text_content": "Get A Free Estimate | Fill out the form below, and we’ll get back to you. | Our Service Area | We Proudly Serve Ann Arbor & Surrounding Areas in Washtenaw & Livingston counties, MI"},
+        {"type": "footer", "order": 9, "content": {"heading": "Contact Us for Tree Service Assistance or a Free Estimate.", "address": "1300 W Joy Rd, Ann Arbor, MI 48105", "phone": "(734) 999-3880"}, "text_content": "Contact Us for Tree Service Assistance or a Free Estimate. | 1300 W Joy Rd, Ann Arbor, MI 48105 | (734) 999-3880 | CLICK TO GET A FREE QUOTE | CLICK TO CALL US NOW (734) 999-3880"}
+      ],
+      "images": [
+        {"src": "https://highlandtreeservices.com/wp-content/uploads/2024/12/Highlan-Tree-Services-Logo.png", "alt": "Highland Tree Services Logo", "role": "logo"},
+        {"src": "https://highlandtreeservices.com/wp-content/uploads/2024/12/About-highland-tree-services.png", "alt": "Commercial Tree Service", "role": "about"},
+        {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/6.jpg", "alt": "Tree service photo", "role": "gallery"},
+        {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/68.jpg", "alt": "A tree fell on a roof after a storm.", "role": "gallery"},
+        {"src": "https://highlandtreeservices.com/wp-content/uploads/2024/12/badges.png", "alt": "Accreditation badges", "role": "badge"}
+      ],
+      "links": [
+        {"href": "/request-a-free-estimate", "text": "GET A FREE QUOTE", "is_internal": true, "is_external": false},
+        {"href": "tel:7349993880", "text": "(734) 999-3880", "is_internal": false, "is_external": true},
+        {"href": "/tree-removal/", "text": "Read More", "is_internal": true, "is_external": false},
+        {"href": "/tree-pruning-trimming/", "text": "Read More", "is_internal": true, "is_external": false},
+        {"href": "/shrub-removal-trimming/", "text": "Read More", "is_internal": true, "is_external": false},
+        {"href": "/stump-removal-grinding/", "text": "Read More", "is_internal": true, "is_external": false},
+        {"href": "/emergency-tree-service-washtenaw-county-mi/", "text": "Read More", "is_internal": true, "is_external": false},
+        {"href": "/land-clearing/", "text": "Read More", "is_internal": true, "is_external": false},
+        {"href": "/tree-bush-planting/", "text": "Read More", "is_internal": true, "is_external": false},
+        {"href": "/storm-damage-cleanup/", "text": "Read More", "is_internal": true, "is_external": false},
+        {"href": "/fallen-tree-cleanup/", "text": "Read More", "is_internal": true, "is_external": false},
+        {"href": "/gallery/", "text": "VIEW GALLERY", "is_internal": true, "is_external": false},
+        {"href": "/testimonials/", "text": "SEE ALL REVIEWS", "is_internal": true, "is_external": false},
+        {"href": "https://www.facebook.com/highlandtreeservicesmi/", "text": "Facebook", "is_internal": false, "is_external": true}
+      ],
+      "forms": [[
+        {"name": "first_name", "label": "First Name", "type": "text", "required": true, "placeholder": "First Name", "options": []},
+        {"name": "services", "label": "What services do you need?", "type": "checkbox", "required": true, "placeholder": "", "options": ["Tree removal", "Tree Pruning / Trimming", "Stump Removal / Grinding", "Shrub Removal / Trimming", "24/7 Emergency Service", "Land Clearing", "Tree / Bush Planting", "Storm Damage Clean Up", "Fallen Tree Clean Up", "Other"]},
+        {"name": "storm_emergency", "label": "Is this a storm-related emergency?", "type": "radio", "required": true, "placeholder": "", "options": ["Yes", "No"]},
+        {"name": "bad_days", "label": "Which days are not good for you?", "type": "checkbox", "required": true, "placeholder": "", "options": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]},
+        {"name": "available_times", "label": "When are you able to meet?", "type": "checkbox", "required": true, "placeholder": "", "options": ["8 - 9 AM", "9 - 12 AM", "12 - 1 PM", "1 - 5 PM", "5 - 8 PM"]},
+        {"name": "address", "label": "What is the address of your property?", "type": "text", "required": true, "placeholder": "Address", "options": []},
+        {"name": "city", "label": "In what city is your property located?", "type": "text", "required": true, "placeholder": "City", "options": []},
+        {"name": "phone", "label": "What is your mobile phone number?", "type": "tel", "required": true, "placeholder": "Mobile Phone Number", "options": []},
+        {"name": "consent", "label": "By providing your phone number, you agree to receive text messages from Highland Tree Services.", "type": "checkbox", "required": true, "placeholder": "", "options": []},
+        {"name": "submit", "label": "Book My Free Estimate", "type": "submit", "required": false, "placeholder": "", "options": []}
+      ]],
+      "text_content": "24-Hour Tree Service | Highland Tree Services 1300 W Joy Rd, Ann Arbor, MI 48105 | CLICK TO GET A FREE QUOTE | CLICK TO CALL US NOW (734) 999-3880 | HIGHLAND TREE SERVICES | Ann Arbor Family Company Providing Tree Services in Washtenaw County, MI | We are a family-owned tree service in Ann Arbor providing professional tree removal, tree trimming, storm damage cleanup, and full tree care. Our experienced team focuses on safety, reliable service, and a spotless cleanup. You can trust us to handle your trees with care and get the job done right the first time. | What We Offer | Our Tree Services in Ann Arbor | Tree Removal: Highland Tree Services provides safe and efficient tree removal solutions tailored to your property’s needs. | Tree Pruning / Trimming: Enhance the beauty and health of your trees with our expert pruning and tree trimming services. | Shrub Removal / Trimming: Transform your landscape with professional shrub removal. | Stump Removal / Grinding: Say goodbye to unsightly stumps with our advanced stump removal and grinding services. | 24/7 Emergency Tree Service: Highland Tree Services is ready around the clock to handle tree emergencies. | Land Clearing: Prepare your property for new developments or restore open spaces. | Tree / Bush Planting: Bring life to your property with our tree and bush planting services. | Storm Damage Cleanup: Restore your property after severe weather. | Fallen Tree Cleanup: Highland Tree Services offers fast and reliable fallen tree cleanup. | ABOUT HIGHLAND TREE SERVICES | Tree Company in Washtenaw & Livingston, Michigan | Highland Tree Services provides expert tree care throughout Washtenaw and Livingston counties. Based in Ann Arbor, we proudly serve nearby communities such as Dexter, Ypsilanti, Chelsea, Saline, Whitmore Lake, Brighton, and South Lyon. Our services cover everything from safe tree removal and precision tree trimming to stump grinding, storm damage cleanup, hazardous tree removal, cabling and bracing, and full land or lot clearing. If you’re interested in learning more about our services, please don’t hesitate to give us a call today! | 5 Star Rated, Specialized Equipment, Competitive Pricing, Family-Owned & Operated | Why Choose Highland Tree Services? | 30+ Years of Combined Experience | BBB Accredited | TCIA & ISA Member | Discounts Available for Veterans & Seniors | Locally-Owned & Operated | Weekend Appointments By Request | TESTIMONIALS | What our clients say | You Can Trust The Experts At Highland Tree Services | Get A Free Estimate | Fill out the form below, and we’ll get back to you. | Our Service Area | We Proudly Serve Ann Arbor & Surrounding Areas in Washtenaw & Livingston counties, MI | Ann Arbor, Hamburg, Dexter, South Lyon, Ypsilanti, Pinckney, Chelsea, Lodi Township, Saline, Northfield Township, Whitmore Lake, Scio Township, Brighton, Webster Township | Contact Us for Tree Service Assistance or a Free Estimate. © 2026 Highland Tree Services. All rights reserved. | Privacy Policy | Terms Of Use",
+      "text_word_count": 540,
+      "seo": {
+        "og_title": "Tree Services in Ann Arbor, MI and Washtenaw County Area",
+        "og_description": "Highland Tree Services handles all tree service and tree care needs in Ann Arbor and all Washtenaw County, MI areas.",
+        "og_image": "https://highlandtreeservices.com/wp-content/uploads/2023/12/19.png",
+        "twitter_card": "summary_large_image"
+      },
+      "json_ld": [
+        {"schema_type": "LocalBusiness", "raw": {"@type": "LocalBusiness", "name": "Highland Tree Services", "url": "https://highlandtreeservices.com/", "telephone": "+1-734-999-3880", "address": {"@type": "PostalAddress", "streetAddress": "1300 W Joy Rd", "addressLocality": "Ann Arbor", "addressRegion": "MI", "postalCode": "48105", "addressCountry": "US"}, "geo": {"@type": "GeoCoordinates", "latitude": 42.344287, "longitude": -83.7743262}, "aggregateRating": {"@type": "AggregateRating", "ratingValue": 4.8, "reviewCount": 21}}},
+        {"schema_type": "WebSite", "raw": {"@type": "WebSite", "url": "https://highlandtreeservices.com/", "name": "Highland Tree Services"}}
+      ],
+      "breadcrumb_path": ["Home"],
+      "cta_text": ["CLICK TO GET A FREE QUOTE", "CLICK TO CALL US NOW (734) 999-3880", "GET A FREE QUOTE", "Read More", "Free Estimate", "VIEW GALLERY", "SEE ALL REVIEWS"],
+      "notes": ["Homepage contains hero, 9 service cards, about block, gallery preview, 6 why-choose cards, 6 testimonials carousel, accreditation badges, service-area list (14 cities/townships), and free-estimate form. Form is an embedded GoHighLevel/LeadConnector iframe."]
+    },
+    {
+      "url": "https://highlandtreeservices.com/about/",
+      "canonical_url": "https://highlandtreeservices.com/about/",
+      "title": "About Highland Tree Services Washtenaw County, MI",
+      "page_type": ["about"],
+      "template_id": "page-with-sidebar-v1",
+      "meta_description": "",
+      "headings": {
+        "h1": ["About Highland Tree Services"],
+        "h2": ["Expert Tree Care Services in Washtenaw & Livingston, Michigan", "Why Choose Highland Tree Services?", "What our clients say"],
+        "h3": ["30+ Years of Combined Experience", "BBB Accredited", "TCIA & ISA Member", "Discounts Available for Veterans & Seniors", "Locally-Owned & Operated", "Weekend Appointments By Request", "SwissMountainElder", "Leslie G.", "Angela S.", "Kevin R.", "Irene H.", "Sinclair H."],
+        "h4": ["ABOUT HIGHLAND TREE SERVICES"]
+      },
+      "components": [
+        {"type": "hero", "order": 0, "content": {"h1": "About Highland Tree Services"}},
+        {"type": "text_block", "order": 1, "content": {"eyebrow": "ABOUT HIGHLAND TREE SERVICES", "heading": "Expert Tree Care Services in Washtenaw & Livingston, Michigan", "body": "Highland Tree Services provides expert tree care services in Washtenaw and Livingston counties, Michigan. Our services include tree removal, pruning and trimming, stump grinding, storm damage removal, hazardous removal, cabling and bracing, and land and lot clearing. If you’re interested in learning more about our services, please don’t hesitate to give us a call today!"}, "assets": [{"src": "https://highlandtreeservices.com/wp-content/uploads/2024/12/About-highland-tree-services.png", "alt": "Commercial Tree Service", "role": "about"}], "bullets": ["5 Star Rated", "Specialized Equipment", "Competitive Pricing", "Family-Owned & Operated"]},
+        {"type": "cards", "order": 2, "content": {"heading": "Why Choose Highland Tree Services?", "cards": [{"title": "30+ Years of Combined Experience", "body": "With over 30 years of combined experience, Highland Tree Services brings unparalleled expertise to every project."}, {"title": "BBB Accredited", "body": "As a BBB-accredited company, Highland Tree Services upholds the highest standards of integrity, trust, and customer satisfaction."}, {"title": "TCIA & ISA Member", "body": "Proud to be a member of the Tree Care Industry Association (TCIA) and the International Society of Arboriculture (ISA)."}, {"title": "Discounts Available for Veterans & Seniors", "body": "We honor our veterans and seniors with exclusive discounts."}, {"title": "Locally-Owned & Operated", "body": "As a locally-owned and operated business, Highland Tree Services understands the unique tree care needs of our community."}, {"title": "Weekend Appointments By Request", "body": "For your convenience, Highland Tree Services offers weekend appointments by request."}]}},
+        {"type": "testimonials", "order": 3, "content": {"eyebrow": "TESTIMONIALS", "heading": "What our clients say"}},
+        {"type": "form", "order": 4, "content": {"heading": "Get A Free Estimate"}}
+      ],
+      "images": [{"src": "https://highlandtreeservices.com/wp-content/uploads/2024/12/About-highland-tree-services.png", "alt": "Commercial Tree Service", "role": "about"}],
+      "links": [{"href": "/request-a-free-estimate/", "text": "CLICK TO GET A FREE QUOTE", "is_internal": true, "is_external": false}, {"href": "tel:7349993880", "text": "(734) 999-3880", "is_internal": false, "is_external": true}],
+      "forms": [],
+      "text_content": "About Highland Tree Services | Home > About Highland Tree Services | ABOUT HIGHLAND TREE SERVICES | Expert Tree Care Services in Washtenaw & Livingston, Michigan | Highland Tree Services provides expert tree care services in Washtenaw and Livingston counties, Michigan. Our services include tree removal, pruning and trimming, stump grinding, storm damage removal, hazardous removal, cabling and bracing, and land and lot clearing. If you’re interested in learning more about our services, please don’t hesitate to give us a call today! | 5 Star Rated, Specialized Equipment, Competitive Pricing, Family-Owned & Operated | Why Choose Highland Tree Services? | 30+ Years of Combined Experience | BBB Accredited | TCIA & ISA Member | Discounts Available for Veterans & Seniors | Locally-Owned & Operated | Weekend Appointments By Request",
+      "text_word_count": 180,
+      "seo": {"og_title": "About Highland Tree Services Washtenaw County, MI", "og_description": "", "og_image": "", "twitter_card": "summary_large_image"},
+      "json_ld": [],
+      "breadcrumb_path": ["Home", "About Highland Tree Services"],
+      "cta_text": ["CLICK TO GET A FREE QUOTE", "CLICK TO CALL US NOW (734) 999-3880"],
+      "notes": ["Standard WordPress page template with sidebar showing services, blog sidebar widgets."]
+    },
+    {
+      "url": "https://highlandtreeservices.com/tree-removal/",
+      "canonical_url": "https://highlandtreeservices.com/tree-removal/",
+      "title": "Tree Removal | Highland Tree Services in Washtenaw County, MI",
+      "page_type": ["services", "service-detail"],
+      "template_id": "service-detail-v1",
+      "meta_description": "",
+      "headings": {
+        "h1": ["Expert Tree Removal In Washtenaw County, MI"],
+        "h2": ["Why Tree Removal Is Important", "Our Tree Removal Process", "Why Choose Highland Tree Services?", "Benefits of Professional Tree Removal", "Frequently Asked Questions (FAQs)", "Areas We Serve", "Contact Us Today for Expert Tree Removal"],
+        "h3": ["Key Reasons to Remove Trees"]
+      },
+      "components": [
+        {"type": "hero", "order": 0, "content": {"h1": "Expert Tree Removal In Washtenaw County, MI"}},
+        {"type": "text_block", "order": 1, "content": {"intro": "When trees become dangerous or disrupt your property, professional removal is essential. Highland Tree Services offers expert tree removal in Washtenaw County, MI, and surrounding areas. We provide safe, efficient services that protect your home, enhance your landscape, and give you peace of mind."}, "assets": [{"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/tree-removal.jpg", "alt": "Tree Removal", "role": "hero"}]},
+        {"type": "text_block", "order": 2, "content": {"heading": "Why Tree Removal Is Important", "body": "Tree removal is more than cutting down a tree. It’s about managing safety risks, protecting property, and ensuring a healthier environment. Dead, damaged, or overgrown trees can become liabilities if left unchecked.", "subheading": "Key Reasons to Remove Trees", "bullets": ["Storm Damage: Severe weather can break branches or uproot trees, posing immediate hazards.", "Diseased or Dying Trees: A diseased tree can quickly become unstable.", "Structural Risks: Tree roots can disrupt foundations, driveways, and underground utilities.", "Overgrown Trees: Trees growing too close to your home, power lines, or fences can cause damage.", "Landscaping Upgrades: Expanding your yard, installing a pool, or building a new structure often requires clearing trees."]}},
+        {"type": "text_block", "order": 3, "content": {"heading": "Our Tree Removal Process", "steps": [{"title": "Initial Consultation", "body": "We begin with a free consultation. Our experts assess your tree’s condition, size, and location to recommend the best removal plan."}, {"title": "Site Inspection and Preparation", "body": "We inspect the entire site to identify potential risks, such as nearby structures or power lines."}, {"title": "Safe Tree Removal", "body": "Using specialized tools and protective gear, we cut down the tree in manageable sections."}, {"title": "Cleanup and Debris Removal", "body": "After removal, we clear all branches, logs, and leaves."}, {"title": "Stump Grinding (Optional)", "body": "We offer stump grinding to remove unsightly stumps, preventing regrowth and making lawn maintenance easier."}]}},
+        {"type": "text_block", "order": 4, "content": {"heading": "Why Choose Highland Tree Services?", "bullets": ["Experienced Professionals", "Advanced Equipment", "Licensed and Insured", "Customer-Centered Approach"]}},
+        {"type": "text_block", "order": 5, "content": {"heading": "Benefits of Professional Tree Removal", "bullets": [{"title": "Increased Safety", "body": "Dead or damaged trees can fall unpredictably."}, {"title": "Enhanced Curb Appeal", "body": "Removing unsightly or poorly placed trees enhances your home’s exterior."}, {"title": "Property Protection", "body": "Overgrown trees can cause damage to roofs, walls, and power lines."}, {"title": "Environmental Responsibility", "body": "We recycle wood and tree debris whenever possible."}]}},
+        {"type": "faq", "order": 6, "content": {"heading": "Frequently Asked Questions (FAQs)", "items": [{"q": "How do I know if a tree needs removal?", "a": "Look for signs like dead branches, leaning trunks, hollow sections, or noticeable root damage."}, {"q": "Can you handle emergency tree removal?", "a": "Yes. We provide emergency tree removal services for storm-damaged or hazardous trees."}, {"q": "Will my property be damaged during removal?", "a": "No. We take every precaution to protect your home, lawn, and surrounding landscape."}, {"q": "Do you offer stump grinding services?", "a": "Yes. We can grind stumps upon request."}, {"q": "Are you licensed and insured?", "a": "Absolutely. We are fully licensed and insured."}]}},
+        {"type": "text_block", "order": 7, "content": {"heading": "Areas We Serve", "body": "Highland Tree Services proudly serves Washtenaw County, MI, and surrounding areas."}},
+        {"type": "cta", "order": 8, "content": {"heading": "Contact Us Today for Expert Tree Removal", "body": "Don’t let hazardous or unwanted trees compromise your property’s safety and beauty. Trust Highland Tree Services for professional tree removal services in Washtenaw County, MI. Call us today at (734) 999-3880 to schedule a free consultation."}, "service_areas": ["Tree Removal in Ann Arbor, MI", "Tree Removal in Dexter, MI", "Tree Removal in Ypsilanti, MI", "Tree Removal in Chelsea, MI", "Tree Removal in Saline, MI", "Tree Removal in Whitmore Lake, MI", "Tree Removal in Brighton, MI", "Tree Removal in Hamburg, MI", "Tree Removal in South Lyon, MI", "Tree Removal in Pinckney, MI", "Tree Removal in Lodi Township, MI", "Tree Removal in Northfield Township, MI", "Tree Removal in Scio Township, MI", "Tree Removal in Webster Township, MI"]}
+      ],
+      "images": [{"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/tree-removal.jpg", "alt": "Tree Removal", "role": "hero"}],
+      "links": [{"href": "tel:+17349993880", "text": "(734) 999-3880", "is_internal": false, "is_external": true}, {"href": "/tree-removal-ann-arbor-mi/", "text": "Tree Removal in Ann Arbor, MI", "is_internal": true, "is_external": false}],
+      "forms": [],
+      "text_content": "Expert Tree Removal In Washtenaw County, MI | When trees become dangerous or disrupt your property, professional removal is essential. Highland Tree Services offers expert tree removal in Washtenaw County, MI, and surrounding areas. | Why Tree Removal Is Important | Key Reasons to Remove Trees: Storm Damage, Diseased or Dying Trees, Structural Risks, Overgrown Trees, Landscaping Upgrades | Our Tree Removal Process: Initial Consultation, Site Inspection and Preparation, Safe Tree Removal, Cleanup and Debris Removal, Stump Grinding | Why Choose Highland Tree Services?: Experienced Professionals, Advanced Equipment, Licensed and Insured, Customer-Centered Approach | Benefits of Professional Tree Removal: Increased Safety, Enhanced Curb Appeal, Property Protection, Environmental Responsibility | FAQs | Areas We Serve | Contact Us Today for Expert Tree Removal. Call (734) 999-3880.",
+      "text_word_count": 480,
+      "seo": {"og_title": "Tree Removal | Highland Tree Services in Washtenaw County, MI", "og_description": "", "og_image": "", "twitter_card": "summary_large_image"},
+      "json_ld": [],
+      "breadcrumb_path": ["Home", "Expert Tree Removal In Washtenaw County, MI"],
+      "cta_text": ["(734) 999-3880", "CLICK TO GET A FREE QUOTE"],
+      "notes": ["Canonical service page with detailed SEO copy, 5-step process, 4 bullet benefits, 5 FAQs, and cross-links to 14 city-specific service pages."]
+    },
+    {
+      "url": "https://highlandtreeservices.com/gallery/",
+      "canonical_url": "https://highlandtreeservices.com/gallery/",
+      "title": "Gallery | Highland Tree Services Washtenaw County, MI",
+      "page_type": ["gallery"],
+      "template_id": "gallery-infinite-v1",
+      "meta_description": "",
+      "headings": {"h1": ["Gallery"]},
+      "components": [
+        {"type": "hero", "order": 0, "content": {"h1": "Gallery"}},
+        {"type": "gallery", "order": 1, "content": {"infinite_scroll": true, "load_more": true, "images": ["6.jpg", "77.jpg", "95.jpg", "91.jpg", "98.jpg", "107.jpg", "106.jpg", "104.jpg", "103.jpg"]}}
+      ],
+      "images": [
+        {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/6.jpg", "alt": "Tree service photo", "role": "gallery"},
+        {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/77.jpg", "alt": "Tree service photo", "role": "gallery"},
+        {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/95.jpg", "alt": "Tree service photo", "role": "gallery"},
+        {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/91.jpg", "alt": "Tree service photo", "role": "gallery"},
+        {"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/98.jpg", "alt": "Tree service photo", "role": "gallery"}
+      ],
+      "links": [],
+      "forms": [],
+      "text_content": "Gallery | Home > Gallery",
+      "text_word_count": 5,
+      "seo": {"og_title": "Gallery | Highland Tree Services Washtenaw County, MI", "og_description": "", "og_image": "", "twitter_card": "summary_large_image"},
+      "json_ld": [],
+      "breadcrumb_path": ["Home", "Gallery"],
+      "cta_text": ["Load more"],
+      "notes": ["Infinite-scroll photo gallery powered by Responsive Lightbox plugin. Shows 9 images initially with Load more button."]
+    },
+    {
+      "url": "https://highlandtreeservices.com/testimonials/",
+      "canonical_url": "https://highlandtreeservices.com/testimonials/",
+      "title": "Testimonials | Highland Tree Services Washtenaw County, MI",
+      "page_type": ["testimonials"],
+      "template_id": "testimonials-grid-v1",
+      "meta_description": "",
+      "headings": {"h1": ["Testimonials"], "h2": ["What do our clients say?"]},
+      "components": [
+        {"type": "hero", "order": 0, "content": {"h1": "Testimonials"}},
+        {"type": "testimonials", "order": 1, "content": {"heading": "What do our clients say?", "reviews": [
+          {"author": "SwissMountainElder", "body": "Charlie is a man of his word, if he’ll be there by 9, expect to see him at 8:55. The crew did everything we asked for, AND cleaned up everything, AND not only did he know everything I asked about, but the total price was below his original bid. Already told the neighborhood about his awesome work."},
+          {"author": "Charles M.", "body": "We received quick and efficient diagnosis and execution during the busy time after a storm. The staff was capable and the owner was friendly and communicative."},
+          {"author": "Kailen M.", "body": "Charlie was very easy to work with! He communicated very clearly and explained the process thoroughly."},
+          {"author": "Wesley S.", "body": "Met with Charlie for a tree removal the same day I called. Very prompt and fast service."},
+          {"author": "David L.", "body": "Timely, professional, courteous, and flexible; I couldn’t ask for more."},
+          {"author": "Jay", "body": "Professional, friendly, and put the tree right where we planned. All at a fair price too."}
+        ]}, "cta_text": ["VIEW MORE TESTIMONIALS"]}}
+      ],
+      "images": [],
+      "links": [],
+      "forms": [],
+      "text_content": "Testimonials | Home > Testimonials | What do our clients say? | SwissMountainElder, Charles M., Kailen M., Wesley S., David L., Jay | VIEW MORE TESTIMONIALS",
+      "text_word_count": 40,
+      "seo": {"og_title": "Testimonials | Highland Tree Services Washtenaw County, MI", "og_description": "", "og_image": "", "twitter_card": "summary_large_image"},
+      "json_ld": [],
+      "breadcrumb_path": ["Home", "Testimonials"],
+      "cta_text": ["VIEW MORE TESTIMONIALS"],
+      "notes": ["Grid of Google-starred reviews with 'View more testimonials' button (likely loads additional reviews via AJAX)."]
+    },
+    {
+      "url": "https://highlandtreeservices.com/blog/",
+      "canonical_url": "https://highlandtreeservices.com/blog/",
+      "title": "Blog | Highland Tree Services Washtenaw County, MI",
+      "page_type": ["blog-index"],
+      "template_id": "blog-index-v1",
+      "meta_description": "",
+      "headings": {"h1": ["Blog"]},
+      "components": [
+        {"type": "hero", "order": 0, "content": {"h1": "Blog"}},
+        {"type": "cards", "order": 1, "content": {"layout": "blog-grid", "pagination": true, "items": [
+          {"title": "Documenting for Insurance: The Protocol for Emergency Tree Claims", "date": "May 15, 2026", "categories": ["Insurance", "Storm Damage"], "url": "/documenting-for-insurance-the-protocol-for-emergency-tree-claims/"},
+          {"title": "Branches near Power Lines: Hiring an Arborist for Emergency Utility Line Clearance", "date": "May 15, 2026", "categories": ["Tree Care Tips", "Tree Service", "Tree Trimming and Pruning"], "url": "/branches-near-power-lines/"},
+          {"title": "How to Safely Check for Tree Damage After a Storm", "date": "May 15, 2026", "categories": ["Storm Damage"], "url": "/how-to-safely-check-for-tree-damage-after-a-storm/"},
+          {"title": "The Homeowner’s Liability: When a Fallen Tree Lands on Your Neighbor’s Property in Ann Arbor, MI", "date": "May 15, 2026", "categories": ["Permits and Liability"], "url": "/when-a-fallen-tree-lands-on-your-neighbors-property-in-ann-arbor-mi/"},
+          {"title": "The Ice Storm \"Hit List\": Common Trees That Can’t Handle the Weight of Winter in Washtenaw County, MI", "date": "April 13, 2026", "categories": ["Tree Service"], "url": "/ice-storm-tree-hit-list-washtenaw-county/"}
+        ]}},
+        {"type": "sidebar", "order": 2, "content": {"widgets": ["Free Tree Service Estimates (with phone)", "Categories list", "Recent Posts"]}}
+      ],
+      "images": [],
+      "links": [],
+      "forms": [],
+      "text_content": "Blog | Home > Blog | Documenting for Insurance: The Protocol for Emergency Tree Claims (May 15, 2026) | Branches near Power Lines (May 15, 2026) | How to Safely Check for Tree Damage After a Storm (May 15, 2026) | The Homeowner’s Liability: When a Fallen Tree Lands on Your Neighbor’s Property (May 15, 2026) | The Ice Storm Hit List: Common Trees That Can’t Handle the Weight of Winter (April 13, 2026) | Categories: Emergency Tree Service, Insurance, Permits and Liability, Storm Damage, Tree Care Tips, Tree Removal, Tree Service, Tree Trimming and Pruning | Recent Posts",
+      "text_word_count": 110,
+      "seo": {"og_title": "Blog | Highland Tree Services Washtenaw County, MI", "og_description": "", "og_image": "", "twitter_card": "summary_large_image"},
+      "json_ld": [],
+      "breadcrumb_path": ["Home", "Blog"],
+      "cta_text": ["Continue Reading", "BOOK A SERVICE NOW"],
+      "notes": ["Paginated blog index with 5 posts on page 1, pagination shows pages 1, 2, ..., 4, 5. Sidebar shows categories (8) and recent posts (3). 22 total posts in sitemap."]
+    },
+    {
+      "url": "https://highlandtreeservices.com/contact-us/",
+      "canonical_url": "https://highlandtreeservices.com/contact-us/",
+      "title": "Contact Highland Tree Services Washtenaw County, MI",
+      "page_type": ["contact"],
+      "template_id": "contact-v1",
+      "meta_description": "",
+      "headings": {"h1": ["Contact Us"], "h2": ["Connect With Us"], "h4": ["Location", "Call Us"]},
+      "components": [
+        {"type": "hero", "order": 0, "content": {"h1": "Contact Us"}},
+        {"type": "text_block", "order": 1, "content": {"heading": "Connect With Us", "body": "Drop us a message, and we’ll be right on it."}},
+        {"type": "cards", "order": 2, "content": {"cards": [{"icon": "location", "title": "Location", "body": "1300 W Joy Rd, Ann Arbor, MI 48105"}, {"icon": "phone", "title": "Call Us", "body": "(734) 999-3880"}]}}
+      ],
+      "images": [],
+      "links": [{"href": "tel:7349993880", "text": "(734) 999-3880", "is_internal": false, "is_external": true}],
+      "forms": [],
+      "text_content": "Contact Us | Home > Contact Us | Connect With Us | Drop us a message, and we’ll be right on it. | Location: 1300 W Joy Rd, Ann Arbor, MI 48105 | Call Us: (734) 999-3880",
+      "text_word_count": 35,
+      "seo": {"og_title": "Contact Highland Tree Services Washtenaw County, MI", "og_description": "", "og_image": "", "twitter_card": "summary_large_image"},
+      "json_ld": [],
+      "breadcrumb_path": ["Home", "Contact Us"],
+      "cta_text": ["CLICK TO GET A FREE QUOTE", "CLICK TO CALL US NOW (734) 999-3880"],
+      "notes": ["Contact page is brief; main contact info card (location + phone). Form/contact submission is via the global footer form or /request-a-free-estimate/."]
+    },
+    {
+      "url": "https://highlandtreeservices.com/service-area/",
+      "canonical_url": "https://highlandtreeservices.com/service-area/",
+      "title": "Service Area | Highland Tree Services",
+      "page_type": ["service-area"],
+      "template_id": "service-area-v1",
+      "meta_description": "",
+      "headings": {"h1": ["Service Area"], "h2": ["Expert Arborist Services Tailored to You", "Proudly serving"]},
+      "components": [
+        {"type": "hero", "order": 0, "content": {"h1": "Service Area", "h2": "Expert Arborist Services Tailored to You"}},
+        {"type": "text_block", "order": 1, "content": {"iframe_map": true}},
+        {"type": "accordion", "order": 2, "content": {"heading": "Proudly serving", "subhead": "We’re proud to serve Washtenaw County, MI and the surrounding area with any tree care needs", "cities": ["Ann Arbor", "Dexter", "Ypsilanti", "Chelsea", "Saline", "Whitmore Lake", "Brighton", "Hamburg", "South Lyon", "Pinckney", "Lodi Township", "Northfield Township", "Scio Township", "Webster Township"]}}
+      ],
+      "images": [],
+      "links": [],
+      "forms": [],
+      "text_content": "Service Area | Expert Arborist Services Tailored to You | Home > Service Area | Proudly serving | We’re proud to serve Washtenaw County, MI and the surrounding area with any tree care needs | Ann Arbor, Dexter, Ypsilanti, Chelsea, Saline, Whitmore Lake, Brighton, Hamburg, South Lyon, Pinckney, Lodi Township, Northfield Township, Scio Township, Webster Township",
+      "text_word_count": 50,
+      "seo": {"og_title": "Service Area | Highland Tree Services", "og_description": "", "og_image": "", "twitter_card": "summary_large_image"},
+      "json_ld": [],
+      "breadcrumb_path": ["Home", "Service Area"],
+      "cta_text": [],
+      "notes": ["Interactive map iframe plus an accordion of 14 city/township service areas."]
+    },
+    {
+      "url": "https://highlandtreeservices.com/request-a-free-estimate/",
+      "canonical_url": "https://highlandtreeservices.com/request-a-free-estimate/",
+      "title": "Request a Free Estimate | Highland Tree Services",
+      "page_type": ["landing", "lead-capture"],
+      "template_id": "lead-capture-v1",
+      "meta_description": "",
+      "headings": {"h1": ["Free Tree Service Estimates"], "h2": ["Free Tree Service Estimates"]},
+      "components": [
+        {"type": "hero", "order": 0, "content": {"heading": "Get A Free Estimate"}},
+        {"type": "text_block", "order": 1, "content": {"heading": "Free Tree Service Estimates", "body": "Estimates Provided Within Two Days Call Today (734) 999-3880 or fill out the form below"}},
+        {"type": "form", "order": 2, "content": {"embed": "GoHighLevel / LeadConnector iframe", "fields": ["First Name", "Services (multi-checkbox, 10 options)", "Storm Emergency (yes/no)", "Bad Days (mon-fri multi-checkbox)", "Available Times (5 time slots)", "Address", "City", "Mobile Phone", "SMS consent", "Submit: Book My Free Estimate"]}, "sidebar": ["Service links", "Recent posts"]}}
+      ],
+      "images": [],
+      "links": [{"href": "tel:7349993880", "text": "(734) 999-3880", "is_internal": false, "is_external": true}],
+      "forms": [[
+        {"name": "first_name", "label": "First Name", "type": "text", "required": true, "placeholder": "First Name", "options": []},
+        {"name": "services", "label": "What services do you need?", "type": "checkbox", "required": true, "placeholder": "", "options": ["Tree removal", "Tree Pruning / Trimming", "Stump Removal / Grinding", "Shrub Removal / Trimming", "24/7 Emergency Service", "Land Clearing", "Tree / Bush Planting", "Storm Damage Clean Up", "Fallen Tree Clean Up", "Other"]},
+        {"name": "storm_emergency", "label": "Is this a storm-related emergency?", "type": "radio", "required": true, "placeholder": "", "options": ["Yes", "No"]},
+        {"name": "bad_days", "label": "Which days are not good for you?", "type": "checkbox", "required": true, "placeholder": "", "options": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]},
+        {"name": "available_times", "label": "When are you able to meet?", "type": "checkbox", "required": true, "placeholder": "", "options": ["8 - 9 AM", "9 - 12 AM", "12 - 1 PM", "1 - 5 PM", "5 - 8 PM"]},
+        {"name": "address", "label": "What is the address of your property?", "type": "text", "required": true, "placeholder": "Address", "options": []},
+        {"name": "city", "label": "In what city is your property located?", "type": "text", "required": true, "placeholder": "City", "options": []},
+        {"name": "phone", "label": "What is your mobile phone number?", "type": "tel", "required": true, "placeholder": "Mobile Phone Number", "options": []},
+        {"name": "consent", "label": "SMS consent", "type": "checkbox", "required": true, "placeholder": "", "options": []},
+        {"name": "submit", "label": "Book My Free Estimate", "type": "submit", "required": false, "placeholder": "", "options": []}
+      ]],
+      "text_content": "Free Tree Service Estimates | Estimates Provided Within Two Days Call Today (734) 999-3880 or fill out the form below | (734) 999-3880 | BOOK A SERVICE NOW",
+      "text_word_count": 35,
+      "seo": {"og_title": "Request a Free Estimate | Highland Tree Services", "og_description": "", "og_image": "", "twitter_card": "summary_large_image"},
+      "json_ld": [],
+      "breadcrumb_path": ["Home"],
+      "cta_text": ["BOOK A SERVICE NOW", "Book My Free Estimate"],
+      "notes": ["Lead-capture landing page with embedded GoHighLevel/LeadConnector form, protected by reCAPTCHA."]
+    },
+    {
+      "url": "https://highlandtreeservices.com/documenting-for-insurance-the-protocol-for-emergency-tree-claims/",
+      "canonical_url": "https://highlandtreeservices.com/documenting-for-insurance-the-protocol-for-emergency-tree-claims/",
+      "title": "Emergency Tree Claims Insurance Protocol",
+      "page_type": ["blog-post"],
+      "template_id": "single-post-v1",
+      "meta_description": "",
+      "headings": {
+        "h1": ["Documenting for Insurance: The Protocol for Emergency Tree Claims"],
+        "h2": ["Why Documentation Matters", "Step-by-Step Guide to Documenting Emergency Tree Claims", "Frequently Asked Questions (FAQs)", "Summary Checklist: Documenting Tree Claims", "Final Advice", "Reviewed by a Certified Arborist"],
+        "h3": ["Ensure Safety First", "Take Clear Photos and Videos", "Document the Date and Time of the Incident", "Record the Tree’s Condition Before the Incident", "A critical aspect of the documentation process is to demonstrate whether the tree was healthy before the storm or if it was already in a weakened state. If you have any records of tree care, such as pruning, maintenance, or professional inspections, now is the time to gather them.", "List All Damaged Property", "Get Multiple Repair Estimates", "Notify Your Insurance Company Promptly", "Keep a Record of All Communications", "Contact a Professional Arborist for an Assessment", "How do I know if my tree damage is covered by insurance?", "Can I remove the fallen tree myself before contacting my insurance?", "What should I do if my neighbor’s tree falls on my property?", "Do I need an arborist’s report for insurance claims?", "How quickly should I file an insurance claim for tree damage?", "What kind of damage does homeowners' insurance cover for trees?", "What if the tree damage is minimal but still requires removal?", "Can I claim for tree damage if I didn’t maintain the tree?"]
+      },
+      "components": [
+        {"type": "hero", "order": 0, "content": {"h1": "Documenting for Insurance: The Protocol for Emergency Tree Claims"}},
+        {"type": "article_header", "order": 1, "content": {"featured_image_alt": "A tree fell on a roof after a storm.", "date": "May 15, 2026", "categories": ["Insurance", "Storm Damage"]}, "assets": [{"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/68.jpg", "alt": "A tree fell on a roof after a storm.", "role": "featured"}]},
+        {"type": "text_block", "order": 2, "content": {"body": "When disaster strikes, especially in the form of a storm, homeowners face the daunting task of cleaning up and repairing their property. One of the most common and costly forms of damage is tree-related damage. Trees can fall on roofs, fences, vehicles, or power lines, leading to expensive repairs. Fortunately, most homeowners' insurance policies cover tree damage, but filing a successful insurance claim involves a thorough and organized documentation process. In this article, we’ll explore the proper protocol for documenting emergency tree claims, ensuring you’re well-prepared to navigate the insurance process and minimize the financial impact of tree damage."}},
+        {"type": "text_block", "order": 3, "content": {"heading": "Why Documentation Matters", "body": "Insurance companies require proper documentation to verify the extent of damage, assess the costs involved, and determine the payout amount. If you fail to provide adequate evidence, your claim could be delayed, denied, or not fully reimbursed. By documenting tree damage accurately and professionally, you help streamline the claims process and ensure you’re getting the compensation you’re entitled to. Proper documentation also protects you from potential disputes with your insurance provider. Whether the tree damage was caused by a storm, high winds, or another unforeseen event, having clear records will help establish your case."}},
+        {"type": "text_block", "order": 4, "content": {"heading": "Step-by-Step Guide to Documenting Emergency Tree Claims", "steps": [
+          {"h": "Ensure Safety First", "body": "Before you start documenting the damage, your top priority should always be safety. Storm-damaged trees may still pose a hazard, with limbs at risk of falling or power lines potentially being downed. If you are unsure about the safety of your property, it’s best to wait for a professional to assess the situation. Contact local authorities or emergency services if there is immediate danger (e.g., trees blocking access, power lines down). You should never attempt to remove a fallen tree or branches near power lines or structures without professional help. Once the immediate dangers are under control, move on to documenting the damage."},
+          {"h": "Take Clear Photos and Videos", "body": "Visual documentation is crucial for your claim. Start by taking clear, wide-angle photos of the tree and the surrounding area, focusing on the overall damage. Don’t just capture the fallen tree - take pictures of any damage caused by the tree, such as broken windows, damaged roofs, or vehicles. Photo Checklist: Wide-angle shots of the overall damage. Close-ups of tree trunks, branches, and any signs of weakness (e.g., rot, cracks, broken limbs). Damage to structures like roofs, fences, or windows. Power line damage (if applicable). Neighboring properties, if your tree has caused damage to their property. It’s also a good idea to take a video for more context."},
+          {"h": "Document the Date and Time of the Incident", "body": "The date and time of the event will be important for your insurance claim, as insurance providers typically require a timeline of the incident. You should keep a detailed log of when the storm occurred, when you discovered the damage, and when you began the cleanup process. If the damage occurred due to a storm, your insurance provider may want to cross-reference the date of the incident with weather reports."},
+          {"h": "Record the Tree’s Condition Before the Incident", "body": "A critical aspect of the documentation process is to demonstrate whether the tree was healthy before the storm or if it was already in a weakened state. If you have any records of tree care, such as pruning, maintenance, or professional inspections, now is the time to gather them. Key Information to Record: Age of the tree, Previous maintenance or inspection reports, Signs of decay or disease (e.g., leaning, broken branches, fungus), Photos of the tree before the incident (if available). If you hired a professional arborist to assess your tree health before the storm, providing their report can further strengthen your claim."},
+          {"h": "List All Damaged Property", "body": "Besides documenting the tree itself, you should also list all items that were damaged by the tree. This includes homes, vehicles, fences, or landscaping. Take photos of the damaged items and keep track of repair estimates and receipts for future reference."},
+          {"h": "Get Multiple Repair Estimates", "body": "In many cases, the insurance company will want to verify repair costs before approving a claim. If significant damage has been caused to your property, obtaining multiple estimates from licensed contractors or repair companies will help validate your claim. Make sure the estimates are itemized and include detailed descriptions of the work to be done, as well as the costs involved."},
+          {"h": "Notify Your Insurance Company Promptly", "body": "Once you have all the necessary documentation, notify your insurance company immediately. Most policies require you to report the damage as soon as possible to ensure that you don’t miss any deadlines. Most insurance companies will send an adjuster to assess the damage in person."},
+          {"h": "Keep a Record of All Communications", "body": "Throughout the claims process, keep a detailed record of all communications with your insurance company, arborist, and any contractors involved in the repair process. This includes emails, phone calls, and letters."},
+          {"h": "Contact a Professional Arborist for an Assessment", "body": "An arborist’s assessment can be crucial in proving that the tree was either healthy or already compromised before the storm. Many insurance providers will ask for an expert evaluation. A certified arborist can identify signs of rot, disease, or other weaknesses. Highland Tree Services, a leading tree service provider in Ann Arbor, MI, offers expert tree removal, tree pruning/trimming, shrub removal/trimming, stump removal/grinding, land clearing, tree/bush planting, 24/7 emergency tree service, storm damage cleanup, and fallen tree cleanup. We perform a thorough site assessment to evaluate your property to identify and address hidden risks, such as partially broken branches or leaning trees, which can be crucial for supporting your insurance claim."}
+        ]}},
+        {"type": "faq", "order": 5, "content": {"heading": "Frequently Asked Questions (FAQs)", "items": [
+          {"q": "How do I know if my tree damage is covered by insurance?", "a": "Most homeowners' insurance policies cover tree damage caused by storms, falling branches, or other unexpected events. However, if the tree was already unhealthy and neglected, coverage may not apply."},
+          {"q": "Can I remove the fallen tree myself before contacting my insurance?", "a": "It’s best to avoid removing the tree until your insurance adjuster has had a chance to assess the damage."},
+          {"q": "What should I do if my neighbor’s tree falls on my property?", "a": "If a neighbor’s tree falls on your property, it’s their responsibility to handle the damage. You should notify your neighbor and document the damage."},
+          {"q": "Do I need an arborist’s report for insurance claims?", "a": "An arborist’s report can be very helpful in proving the condition of the tree before it fell."},
+          {"q": "How quickly should I file an insurance claim for tree damage?", "a": "It’s important to file your claim as soon as possible after the damage occurs."},
+          {"q": "What kind of damage does homeowners' insurance cover for trees?", "a": "Homeowners' insurance typically covers damage caused by fallen trees, including damage to your home, vehicles, fences, or other structures."},
+          {"q": "What if the tree damage is minimal but still requires removal?", "a": "Even if the damage is minor, you should document the situation and contact your insurance company."},
+          {"q": "Can I claim for tree damage if I didn’t maintain the tree?", "a": "If your tree was in poor condition due to neglect and fell as a result, your insurance company may not cover the damage."}
+        ]}},
+        {"type": "table", "order": 6, "content": {"heading": "Summary Checklist: Documenting Tree Claims", "rows": [
+          {"step": "Safety First", "action": "Stay clear of hazards; prioritize life over property"},
+          {"step": "Visual Proof", "action": "Take wide and close-up photos/videos of all damage"},
+          {"step": "Logs", "action": "Record the exact date, time, and storm details"},
+          {"step": "Arborist Report", "action": "Hire a pro for a formal damage and health assessment"},
+          {"step": "Inventory", "action": "List all affected items (cars, fences, structures)"},
+          {"step": "Insurance", "action": "Notify your provider immediately with all documentation"}
+        ]}},
+        {"type": "text_block", "order": 7, "content": {"heading": "Final Advice", "body": "Documenting tree damage for insurance claims is essential for a smooth process. Start by prioritizing safety; do not attempt to remove damaged trees near power lines. Once it’s safe, take clear photos and videos of the damage from multiple angles. Include close-ups and wide shots for thorough documentation. Get an expert arborist’s assessment, especially if the tree was unhealthy before the storm. Keep receipts for any emergency tree services or repairs. Contact your insurance provider immediately and provide all your documentation. Be proactive in following up to ensure a timely claims process. Keep a detailed log of all communications with your insurance provider and contractors. Proper documentation will protect you and help ensure that your claim is processed efficiently."}},
+        {"type": "text_block", "order": 8, "content": {"heading": "Reviewed by a Certified Arborist", "body": "This article has been reviewed by a certified arborist to ensure all information regarding tree care and storm safety is accurate and up to industry standards."}}
+      ],
+      "images": [{"src": "https://highlandtreeservices.com/wp-content/uploads/2023/12/68.jpg", "alt": "A tree fell on a roof after a storm.", "role": "featured"}],
+      "links": [
+        {"href": "/tree-removal/", "text": "tree removal", "is_internal": true, "is_external": false},
+        {"href": "/tree-pruning-trimming/", "text": "tree pruning/trimming", "is_internal": true, "is_external": false},
+        {"href": "/shrub-removal-trimming/", "text": "shrub removal/trimming", "is_internal": true, "is_external": false},
+        {"href": "/stump-removal-grinding/", "text": "stump removal/grinding", "is_internal": true, "is_external": false},
+        {"href": "/land-clearing/", "text": "land clearing", "is_internal": true, "is_external": false},
+        {"href": "/tree-bush-planting/", "text": "tree/bush planting", "is_internal": true, "is_external": false},
+        {"href": "/emergency-tree-service-washtenaw-county-mi/", "text": "24/7 emergency tree service", "is_internal": true, "is_external": false},
+        {"href": "/storm-damage-cleanup/", "text": "storm damage cleanup", "is_internal": true, "is_external": false},
+        {"href": "/fallen-tree-cleanup/", "text": "fallen tree cleanup", "is_internal": true, "is_external": false}
+      ],
+      "forms": [],
+      "text_content": "Documenting for Insurance: The Protocol for Emergency Tree Claims | May 15, 2026 | Insurance, Storm Damage | When disaster strikes, especially in the form of a storm, homeowners face the daunting task of cleaning up and repairing their property. One of the most common and costly forms of damage is tree-related damage. Trees can fall on roofs, fences, vehicles, or power lines, leading to expensive repairs. Fortunately, most homeowners' insurance policies cover tree damage, but filing a successful insurance claim involves a thorough and organized documentation process. In this article, we’ll explore the proper protocol for documenting emergency tree claims, ensuring you’re well-prepared to navigate the insurance process and minimize the financial impact of tree damage. | Why Documentation Matters | Insurance companies require proper documentation to verify the extent of damage, assess the costs involved, and determine the payout amount. If you fail to provide adequate evidence, your claim could be delayed, denied, or not fully reimbursed. By documenting tree damage accurately and professionally, you help streamline the claims process and ensure you’re getting the compensation you’re entitled to. Proper documentation also protects you from potential disputes with your insurance provider. Whether the tree damage was caused by a storm, high winds, or another unforeseen event, having clear records will help establish your case. | Step-by-Step Guide to Documenting Emergency Tree Claims | Ensure Safety First: Before you start documenting the damage, your top priority should always be safety. Storm-damaged trees may still pose a hazard, with limbs at risk of falling or power lines potentially being downed. If you are unsure about the safety of your property, it’s best to wait for a professional to assess the situation. Contact local authorities or emergency services if there is immediate danger (e.g., trees blocking access, power lines down). You should never attempt to remove a fallen tree or branches near power lines or structures without professional help. Once the immediate dangers are under control, move on to documenting the damage. | Take Clear Photos and Videos: Visual documentation is crucial for your claim. Start by taking clear, wide-angle photos of the tree and the surrounding area, focusing on the overall damage. Don’t just capture the fallen tree - take pictures of any damage caused by the tree, such as broken windows, damaged roofs, or vehicles. Photo Checklist: Wide-angle shots of the overall damage. Close-ups of tree trunks, branches, and any signs of weakness (e.g., rot, cracks, broken limbs). Damage to structures like roofs, fences, or windows. Power line damage (if applicable). Neighboring properties, if your tree has caused damage to their property. It’s also a good idea to take a video for more context. Video documentation can show the scale of the damage and provide a clearer understanding of the destruction. | Document the Date and Time of the Incident: The date and time of the event will be important for your insurance claim, as insurance providers typically require a timeline of the incident. You should keep a detailed log of when the storm occurred, when you discovered the damage, and when you began the cleanup process. If the damage occurred due to a storm, your insurance provider may want to cross-reference the date of the incident with weather reports. | Record the Tree’s Condition Before the Incident: A critical aspect of the documentation process is to demonstrate whether the tree was healthy before the storm or if it was already in a weakened state. If you have any records of tree care, such as pruning, maintenance, or professional inspections, now is the time to gather them. Key Information to Record: Age of the tree; Previous maintenance or inspection reports; Signs of decay or disease (e.g., leaning, broken branches, fungus); Photos of the tree before the incident (if available). If you hired a professional arborist to assess your tree health before the storm, providing their report can further strengthen your claim. | List All Damaged Property: Besides documenting the tree itself, you should also list all items that were damaged by the tree. This includes homes, vehicles, fences, or landscaping. Take photos of the damaged items and keep track of repair estimates and receipts for future reference. When submitting your claim, ensure that you provide a detailed list of damaged items, along with the cost of repairs or replacements. Having these records will help your insurance provider determine the payout amount more accurately. | Get Multiple Repair Estimates: In many cases, the insurance company will want to verify repair costs before approving a claim. If significant damage has been caused to your property, obtaining multiple estimates from licensed contractors or repair companies will help validate your claim. Make sure the estimates are itemized and include detailed descriptions of the work to be done, as well as the costs involved. Submit these estimates alongside your photos, videos, and expert assessments. | Notify Your Insurance Company Promptly: Once you have all the necessary documentation, notify your insurance company immediately. Most policies require you to report the damage as soon as possible to ensure that you don’t miss any deadlines. Be prepared to provide all the evidence you’ve gathered, and follow up regularly to ensure your claim is processed efficiently. Most insurance companies will send an adjuster to assess the damage in person. Be sure to communicate the situation clearly and provide all documentation they may need for their review. | Keep a Record of All Communications: Throughout the claims process, keep a detailed record of all communications with your insurance company, arborist, and any contractors involved in the repair process. This includes emails, phone calls, and letters. Having a complete record will help avoid misunderstandings and ensure that everything is documented for future reference. | Contact a Professional Arborist for an Assessment: An arborist’s assessment can be crucial in proving that the tree was either healthy or already compromised before the storm. Many insurance providers will ask for an expert evaluation of the tree to determine its condition and whether it could have been prevented from falling. A certified arborist can identify signs of rot, disease, or other weaknesses that may have contributed to the tree falling. Highland Tree Services, a leading tree service provider in Ann Arbor, MI, offers expert tree removal, tree pruning/trimming, shrub removal/trimming, stump removal/grinding, land clearing, tree/bush planting, 24/7 emergency tree service, storm damage cleanup, and fallen tree cleanup. We perform a thorough site assessment to evaluate your property to identify and address hidden risks, such as partially broken branches or leaning trees, which can be crucial for supporting your insurance claim. Our team can assess the tree’s health before and after the incident and provide you with an official report to submit with your claim. | Frequently Asked Questions (FAQs) | How do I know if my tree damage is covered by insurance? Most homeowners' insurance policies cover tree damage caused by storms, falling branches, or other unexpected events. However, if the tree was already unhealthy and neglected, coverage may not apply. Review your policy or speak to your insurance provider to clarify the details. | Can I remove the fallen tree myself before contacting my insurance? It’s best to avoid removing the tree until your insurance adjuster has had a chance to assess the damage. If you need to remove the tree for safety reasons, take photos of the damage beforehand and keep all receipts for any cleanup or removal services. | What should I do if my neighbor’s tree falls on my property? If a neighbor’s tree falls on your property, it’s their responsibility to handle the damage. You should notify your neighbor and document the damage, then contact your insurance company to see if it’s covered under your policy. | Do I need an arborist’s report for insurance claims? An arborist’s report can be very helpful in proving the condition of the tree before it fell, especially if your claim involves negligence. If you hire a professional arborist, they can provide a report that will support your claim. | How quickly should I file an insurance claim for tree damage? It’s important to file your claim as soon as possible after the damage occurs. Most policies have a window of time within which you must report damage, so acting quickly is essential. | What kind of damage does homeowners' insurance cover for trees? Homeowners' insurance typically covers damage caused by fallen trees, including damage to your home, vehicles, fences, or other structures. However, the tree itself may not be covered unless it falls due to a covered event, such as a storm. | What if the tree damage is minimal but still requires removal? Even if the damage is minor, you should document the situation and contact your insurance company. Some policies will cover the cost of tree removal, even if the damage to the property is small. | Can I claim for tree damage if I didn’t maintain the tree? If your tree was in poor condition due to neglect and fell as a result, your insurance company may not cover the damage. Regular maintenance and inspections can help prevent this issue. | Summary Checklist: Documenting Tree Claims | Safety First - Stay clear of hazards; prioritize life over property | Visual Proof - Take wide and close-up photos/videos of all damage | Logs - Record the exact date, time, and storm details | Arborist Report - Hire a pro for a formal damage and health assessment | Inventory - List all affected items (cars, fences, structures) | Insurance - Notify your provider immediately with all documentation | Final Advice | Documenting tree damage for insurance claims is essential for a smooth process. Start by prioritizing safety; do not attempt to remove damaged trees near power lines. Once it’s safe, take clear photos and videos of the damage from multiple angles. Include close-ups and wide shots for thorough documentation. Get an expert arborist’s assessment, especially if the tree was unhealthy before the storm. Keep receipts for any emergency tree services or repairs. Contact your insurance provider immediately and provide all your documentation. Be proactive in following up to ensure a timely claims process. Keep a detailed log of all communications with your insurance provider and contractors. Proper documentation will protect you and help ensure that your claim is processed efficiently. | Reviewed by a Certified Arborist | This article has been reviewed by a certified arborist to ensure all information regarding tree care and storm safety is accurate and up to industry standards.",
+      "text_word_count": 1620,
+      "seo": {"og_title": "Emergency Tree Claims Insurance Protocol", "og_description": "", "og_image": "https://highlandtreeservices.com/wp-content/uploads/2023/12/68.jpg", "twitter_card": "summary_large_image"},
+      "json_ld": [],
+      "breadcrumb_path": ["Home", "Documenting for Insurance: The Protocol for Emergency Tree Claims"],
+      "cta_text": ["(734) 999-3880", "BOOK A SERVICE NOW", "Book My Free Estimate"],
+      "notes": ["Long-form SEO blog post with featured image, 9-step checklist, 8 FAQs, summary table, and certified-arborist review stamp. Heavy internal cross-linking to all 9 service pages."]
+    }
+  ],
+  "global_assets": {
+    "logo": "https://highlandtreeservices.com/wp-content/uploads/2024/12/Highlan-Tree-Services-Logo.png",
+    "favicon": "https://highlandtreeservices.com/wp-content/themes/JSA-Theme-master/images/favicon.png",
+    "og_image": "https://highlandtreeservices.com/wp-content/uploads/2023/12/19.png",
+    "badge_image": "https://highlandtreeservices.com/wp-content/uploads/2024/12/badges.png",
+    "social": {
+      "facebook": "https://www.facebook.com/highlandtreeservicesmi/"
+    }
+  },
+  "contact_info": {
+    "email": null,
+    "phone": "+1-734-999-3880",
+    "address": "1300 W Joy Rd, Ann Arbor, MI 48105",
+    "geo": {"lat": 42.344287, "lng": -83.7743262},
+    "hours": "Open 24/7 (Mon-Sun 00:00-23:59)",
+    "google_maps": "https://maps.app.goo.gl/3MofGTPECL2YpRny5"
+  },
+  "navigation_structure": [
+    {
+      "label": "Home",
+      "url": "/",
+      "page_url": "https://highlandtreeservices.com/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "Services",
+      "url": "/services",
+      "page_url": null,
+      "children": [
+        {"label": "Tree Removal", "url": "/tree-removal/", "page_url": "https://highlandtreeservices.com/tree-removal/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Tree Pruning / Trimming", "url": "/tree-pruning-trimming/", "page_url": "https://highlandtreeservices.com/tree-pruning-trimming/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Shrub Removal / Trimming", "url": "/shrub-removal-trimming/", "page_url": "https://highlandtreeservices.com/shrub-removal-trimming/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Stump Removal / Grinding", "url": "/stump-removal-grinding/", "page_url": "https://highlandtreeservices.com/stump-removal-grinding/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "24/7 Emergency Tree Service", "url": "/emergency-tree-service-washtenaw-county-mi/", "page_url": "https://highlandtreeservices.com/emergency-tree-service-washtenaw-county-mi/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Land Clearing", "url": "/land-clearing/", "page_url": "https://highlandtreeservices.com/land-clearing/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Tree / Bush Planting", "url": "/tree-bush-planting/", "page_url": "https://highlandtreeservices.com/tree-bush-planting/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Storm Damage Cleanup", "url": "/storm-damage-cleanup/", "page_url": "https://highlandtreeservices.com/storm-damage-cleanup/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Fallen Tree Cleanup", "url": "/fallen-tree-cleanup/", "page_url": "https://highlandtreeservices.com/fallen-tree-cleanup/", "children": [], "is_dropdown": false, "is_cta_button": false}
+      ],
+      "is_dropdown": true,
+      "is_cta_button": false
+    },
+    {
+      "label": "Service Area",
+      "url": "/service-area/",
+      "page_url": "https://highlandtreeservices.com/service-area/",
+      "children": [
+        {"label": "Ann Arbor", "url": "/tree-service-ann-arbor-mi/", "page_url": "https://highlandtreeservices.com/tree-service-ann-arbor-mi/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Dexter", "url": "/tree-service-dexter-mi/", "page_url": "https://highlandtreeservices.com/tree-service-dexter-mi/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Brighton", "url": "/tree-service-brighton-mi/", "page_url": "https://highlandtreeservices.com/tree-service-brighton-mi/", "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Ypsilanti", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Chelsea", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Saline", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Whitmore Lake", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Hamburg", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "South Lyon", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Pinckney", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Lodi Township", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Northfield Township", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Scio Township", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false},
+        {"label": "Webster Township", "url": "#", "page_url": null, "children": [], "is_dropdown": false, "is_cta_button": false}
+      ],
+      "is_dropdown": true,
+      "is_cta_button": false
+    },
+    {
+      "label": "About Us",
+      "url": "/about/",
+      "page_url": "https://highlandtreeservices.com/about/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "Gallery",
+      "url": "/gallery/",
+      "page_url": "https://highlandtreeservices.com/gallery/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "Testimonials",
+      "url": "/testimonials/",
+      "page_url": "https://highlandtreeservices.com/testimonials/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "Blog",
+      "url": "/blog/",
+      "page_url": "https://highlandtreeservices.com/blog/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "Contact Us",
+      "url": "/contact-us/",
+      "page_url": "https://highlandtreeservices.com/contact-us/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "CLICK TO GET A FREE QUOTE",
+      "url": "/request-a-free-estimate/",
+      "page_url": "https://highlandtreeservices.com/request-a-free-estimate/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": true
+    },
+    {
+      "label": "CLICK TO CALL US NOW (734) 999-3880",
+      "url": "tel:7349993880",
+      "page_url": null,
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": true
+    }
+  ],
+  "estimated_fidelity": 0.88,
+  "warnings": [
+    "Footer 'Service Areas' links to several cities use href='#' (dead links): Ypsilanti, Chelsea, Saline, Whitmore Lake, Hamburg, South Lyon, Pinckney, Lodi Township, Northfield Township, Scio Township, Webster Township",
+    "Google Tag Manager (GTM-KXRHT3PM) fails to load (DNS blocked in sandbox); analytics events not observable",
+    "favicon.png returns 404 from JSA-Theme directory (likely CDN rewrite)",
+    "Gallery page uses infinite scroll (only 9 photos initially visible); full photo count not captured",
+    "Many service-area and FAQ copy templates appear duplicated across all 9 service pages — high template reuse",
+    "Service Area page map is rendered as iframe — underlying map tile details not captured",
+    "Contact form is embedded GoHighLevel/LeadConnector iframe — hosted externally; field structure captured via snapshot but submission flow not exercised"
+  ],
+  "recommendations": [
+    "WordPress + JSA-Theme is a thin, custom-coded theme (no Elementor/Divi markers). It would migrate cleanly to Next.js + Tailwind + a headless CMS (e.g., Sanity or Strapi) or even a fully static Astro build for SEO.",
+    "Heavy service-area SEO scaffolding (9 core services × multiple city landing pages = 20+ canonical SEO pages) is a strong programmatic SEO pattern that should be preserved.",
+    "The footer dead-link service areas should be filled with real pages — major SEO win given the local SEO focus.",
+    "Testimonials are duplicated site-wide (same 6 reviews in footer slider on every page). Consider centralizing as JSON-LD Review array + a single shared component.",
+    "Form is external GoHighLevel iframe. For a rebuild, replace with a native form posting to a CRM webhook — eliminates third-party JS dependency and improves Core Web Vitals.",
+    "wp-compress-image-optimizer + Zapwp CDN adds image optimization; equivalent on Next.js = next/image with proper srcset.",
+    "Yoast SEO handles sitemaps; on rebuild use next-sitemap or @astrojs/sitemap.",
+    "The JSA-Theme uses Bootstrap 4 + Slick carousel. Modern equivalent: Tailwind + Embla Carousel.",
+    "Responsive Menu v4 handles the mobile menu; on rebuild use a small headless React/Vue menu component."
+  ],
+  "reasoning_trace": [
+    "Navigated to https://highlandtreeservices.com/ via browser_navigate; snapshot showed complete homepage structure",
+    "Identified WordPress platform from /wp-content/ asset paths, jQuery Migrate console log, and Yoast SEO sitemap markup (generator meta: WordPress 7.0)",
+    "Extracted SEO metadata + JSON-LD (LocalBusiness, Organization, WebSite, BreadcrumbList, ImageObject) and full image inventory via browser_evaluate",
+    "Discovered theme: JSA-Theme-master + plugins: Responsive Lightbox, Responsive Menu v4, Yoast SEO, WP-Compress Image Optimizer, GoHighLevel/LeadConnector form embed, Zapwp CDN fronting",
+    "Fetched page-sitemap.xml (31 URLs) and post-sitemap.xml (22 URLs) via curl to enumerate all discoverable pages",
+    "Navigated to /about/, /tree-removal/, /gallery/, /testimonials/, /blog/, /contact-us/, /service-area/, /request-a-free-estimate/ individually (parallel navigation was aborting the page load)",
+    "Navigated to a representative blog post (Documenting for Insurance) to extract the FULL article text per persona anti-pattern rules",
+    "Captured the embedded GoHighLevel form field schema (10 fields including service checkboxes, availability windows, SMS consent) via Playwright iframe snapshot",
+    "Identified 9 core services + 14 service-area cities + 8 testimonial authors + 22 blog posts + 31 pages total = 53 discoverable URLs",
+    "Verified LocalBusiness schema has 4.8 aggregate rating across 21 Google reviews (3 reviews surfaced inline)",
+    "Assembled all extracted content into the SiteUnderstanding schema and saved to memory/site_understandings/highlandtreeservices_com.json"
+  ]
+}

@@ -303,11 +303,11 @@ def architect(site_id: str) -> Optional[SiteArchitecture]:
         context={"site_id": site_id, "url": site.url},
         working_dir=".",
         persona="architect_specialist",
-        timeout=300,
+        timeout=600,  # Phase 1.2: lifted from 300 — complex planning personas need room
         on_timeout=make_timeout_callback(
             persona="architect_specialist",
             migration_id_fn=lambda: site_id,
-            default_timeout_s=300,
+            default_timeout_s=600,
         ),
     )
 
@@ -352,11 +352,11 @@ def architect(site_id: str) -> Optional[SiteArchitecture]:
             context={"site_id": site_id, "url": site.url, "mode": "reemit"},
             working_dir=".",
             persona="architect_specialist",
-            timeout=120,
+            timeout=180,  # Phase 1.2: lifted from 120 — JSON-only retry, but allow more headroom
             on_timeout=make_timeout_callback(
                 persona="architect_specialist",
                 migration_id_fn=lambda: site_id,
-                default_timeout_s=120,
+                default_timeout_s=180,
             ),
         )
         if not retry_result.success:

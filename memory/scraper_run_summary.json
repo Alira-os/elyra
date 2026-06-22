@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "files_created": ["C:\\Users\\micha\\DevProjects\\Alira\\elyra\\memory\\site_understandings\\highlandtreeservices_com.json"],
+  "files_modified": [],
+  "errors": [],
+  "summary": "Scraped highlandtreeservices.com using Docker MCP fetch + sitemap parsing. Confirmed WordPress + Yoast SEO. Discovered 55 pages (34 pages + 21 posts) including home, 9 service detail pages, ~14 local-SEO landing pages, about, contact, gallery, testimonials, blog index, and 21 articles. Extracted per-page headings, components, full text content, CTAs, forms, breadcrumbs, navigation hierarchy (2-level dropdown with Services + Service Area), global assets (logo, favicon, social), contact info (1300 W Joy Rd, Ann Arbor, MI 48105; (734) 999-3880), template IDs (home-front-page, service-detail-v1, about-page-v1, contact-page-v1, blog-index-v1, single-post-v1, service-area-index-v1). Captured full 1850-word body text of representative blog post. Documented warnings (duplicated footer, gallery untested, partial nav exposure of served towns) and 8 actionable rebuild recommendations (Next.js + Tailwind, dynamic [city]/[service] routes, preserve Yoast canonicals, etc.).",
+  "recovery_suggestion": null
+}

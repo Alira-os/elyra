@@ -8,16 +8,42 @@ Run a full migration:
 Example:
     python run_orchestrator.py https://merimeesolutions.wixstudio.com/my-site-2
     python run_orchestrator.py https://example.wixsite.com wix
+
+Ad-hoc sandbox cleanup (no migration):
+    python run_orchestrator.py --prune-sandboxes [max_age_days]
 """
 
+import argparse
 import sys
 import time
 from urllib.parse import urlparse
 from datetime import datetime, timezone
 
+
+def _handle_prune_only(args) -> int:
+    """CLI path: prune stale kilo-elyra sandbox dirs and exit."""
+    from tools.kilo_sandbox import prune_sandboxes
+    removed = prune_sandboxes(max_age_days=args.prune_sandboxes)
+    print(f"[SANDBOX] Pruned {removed} stale sandbox dir(s) older than {args.prune_sandboxes}d")
+    return 0
+
+
 def main():
-    url = sys.argv[1] if len(sys.argv) > 1 else "https://example.wixsite.com"
-    platform = sys.argv[2] if len(sys.argv) > 2 else None
+    parser = argparse.ArgumentParser(description="Elyra orchestrator entry point")
+    parser.add_argument("url", nargs="?", default=None,
+                        help="URL of the site to migrate (default: example.wixsite.com)")
+    parser.add_argument("platform", nargs="?", default=None,
+                        help="Optional platform override (wix, squarespace, webflow, generic)")
+    parser.add_argument("--prune-sandboxes", nargs="?", type=int, const=7, default=None,
+                        help="Prune stale kilo-elyra sandbox dirs older than N days (default 7) "
+                             "and exit without running a migration.")
+    args = parser.parse_args()
+
+    if args.prune_sandboxes is not None and args.url is None:
+        return _handle_prune_only(args)
+
+    url = args.url or "https://example.wixsite.com"
+    platform = args.platform
 
     from conductor.orchestrator import MigrationManager
     from conductor.routing import Router
@@ -51,11 +77,11 @@ def main():
         "migration_id": datetime.now().strftime("%Y%m%d_%H%M%S"),
         "task_type": "portfolio",
         # Phase 0.8: force the pre-flight to re-run all planning
-        # personas for a fresh site slug (or any time the runner is
-        # invoked). This is the safe default — the persona prompt
-        # is cheap, and re-running ensures all artifacts are coherent
-        # for the new URL.
-        "force_preflight": True,
+        # personas for a fresh site slug. Disabled when an artifact
+        # for the current URL already exists, so the rest of the
+        # pipeline (architect/marketing/designer/forge) can proceed
+        # without re-running an already-successful scraper.
+        "force_preflight": False,
     }
 
     print(f"[ELYRA] Starting migration for {url}")
@@ -81,6 +107,16 @@ def main():
 
     gaps = result.get("gaps", [])
     print(f"[GAPS] Logged: {len(gaps)}")
+
+    # Best-effort prune of stale kilo-elyra sandboxes. Wrapped in
+    # try/except so a cleanup failure can never break the migration.
+    try:
+        from tools.kilo_sandbox import prune_sandboxes
+        removed = prune_sandboxes(max_age_days=7)
+        if removed:
+            print(f"[SANDBOX] Pruned {removed} stale kilo-elyra sandbox(es)")
+    except Exception as e:
+        print(f"[SANDBOX] Cleanup skipped: {e}")
 
     return 0 if result["success"] else 1
 

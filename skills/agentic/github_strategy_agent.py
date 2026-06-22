@@ -262,7 +262,7 @@ Return JSON:
   "message": "What happened"
 }}"""
 
-    result = _run_kilo_persona(prompt, PERSONA_PATH, timeout=60)
+    result = _run_kilo_persona(prompt, PERSONA_PATH, timeout=180)  # Phase 1.2: lifted from 60
     return result.get("success", False)
 
 
@@ -327,7 +327,7 @@ Create a GitHub issue in the Alira-os/elyra repository to track a failed migrati
 
 Return ONLY valid JSON. No markdown code blocks, no explanation outside the JSON."""
 
-    result = _run_kilo_persona(prompt, PERSONA_PATH, timeout=120)
+    result = _run_kilo_persona(prompt, PERSONA_PATH, timeout=300)  # Phase 1.2: lifted from 120
 
     if "error" in result:
         logger.error(f"Kilo GitHub issue creation failed: {result['error']}")

@@ -390,11 +390,11 @@ def build(site_id: str, arch_id: str, rec_id: str, gap_context: Optional[str] = 
         context={"site_id": site_id, "arch_id": arch_id, "rec_id": rec_id, "url": site.url},
         working_dir=".",
         persona="builder",
-        timeout=600,
+        timeout=1200,  # Phase 1.2: lifted from 600 — builder writes 6+ pages of real code
         on_timeout=make_timeout_callback(
             persona="builder",
             migration_id_fn=lambda: site_id,
-            default_timeout_s=600,
+            default_timeout_s=1200,
         ),
     )
 

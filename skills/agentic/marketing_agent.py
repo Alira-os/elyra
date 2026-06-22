@@ -243,11 +243,11 @@ def market(site_id: str, arch_id: str) -> Optional[ContentRecommendation]:
         context={"site_id": site_id, "arch_id": arch_id, "url": site.url},
         working_dir=".",
         persona="marketing_specialist",
-        timeout=300,
+        timeout=600,  # Phase 1.2: lifted from 300 — content strategy + variants takes longer
         on_timeout=make_timeout_callback(
             persona="marketing_specialist",
             migration_id_fn=lambda: site_id,
-            default_timeout_s=300,
+            default_timeout_s=600,
         ),
     )
 

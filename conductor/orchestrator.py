@@ -1098,14 +1098,15 @@ You are now acting solely as the Migration Manager. Return ONLY a valid JSON obj
 """
 
         # Call Kilo (Manager persona).  We expect it to return raw JSON string.
-        # SAFETY RAIL: Manager decision must complete within 120s or we abort to avoid
-        # hanging the entire orchestrator. The manager prompt is ~13K chars and Kilo
-        # can hang on certain interactive prompts even with --auto flag.
+        # Phase 1.2: lifted from 120s — Kilo startup alone is ~13s and the
+        # manager prompt is ~13K chars; the previous 120s ceiling was being
+        # hit on a cold MCP-spawn path even for valid runs. No upper cap is
+        # imposed by invoke_kilo_safe itself.
         raw = invoke_kilo(
             prompt=prompt,
             context={"role": "migration_manager", "mode": "decision"},
             working_dir=".",
-            timeout=120,  # Hard timeout - manager decision must be fast
+            timeout=300,  # Phase 1.2: lifted from 120 — manager has 13K prompt + Kilo MCP startup
         )
 
         # Always log the raw response for live debugging.

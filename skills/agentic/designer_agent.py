@@ -446,7 +446,7 @@ def design(site_id: str, rec_id: str, gap_context: Optional[str] = None) -> Opti
     # Phase 0.7: 120s → 300s. The designer is the largest in-chain
     # persona prompt and the most likely to need a real LLM round-trip;
     # 4 of the 35 logged gaps were timeouts at 120s.
-    _DESIGNER_TIMEOUT = 300
+    _DESIGNER_TIMEOUT = 600  # Phase 1.2: lifted from 300 — Stitch integration + iterations
     _DESIGNER_MAX_RETRIES = 2  # retries ON TOP of the initial attempt
 
     stdout = ""

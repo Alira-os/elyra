@@ -6,6 +6,8 @@
 **Branch:** `feature/phase1-meta-detector`
 **Owner:** Elyra Team
 
+> **Normative model:** see [`AGENTS.md`](../AGENTS.md) for the agent vs. tool decision rule. This doc assumes you already know what an "agent" is in Elyra (a persona `.md` invoked via Kilo CLI, not an MCP server). The scraper is the canonical worked example.
+
 ---
 
 ## Goal

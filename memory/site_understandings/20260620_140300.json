@@ -1,0 +1,862 @@
+{
+  "url": "https://highlandtreeservices.com/",
+  "platform": "wordpress",
+  "platform_confidence": 0.85,
+  "site_name": "Highland Tree Services",
+  "total_pages_discovered": 6,
+  "pages": [
+    {
+      "url": "https://highlandtreeservices.com/",
+      "canonical_url": "https://highlandtreeservices.com/",
+      "title": "Highland Tree Services | Professional Tree Care in the Highlands",
+      "page_type": [
+        "home"
+      ],
+      "template_id": "home-v1",
+      "meta_description": "Highland Tree Services provides professional tree removal, pruning, stump grinding, and emergency storm damage services throughout the Highlands region.",
+      "headings": {
+        "h1": [
+          "Highland Tree Services"
+        ],
+        "h2": [
+          "Our Services",
+          "Why Choose Us",
+          "Recent Projects",
+          "Contact Us"
+        ],
+        "h3": [
+          "Tree Removal",
+          "Tree Pruning",
+          "Stump Grinding",
+          "Emergency Storm Service"
+        ]
+      },
+      "components": [
+        {
+          "type": "hero",
+          "order": 0,
+          "content": {
+            "headline": "Highland Tree Services",
+            "subheadline": "Professional tree care you can trust"
+          },
+          "assets": [
+            {
+              "src": "https://highlandtreeservices.com/wp-content/uploads/hero.jpg",
+              "alt": "Arborist working on a large tree",
+              "width": null,
+              "height": null,
+              "role": "hero"
+            }
+          ],
+          "layout": {
+            "columns": 1,
+            "gap": "0px"
+          },
+          "text_content": "Highland Tree Services Professional tree care you can trust Get a Free Quote"
+        },
+        {
+          "type": "cards",
+          "order": 1,
+          "content": {
+            "headline": "Our Services"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 4,
+            "gap": "24px"
+          },
+          "text_content": "Our Services Tree Removal Tree Pruning Stump Grinding Emergency Storm Service"
+        },
+        {
+          "type": "text_block",
+          "order": 2,
+          "content": {
+            "headline": "Why Choose Us"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1,
+            "gap": "16px"
+          },
+          "text_content": "Why Choose Us Over 20 years of experience serving the Highlands. Fully licensed and insured. ISA certified arborists. Free no-obligation estimates."
+        },
+        {
+          "type": "gallery",
+          "order": 3,
+          "content": {
+            "headline": "Recent Projects"
+          },
+          "assets": [
+            {
+              "src": "https://highlandtreeservices.com/wp-content/uploads/project1.jpg",
+              "alt": "Oak tree removal project",
+              "width": null,
+              "height": null,
+              "role": "gallery"
+            },
+            {
+              "src": "https://highlandtreeservices.com/wp-content/uploads/project2.jpg",
+              "alt": "Backyard pruning work",
+              "width": null,
+              "height": null,
+              "role": "gallery"
+            }
+          ],
+          "layout": {
+            "columns": 3,
+            "gap": "16px"
+          },
+          "text_content": "Recent Projects"
+        },
+        {
+          "type": "form",
+          "order": 4,
+          "content": {
+            "headline": "Contact Us"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1,
+            "gap": "12px"
+          },
+          "text_content": "Contact Us Name Email Phone Message Send"
+        },
+        {
+          "type": "footer",
+          "order": 5,
+          "content": {},
+          "assets": [
+            {
+              "src": "https://highlandtreeservices.com/wp-content/uploads/logo.png",
+              "alt": "Highland Tree Services logo",
+              "width": null,
+              "height": null,
+              "role": "logo"
+            }
+          ],
+          "layout": {
+            "columns": 3,
+            "gap": "32px"
+          },
+          "text_content": "Highland Tree Services info@highlandtreeservices.com (555) 123-4567 123 Forest Lane, Highlands © 2024 Highland Tree Services. All rights reserved."
+        }
+      ],
+      "images": [
+        {
+          "src": "https://highlandtreeservices.com/wp-content/uploads/hero.jpg",
+          "alt": "Arborist working on a large tree",
+          "width": 1920,
+          "height": 1080,
+          "role": "hero"
+        },
+        {
+          "src": "https://highlandtreeservices.com/wp-content/uploads/project1.jpg",
+          "alt": "Oak tree removal project",
+          "width": 800,
+          "height": 600,
+          "role": "gallery"
+        },
+        {
+          "src": "https://highlandtreeservices.com/wp-content/uploads/project2.jpg",
+          "alt": "Backyard pruning work",
+          "width": 800,
+          "height": 600,
+          "role": "gallery"
+        },
+        {
+          "src": "https://highlandtreeservices.com/wp-content/uploads/logo.png",
+          "alt": "Highland Tree Services logo",
+          "width": 240,
+          "height": 80,
+          "role": "logo"
+        }
+      ],
+      "links": [
+        {
+          "href": "/services/",
+          "text": "Services",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "/about/",
+          "text": "About",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "/blog/",
+          "text": "Blog",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "/contact/",
+          "text": "Contact",
+          "is_internal": true,
+          "is_external": false
+        }
+      ],
+      "forms": [
+        [
+          {
+            "name": "name",
+            "label": "Name",
+            "type": "text",
+            "required": true,
+            "placeholder": "Your full name",
+            "options": []
+          },
+          {
+            "name": "email",
+            "label": "Email",
+            "type": "email",
+            "required": true,
+            "placeholder": "you@example.com",
+            "options": []
+          },
+          {
+            "name": "phone",
+            "label": "Phone",
+            "type": "tel",
+            "required": false,
+            "placeholder": "(555) 123-4567",
+            "options": []
+          },
+          {
+            "name": "message",
+            "label": "Message",
+            "type": "textarea",
+            "required": true,
+            "placeholder": "How can we help?",
+            "options": []
+          }
+        ]
+      ],
+      "text_content": "Highland Tree Services Professional tree care you can trust Get a Free Quote Our Services Tree Removal Tree Pruning Stump Grinding Emergency Storm Service Why Choose Us Over 20 years of experience serving the Highlands. Fully licensed and insured. ISA certified arborists. Free no-obligation estimates. Recent Projects Contact Us Name Email Phone Message Send Highland Tree Services info@highlandtreeservices.com (555) 123-4567 123 Forest Lane, Highlands © 2024 Highland Tree Services. All rights reserved.",
+      "text_word_count": 95,
+      "seo": {
+        "og_title": "Highland Tree Services | Professional Tree Care",
+        "og_description": "Licensed and insured tree removal, pruning, and stump grinding in the Highlands region.",
+        "og_image": "https://highlandtreeservices.com/wp-content/uploads/og.jpg",
+        "twitter_card": "summary_large_image"
+      },
+      "json_ld": [
+        {
+          "schema_type": "LocalBusiness",
+          "raw": {
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": "Highland Tree Services",
+            "telephone": "(555) 123-4567",
+            "email": "info@highlandtreeservices.com",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "123 Forest Lane",
+              "addressRegion": "Highlands"
+            }
+          }
+        }
+      ],
+      "breadcrumb_path": [
+        "Home"
+      ],
+      "cta_text": [
+        "Get a Free Quote",
+        "Contact Us",
+        "Send"
+      ],
+      "notes": [],
+      "navigation_from_page": []
+    },
+    {
+      "url": "https://highlandtreeservices.com/services/",
+      "canonical_url": "https://highlandtreeservices.com/services/",
+      "title": "Services | Highland Tree Services",
+      "page_type": [
+        "services"
+      ],
+      "template_id": "services-grid-v1",
+      "meta_description": "Full list of tree care services offered by Highland Tree Services.",
+      "headings": {
+        "h1": [
+          "Our Services"
+        ],
+        "h2": [
+          "Tree Removal",
+          "Tree Pruning",
+          "Stump Grinding",
+          "Emergency Service"
+        ],
+        "h3": []
+      },
+      "components": [
+        {
+          "type": "hero",
+          "order": 0,
+          "content": {
+            "headline": "Our Services"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1,
+            "gap": "0px"
+          },
+          "text_content": "Our Services"
+        },
+        {
+          "type": "cards",
+          "order": 1,
+          "content": {},
+          "assets": [],
+          "layout": {
+            "columns": 2,
+            "gap": "24px"
+          },
+          "text_content": "Tree Removal Safe and efficient removal of trees of any size. Tree Pruning Professional pruning to promote healthy growth. Stump Grinding Complete stump removal and cleanup. Emergency Service 24/7 storm damage response."
+        }
+      ],
+      "images": [],
+      "links": [
+        {
+          "href": "/services/tree-removal/",
+          "text": "Tree Removal",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "/services/tree-pruning/",
+          "text": "Tree Pruning",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "/services/stump-grinding/",
+          "text": "Stump Grinding",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "/services/emergency/",
+          "text": "Emergency Service",
+          "is_internal": true,
+          "is_external": false
+        }
+      ],
+      "forms": [],
+      "text_content": "Our Services Tree Removal Safe and efficient removal of trees of any size. Tree Pruning Professional pruning to promote healthy growth. Stump Grinding Complete stump removal and cleanup. Emergency Service 24/7 storm damage response.",
+      "text_word_count": 42,
+      "seo": {
+        "og_title": "Services | Highland Tree Services",
+        "og_description": "Tree removal, pruning, stump grinding, and emergency services.",
+        "og_image": "",
+        "twitter_card": "summary"
+      },
+      "json_ld": [],
+      "breadcrumb_path": [
+        "Home",
+        "Services"
+      ],
+      "cta_text": [
+        "Learn More"
+      ],
+      "notes": [
+        "Shares services-grid-v1 template with /services/* subpages"
+      ],
+      "navigation_from_page": []
+    },
+    {
+      "url": "https://highlandtreeservices.com/about/",
+      "canonical_url": "https://highlandtreeservices.com/about/",
+      "title": "About | Highland Tree Services",
+      "page_type": [
+        "about"
+      ],
+      "template_id": "about-v1",
+      "meta_description": "Learn about Highland Tree Services and our team of certified arborists.",
+      "headings": {
+        "h1": [
+          "About Us"
+        ],
+        "h2": [
+          "Our Story",
+          "Our Team"
+        ],
+        "h3": []
+      },
+      "components": [
+        {
+          "type": "text_block",
+          "order": 0,
+          "content": {
+            "headline": "About Us"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1,
+            "gap": "16px"
+          },
+          "text_content": "About Us Our Story Founded in 2002, Highland Tree Services has been serving the Highlands community for over two decades. Our Team Our certified arborists bring decades of combined experience."
+        },
+        {
+          "type": "cta",
+          "order": 1,
+          "content": {},
+          "assets": [],
+          "layout": {
+            "columns": 1,
+            "gap": "16px"
+          },
+          "text_content": "Ready to work with us? Contact Us"
+        }
+      ],
+      "images": [
+        {
+          "src": "https://highlandtreeservices.com/wp-content/uploads/team.jpg",
+          "alt": "Highland Tree Services team",
+          "width": 1200,
+          "height": 600,
+          "role": "about"
+        }
+      ],
+      "links": [
+        {
+          "href": "/contact/",
+          "text": "Contact Us",
+          "is_internal": true,
+          "is_external": false
+        }
+      ],
+      "forms": [],
+      "text_content": "About Us Our Story Founded in 2002, Highland Tree Services has been serving the Highlands community for over two decades. Our Team Our certified arborists bring decades of combined experience. Ready to work with us? Contact Us",
+      "text_word_count": 38,
+      "seo": {
+        "og_title": "About | Highland Tree Services",
+        "og_description": "Meet the team behind Highland Tree Services.",
+        "og_image": "https://highlandtreeservices.com/wp-content/uploads/team.jpg",
+        "twitter_card": "summary"
+      },
+      "json_ld": [],
+      "breadcrumb_path": [
+        "Home",
+        "About"
+      ],
+      "cta_text": [
+        "Contact Us"
+      ],
+      "notes": [],
+      "navigation_from_page": []
+    },
+    {
+      "url": "https://highlandtreeservices.com/blog/",
+      "canonical_url": "https://highlandtreeservices.com/blog/",
+      "title": "Blog | Highland Tree Services",
+      "page_type": [
+        "blog"
+      ],
+      "template_id": "blog-list-v1",
+      "meta_description": "Tips, news, and insights from the Highland Tree Services team.",
+      "headings": {
+        "h1": [
+          "Blog"
+        ],
+        "h2": [],
+        "h3": [
+          "When to Prune Your Trees",
+          "How to Spot Tree Disease"
+        ]
+      },
+      "components": [
+        {
+          "type": "cards",
+          "order": 0,
+          "content": {
+            "headline": "Blog"
+          },
+          "assets": [
+            {
+              "src": "https://highlandtreeservices.com/wp-content/uploads/blog1.jpg",
+              "alt": "Pruning tools",
+              "width": null,
+              "height": null,
+              "role": "thumbnail"
+            }
+          ],
+          "layout": {
+            "columns": 2,
+            "gap": "24px"
+          },
+          "text_content": "Blog When to Prune Your Trees Read more How to Spot Tree Disease Read more"
+        }
+      ],
+      "images": [
+        {
+          "src": "https://highlandtreeservices.com/wp-content/uploads/blog1.jpg",
+          "alt": "Pruning tools",
+          "width": 800,
+          "height": 500,
+          "role": "thumbnail"
+        },
+        {
+          "src": "https://highlandtreeservices.com/wp-content/uploads/blog2.jpg",
+          "alt": "Diseased leaves",
+          "width": 800,
+          "height": 500,
+          "role": "thumbnail"
+        }
+      ],
+      "links": [
+        {
+          "href": "/blog/when-to-prune-your-trees/",
+          "text": "When to Prune Your Trees",
+          "is_internal": true,
+          "is_external": false
+        },
+        {
+          "href": "/blog/how-to-spot-tree-disease/",
+          "text": "How to Spot Tree Disease",
+          "is_internal": true,
+          "is_external": false
+        }
+      ],
+      "forms": [],
+      "text_content": "Blog When to Prune Your Trees Read more How to Spot Tree Disease Read more",
+      "text_word_count": 14,
+      "seo": {
+        "og_title": "Blog | Highland Tree Services",
+        "og_description": "Tree care tips and news.",
+        "og_image": "",
+        "twitter_card": "summary"
+      },
+      "json_ld": [],
+      "breadcrumb_path": [
+        "Home",
+        "Blog"
+      ],
+      "cta_text": [
+        "Read more"
+      ],
+      "notes": [],
+      "navigation_from_page": []
+    },
+    {
+      "url": "https://highlandtreeservices.com/contact/",
+      "canonical_url": "https://highlandtreeservices.com/contact/",
+      "title": "Contact | Highland Tree Services",
+      "page_type": [
+        "contact"
+      ],
+      "template_id": "contact-v1",
+      "meta_description": "Get in touch with Highland Tree Services for a free estimate.",
+      "headings": {
+        "h1": [
+          "Contact Us"
+        ],
+        "h2": [
+          "Send a Message",
+          "Visit Us"
+        ],
+        "h3": []
+      },
+      "components": [
+        {
+          "type": "form",
+          "order": 0,
+          "content": {
+            "headline": "Send a Message"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1,
+            "gap": "12px"
+          },
+          "text_content": "Send a Message Name Email Phone Service Type Tree Removal Tree Pruning Stump Grinding Emergency Service Message Send"
+        },
+        {
+          "type": "text_block",
+          "order": 1,
+          "content": {
+            "headline": "Visit Us"
+          },
+          "assets": [],
+          "layout": {
+            "columns": 1,
+            "gap": "12px"
+          },
+          "text_content": "Visit Us 123 Forest Lane, Highlands info@highlandtreeservices.com (555) 123-4567"
+        }
+      ],
+      "images": [],
+      "links": [],
+      "forms": [
+        [
+          {
+            "name": "name",
+            "label": "Name",
+            "type": "text",
+            "required": true,
+            "placeholder": "Your name",
+            "options": []
+          },
+          {
+            "name": "email",
+            "label": "Email",
+            "type": "email",
+            "required": true,
+            "placeholder": "you@example.com",
+            "options": []
+          },
+          {
+            "name": "phone",
+            "label": "Phone",
+            "type": "tel",
+            "required": false,
+            "placeholder": "(555) 123-4567",
+            "options": []
+          },
+          {
+            "name": "service",
+            "label": "Service Type",
+            "type": "select",
+            "required": true,
+            "placeholder": "",
+            "options": [
+              "Tree Removal",
+              "Tree Pruning",
+              "Stump Grinding",
+              "Emergency Service"
+            ]
+          },
+          {
+            "name": "message",
+            "label": "Message",
+            "type": "textarea",
+            "required": true,
+            "placeholder": "Tell us about your project",
+            "options": []
+          }
+        ]
+      ],
+      "text_content": "Contact Us Send a Message Name Email Phone Service Type Tree Removal Tree Pruning Stump Grinding Emergency Service Message Send Visit Us 123 Forest Lane, Highlands info@highlandtreeservices.com (555) 123-4567",
+      "text_word_count": 38,
+      "seo": {
+        "og_title": "Contact | Highland Tree Services",
+        "og_description": "Get in touch for a free estimate.",
+        "og_image": "",
+        "twitter_card": "summary"
+      },
+      "json_ld": [],
+      "breadcrumb_path": [
+        "Home",
+        "Contact"
+      ],
+      "cta_text": [
+        "Send"
+      ],
+      "notes": [],
+      "navigation_from_page": []
+    },
+    {
+      "url": "https://highlandtreeservices.com/blog/when-to-prune-your-trees/",
+      "canonical_url": "https://highlandtreeservices.com/blog/when-to-prune-your-trees/",
+      "title": "When to Prune Your Trees | Highland Tree Services Blog",
+      "page_type": [
+        "blog_post"
+      ],
+      "template_id": "blog-post-v1",
+      "meta_description": "A seasonal guide to pruning your trees for healthy growth.",
+      "headings": {
+        "h1": [
+          "When to Prune Your Trees"
+        ],
+        "h2": [
+          "Best Seasons for Pruning",
+          "Tools You'll Need"
+        ],
+        "h3": []
+      },
+      "components": [
+        {
+          "type": "text_block",
+          "order": 0,
+          "content": {
+            "headline": "When to Prune Your Trees"
+          },
+          "assets": [
+            {
+              "src": "https://highlandtreeservices.com/wp-content/uploads/blog1.jpg",
+              "alt": "Pruning tools",
+              "width": null,
+              "height": null,
+              "role": "featured"
+            }
+          ],
+          "layout": {
+            "columns": 1,
+            "gap": "16px"
+          },
+          "text_content": "When to Prune Your Trees Best Seasons for Pruning Late winter and early spring are generally the best times to prune most deciduous trees. Pruning during dormancy reduces stress on the tree and minimizes sap loss. Tools You'll Need Sharp bypass pruners, loppers for thicker branches, and a pruning saw for larger cuts. Always sterilize your tools between cuts to prevent disease spread."
+        }
+      ],
+      "images": [
+        {
+          "src": "https://highlandtreeservices.com/wp-content/uploads/blog1.jpg",
+          "alt": "Pruning tools",
+          "width": 1200,
+          "height": 600,
+          "role": "featured"
+        }
+      ],
+      "links": [
+        {
+          "href": "/blog/",
+          "text": "Back to Blog",
+          "is_internal": true,
+          "is_external": false
+        }
+      ],
+      "forms": [],
+      "text_content": "When to Prune Your Trees Best Seasons for Pruning Late winter and early spring are generally the best times to prune most deciduous trees. Pruning during dormancy reduces stress on the tree and minimizes sap loss. Tools You'll Need Sharp bypass pruners, loppers for thicker branches, and a pruning saw for larger cuts. Always sterilize your tools between cuts to prevent disease spread.",
+      "text_word_count": 72,
+      "seo": {
+        "og_title": "When to Prune Your Trees",
+        "og_description": "Seasonal pruning guide.",
+        "og_image": "https://highlandtreeservices.com/wp-content/uploads/blog1.jpg",
+        "twitter_card": "summary_large_image"
+      },
+      "json_ld": [
+        {
+          "schema_type": "Article",
+          "raw": {
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": "When to Prune Your Trees",
+            "author": {
+              "@type": "Organization",
+              "name": "Highland Tree Services"
+            }
+          }
+        }
+      ],
+      "breadcrumb_path": [
+        "Home",
+        "Blog",
+        "When to Prune Your Trees"
+      ],
+      "cta_text": [],
+      "notes": [
+        "Full article body captured"
+      ],
+      "navigation_from_page": []
+    }
+  ],
+  "global_assets": {
+    "logo": "https://highlandtreeservices.com/wp-content/uploads/logo.png",
+    "favicon": "https://highlandtreeservices.com/favicon.ico",
+    "social": {
+      "facebook": "https://facebook.com/highlandtreeservices",
+      "instagram": "https://instagram.com/highlandtreeservices"
+    }
+  },
+  "contact_info": {
+    "email": "info@highlandtreeservices.com",
+    "phone": "(555) 123-4567",
+    "address": "123 Forest Lane, Highlands"
+  },
+  "navigation_structure": [
+    {
+      "label": "Home",
+      "url": "/",
+      "page_url": "https://highlandtreeservices.com/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "Services",
+      "url": "/services/",
+      "page_url": "https://highlandtreeservices.com/services/",
+      "children": [
+        {
+          "label": "Tree Removal",
+          "url": "/services/tree-removal/",
+          "page_url": "https://highlandtreeservices.com/services/tree-removal/",
+          "children": [],
+          "is_dropdown": false,
+          "is_cta_button": false
+        },
+        {
+          "label": "Tree Pruning",
+          "url": "/services/tree-pruning/",
+          "page_url": "https://highlandtreeservices.com/services/tree-pruning/",
+          "children": [],
+          "is_dropdown": false,
+          "is_cta_button": false
+        },
+        {
+          "label": "Stump Grinding",
+          "url": "/services/stump-grinding/",
+          "page_url": "https://highlandtreeservices.com/services/stump-grinding/",
+          "children": [],
+          "is_dropdown": false,
+          "is_cta_button": false
+        },
+        {
+          "label": "Emergency Service",
+          "url": "/services/emergency/",
+          "page_url": "https://highlandtreeservices.com/services/emergency/",
+          "children": [],
+          "is_dropdown": false,
+          "is_cta_button": false
+        }
+      ],
+      "is_dropdown": true,
+      "is_cta_button": false
+    },
+    {
+      "label": "About",
+      "url": "/about/",
+      "page_url": "https://highlandtreeservices.com/about/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "Blog",
+      "url": "/blog/",
+      "page_url": "https://highlandtreeservices.com/blog/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": false
+    },
+    {
+      "label": "Contact",
+      "url": "/contact/",
+      "page_url": "https://highlandtreeservices.com/contact/",
+      "children": [],
+      "is_dropdown": false,
+      "is_cta_button": true
+    }
+  ],
+  "estimated_fidelity": 0.78,
+  "warnings": [
+    "Service subpages inferred but not fully explored; treat their content as template-derived placeholders."
+  ],
+  "recommendations": [
+    "Rebuild as a static Next.js site with Tailwind CSS — content is small, page count is low, and SEO metadata is already well-structured.",
+    "Use MDX for blog posts to preserve article content and schema.org Article markup.",
+    "Replace WordPress contact form with a serverless form handler (e.g., Netlify Forms or a Cloudflare Worker).",
+    "Compress and serve hero image as WebP/AVIF; current hero is likely 1920px JPG."
+  ],
+  "reasoning_trace": [
+    "Navigated to https://highlandtreeservices.com/ via browser_navigate",
+    "Detected WordPress via wp-content/uploads paths and wp-content asset URLs",
+    "Browser snapshot of home revealed 4-card services grid, hero, contact form, footer",
+    "Identified nav: Home, Services (dropdown with 4 children), About, Blog, Contact (CTA button)",
+    "Followed Services, About, Blog, Contact, and one blog post to build 6-page sample",
+    "Extracted contact form schema with 5 fields including a service-type select",
+    "Captured LocalBusiness JSON-LD on home and Article JSON-LD on blog post",
+    "Noted services-grid-v1 template reused across /services/* subpages"
+  ],
+  "raw_artifacts": {}
+}

@@ -78,6 +78,12 @@ Your previous response could not be parsed as JSON. This time:
 Begin now."""
 
     schema_json = json.dumps(SiteUnderstanding.model_json_schema(), indent=2)
+    # Phase 1.2: persona markdown's "Output Contract" section already
+    # shows the SiteUnderstanding schema as an example JSON object.
+    # Dumping `model_json_schema()` inline added 12.6K of duplicate
+    # information (57% of the 22K prompt) without changing the LLM's
+    # output. Drop it; the persona's own schema doc is enough.
+    _ = schema_json  # retained for debugging; not embedded.
 
     return f"""{persona}
 
@@ -90,9 +96,12 @@ full navigation structure, per-page structure with components/text/content,
 global assets, contact info.
 
 ## Output Contract
-Output ONLY valid JSON matching this schema — no markdown, no commentary,
-no text outside the JSON object:
-{schema_json}
+Output ONLY valid JSON matching the SiteUnderstanding schema documented in
+the "Output Contract" section of your persona charter above. No markdown
+fences, no commentary, no text outside the JSON object.
+
+The persona's Output Contract section shows the schema as an example JSON
+object. Match that shape exactly.
 
 Begin exploration now."""
 
@@ -117,49 +126,78 @@ def parse_and_validate(raw_json: str) -> Optional[SiteUnderstanding]:
     Handles null values in required string fields by either removing invalid
     assets/images or falling back to a minimal valid SiteUnderstanding.
     """
-    try:
-        data = json.loads(raw_json)
+    # Phase 1.2: known-good component types per the SiteUnderstanding
+    # schema. LLM scraper outputs occasionally introduce ad-hoc types
+    # (e.g. "header", "sidebar", "search_bar"). Coerce anything not in
+    # this set to "unknown" so the artifact survives lenient parse.
+    from models.site_schemas import ComponentType, PageType
+    _valid_component_types = {t.value for t in ComponentType}
+    _valid_page_types = {t.value for t in PageType}
 
-        if "contact_info" in data and isinstance(data["contact_info"], dict):
-            data["contact_info"] = {
-                k: v for k, v in data["contact_info"].items() if v is not None
-            }
+    def _coerce_page_types(pages):
+        for page in pages:
+            if "page_type" in page and isinstance(page["page_type"], list):
+                page["page_type"] = [
+                    t if t in _valid_page_types else "other"
+                    for t in page["page_type"]
+                    if isinstance(t, str)
+                ]
 
-        for page in data.get("pages", []):
-            if "images" in page and isinstance(page["images"], list):
-                page["images"] = [img for img in page["images"] if img and img.get("src")]
+    def _coerce_nav_urls(nav):
+        if isinstance(nav, list):
+            for node in nav:
+                if isinstance(node, dict):
+                    url = node.get("page_url")
+                    if isinstance(url, str) and not url.startswith(("http://", "https://")):
+                        node["page_url"] = None
 
-            # Clean up null values in components and their child structures
+    def _coerce_components(pages):
+        for page in pages:
             if "components" in page and isinstance(page["components"], list):
                 for comp in page["components"]:
-                    if "assets" in comp and isinstance(comp["assets"], list):
+                    if isinstance(comp, dict) and comp.get("type") not in _valid_component_types:
+                        comp["type"] = "unknown"
+                    if isinstance(comp, dict) and "assets" in comp and isinstance(comp["assets"], list):
                         comp["assets"] = [
                             a for a in comp["assets"]
                             if a and a.get("src") is not None
                         ]
 
+    def _clean(data):
+        if "contact_info" in data and isinstance(data["contact_info"], dict):
+            ci = {}
+            for k, v in data["contact_info"].items():
+                if v is None:
+                    continue
+                if k == "geo" and isinstance(v, dict):
+                    lat = v.get("lat")
+                    lng = v.get("lng")
+                    if lat is not None and lng is not None:
+                        v = f"{lat},{lng}"
+                    else:
+                        v = json.dumps(v)
+                ci[k] = v
+            data["contact_info"] = ci
+        for page in data.get("pages", []):
+            if "images" in page and isinstance(page["images"], list):
+                page["images"] = [img for img in page["images"] if img and img.get("src")]
+            _coerce_page_types([page])
+            _coerce_components([page])
+        _coerce_nav_urls(data.get("navigation_structure"))
+
+    try:
+        data = json.loads(raw_json)
+        _clean(data)
         return SiteUnderstanding(**data)
     except Exception as e:
         print(f"[WARN] Validation error: {e}")
         try:
             data = json.loads(raw_json)
-            if "contact_info" in data and isinstance(data["contact_info"], dict):
-                data["contact_info"] = {
-                    k: v for k, v in data["contact_info"].items() if v is not None
-                }
-            for page in data.get("pages", []):
-                if "images" in page and isinstance(page["images"], list):
-                    page["images"] = [img for img in page["images"] if img and img.get("src")]
-                if "components" in page and isinstance(page["components"], list):
-                    for comp in page["components"]:
-                        if "assets" in comp and isinstance(comp["assets"], list):
-                            comp["assets"] = [
-                                a for a in comp["assets"]
-                                if a and a.get("src") is not None
-                            ]
+            _clean(data)
             allowed = {k: v for k, v in data.items() if k in SiteUnderstanding.model_fields}
             return SiteUnderstanding(**allowed)
-        except Exception:
+        except Exception as e2:
+            print(f"[WARN] Lenient parse also failed: {e2}")
             return None
 
 
@@ -295,7 +333,7 @@ def scrape(url: str) -> Optional[SiteUnderstanding]:
         context={"url": url},
         working_dir=".",
         persona="scraper_specialist",
-        timeout=300,
+        timeout=900,  # Phase 1.2: real Playwright agent loops need 2-5+ min
         on_timeout=_on_scraper_timeout,
     )
 
@@ -317,7 +355,7 @@ def scrape(url: str) -> Optional[SiteUnderstanding]:
             context={"url": url, "previous_prompt_chars": len(prompt)},
             working_dir=".",
             persona="scraper_specialist",
-            timeout=300,
+            timeout=300,  # retry is JSON-only, no tool calls → fast
             on_timeout=_on_scraper_timeout,
         )
         if retry_result.success:

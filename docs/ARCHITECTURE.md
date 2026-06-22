@@ -82,81 +82,51 @@ Elyra runs in a containerized environment alongside MCP servers and OpenCode.
 
 ## MCP Integration Pattern
 
+> **Read `AGENTS.md` first.** This section is the long-form reference; `AGENTS.md` is the normative decision rule. The two must agree — if they don't, `AGENTS.md` wins.
+
 ### Principle
 
-Elyra is a **client** — it never implements MCP servers. MCP servers run externally and Elyra connects to them via the official `mcp` Python SDK.
+MCP servers are **tools** that Elyra's **agents** call. They are not agents themselves, and they are not a layer the agents route through. The clean separation:
 
-### MCP Gateway (Unified Client Layer)
+- **Agent** = a persona (`.md`) that reasons. Lives in `registry/personas/`. The canonical example is `scraper_specialist.md`, which thinks about a site, decides what to navigate, and produces a `SiteUnderstanding`.
+- **Tool (MCP server)** = a fixed set of callable functions the LLM picks during its ReAct loop. Connected to Kilo via `kilocode/.mcp.json` (project-local) or the `mcp:` block of `~/.config/kilo/kilo.json` (user-global).
+- **Execution layer** = Kilo CLI, invoked from Python by `tools/kilo.py:invoke_kilo_safe`.
 
-**Phase 1:** Individual MCP sidecars via stdio transport. Each MCP server is a separate container that Elyra connects to directly.
+The earlier framing of this section ("Elyra is a client — it never implements MCP servers") was correct in spirit but easy to misread as "Elyra is *one* thing that connects to MCPs." It is not. Elyra *is* a fleet of agents, each of which uses MCPs as tools. Conflating the two is how we ended up with a `scraper-mcp` entry in the global config: someone treated the scraper as a tool, when it is an agent that uses Playwright + Fetch MCPs as its tools.
 
-**Phase 2+:** MCP Gateway (optional evolution) — unified client layer that:
-- Manages connections to multiple MCP servers
-- Provides single interface for Elyra
-- Handles server discovery, health checks, failover
-- Similar to how OpenRouter provides unified access to multiple LLM providers
+### What the scraper is — and is not
 
-```
-Phase 1 (Individual Sidecars):
-Elyra ◄──stdio──► Playwright MCP
-Elyra ◄──stdio──► GitHub MCP
-Elyra ◄──stdio──► Fly.io MCP
+The scraper (`scraper_specialist` persona, `skills/agentic/scraper_agent.py` glue) is the worked example for the whole model. It:
 
-Phase 2+ (With Gateway):
-Elyra ◄──HTTP──► MCP Gateway ◄──stdio──► Playwright MCP
-                              ◄──stdio──► GitHub MCP
-                              ◄──stdio──► fly.io MCP
-```
+- is an **agent**, defined by `registry/personas/scraper_specialist.md`
+- runs as a Kilo CLI subprocess via `tools/kilo.py:invoke_kilo_safe`
+- during its ReAct loop, calls the **Playwright MCP** and **Fetch MCP** tools declared in `kilocode/.mcp.json`
+- emits a **structured response** validated against `SiteUnderstanding` in `models/site_schemas.py`
 
-**Why:** Individual sidecars are simpler for Phase 1. Gateway is future evolution if complexity grows.
+It is **not** an MCP server. There is no `scraper-mcp` entry in any config. There is no `localhost:8812` gateway. There is no Python "MCP client" wrapper that does the scraping. (The Phase 0 stubs in `tools/mcp/` are remnants and should be removed or replaced with real MCP SDK clients only when an actual client is needed — not as proxies for the agent.)
 
-**Phase 2+ Gateway:**
-Phase 1 uses direct SDK connections. Phase 2+ introduces a lightweight gateway (TrueFoundry free tier or self-hosted aggregator) for centralized auth, rate limiting, audit logging, and tool discovery — keeping Elyra clean and extensible.
+### Where MCPs are wired
 
-### MCP Client Implementation (Phase 1+)
+| Scope | File | What lives there |
+|---|---|---|
+| Project-local | `kilocode/.mcp.json` | MCP servers that Elyra personas call directly. Current entries: `playwright`, `fetch`, `impeccable`, `stitch`. |
+| User-global | `~/.config/kilo/kilo.json` `mcp:` block | MCP servers shared across all projects. Current entries: `docker-mcp`, `netlify`, `fly`, `cloudflare`, `stitch`. |
+| Python SDK clients (rare) | `tools/mcp/<name>.py` | Only if some other system needs to call an MCP server outside the Kilo ReAct loop. Phase 0 left stubs here — they are not part of the canonical flow. |
 
-```python
-from mcp import ClientSession, StdioServerParameters
-from typing import Optional
-import asyncio
+### MCP servers currently in use
 
-class PlaywrightMCP:
-    """Real Playwright MCP client using official SDK."""
+| Server | Purpose | Used by (agent) |
+|---|---|---|
+| Playwright | JS rendering, DOM extraction | `scraper_specialist` |
+| Fetch | Clean HTTP content fetching | `scraper_specialist` |
+| Impeccable | Visual audit / critique | `ui_designer`, `builder_specialist` |
+| Stitch | Visual brand direction (Google) | `ui_designer` |
+| Netlify | Deploy / site management | deploy flows |
+| Fly.io | Client site deployment | `deploy_engineer` |
+| Cloudflare | DNS / Workers / R2 | deploy flows |
+| docker-mcp (gateway) | Aggregated tool gateway for the main session | used by interactive Kilo session, not by a specific persona |
 
-    def __init__(self, server_command: list[str]):
-        self.server_params = StdioServerParameters(
-            command="npx",
-            args=["-y", "@playwright/mcp-server"]
-        )
-
-    async def scrape_site(self, url: str) -> ScrapedSite:
-        async with ClientSession(self.server_params) as session:
-            await session.initialize()
-            result = await session.call_tool(
-                "playwright_scrape",
-                {"url": url}
-            )
-            return ScrapedSite(**result)
-```
-
-### MCP Servers to Wire (Phase 1 Priority)
-
-| MCP Server | Purpose | Docker Image / Package |
-|------------|---------|------------------------|
-| Playwright | JS rendering, DOM extraction | `@playwright/mcp-server` |
-| Fetch | Clean HTTP content fetching | `@fetch/mcp-server` |
-| GitHub | Repo creation, Actions | `@github/mcp-server` |
-| Fly.io | Client site deployment | `@flyio/mcp-server` |
-
-### Stub Markers (Phase 0)
-
-Current `tools/mcp/*.py` files are marked as Phase 0 stubs:
-- `playwright.py` — "STUB — Interface only, returns mock data"
-- `github.py` — "STUB — Interface only, returns mock data"
-- `fly.py` — "STUB — Interface only, returns mock data"
-- `fetch.py` — "PARTIAL — urllib works but not using MCP protocol"
-
-Replace stubs in Phase 1 with real MCP client implementations.
+If you are adding a new MCP server, it must be a tool — i.e. a fixed set of callable functions, not a thing that thinks. Add it to the right `.mcp.json` and reference it by name in the relevant persona's "Tools You May Use" section.
 
 ---
 

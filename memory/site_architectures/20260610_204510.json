@@ -1,0 +1,37 @@
+{
+  "source_url": "https://example.com/",
+  "source_understanding_id": "20260610_204510",
+  "target_stack": {
+    "framework": "nextjs",
+    "styling": "tailwind"
+  },
+  "deployment": {
+    "fly_app_name": "",
+    "github_repo": "",
+    "base_branch": "main",
+    "preview_branch_prefix": "preview/",
+    "env_vars": [],
+    "secret_keys": [],
+    "fly_regions": [
+      "lax"
+    ]
+  },
+  "pages": [],
+  "components": [],
+  "image_strategy": {
+    "source_pattern": "",
+    "target_strategy": "preserve-cdn",
+    "cdn_domain": null
+  },
+  "seo_migration": {
+    "url_mapping": [],
+    "canonical_strategy": "preserve",
+    "og_image_strategy": "migrate",
+    "json_ld_action": "preserve"
+  },
+  "architecture_decisions": [],
+  "estimated_build_hours": 0.0,
+  "confidence": 0.7,
+  "warnings": [],
+  "reasoning_trace": []
+}

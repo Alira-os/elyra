@@ -31,14 +31,15 @@ from typing import Any, Optional
 
 # Per-persona default prompt budget. Tune by running a real E2E and
 # watching which personas hit the size-refusal guard.
-DEFAULT_BUDGETS = {
-    "scraper_specialist": 14_000,  # small — only a URL
-    "architect_specialist": 14_000,  # site + schema
-    "marketing_specialist": 14_000,  # site + arch
-    "ui_designer": 14_000,  # site + rec (bigger inputs)
-    "builder": 30_000,  # site + arch + rec + visual — needs more
-    "deploy_specialist": 12_000,  # mostly metadata
-}
+#
+# Phase 1.2: budgets removed. The 256K hard-refuse cap in tools/kilo.py
+# is the only enforced limit, and it's deliberately set high enough
+# to admit any legitimate persona prompt. The scraper prompt is ~9.7K
+# (down from 22K after dropping the inline schema dump). The
+# convergence-point builder is ~26K. There is no persona that needs
+# a smaller budget than the hard cap, so per-persona budgets added
+# complexity without value.
+DEFAULT_BUDGETS = {}
 
 
 # --- Compaction helpers ---------------------------------------------------

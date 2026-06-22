@@ -18,6 +18,7 @@ import json
 import shutil
 import re
 import os
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -279,6 +280,7 @@ def _run_kiloInteractive(
     artifact_dir: Optional[str] = None,
     session_id: Optional[str] = None,
     use_stdin: bool = False,
+    subprocess_env: Optional[dict[str, str]] = None,
 ) -> tuple[int, str, str]:
     """Run Kilo.
 
@@ -294,6 +296,10 @@ def _run_kiloInteractive(
         artifact_dir: If set, Kilo MCP artifacts go here
         session_id: Session ID for artifact scoping
         use_stdin: If True, pass prompt via stdin; if False, use @prompt_file
+        subprocess_env: Optional env override for the subprocess. When set, Kilo's
+            data dir is redirected (via ``XDG_DATA_HOME``) into a per-migration
+            sandbox so sessions don't pollute the user's normal Kilo DB. ``None``
+            means inherit the parent env (today's behaviour).
     """
     import tempfile
 
@@ -311,6 +317,7 @@ def _run_kiloInteractive(
                 timeout=timeout,
                 encoding="utf-8",
                 errors="replace",
+                env=subprocess_env,
                 creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0,
             )
             return result.returncode, result.stdout or "", result.stderr or ""
@@ -348,6 +355,7 @@ def _run_kiloInteractive(
                 timeout=timeout,
                 encoding="utf-8",
                 errors="replace",
+                env=subprocess_env,
                 creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0,
             )
             return result.returncode, result.stdout or "", result.stderr or ""
@@ -367,6 +375,8 @@ def invoke_kilo(
     mutation_seed: Optional[str] = None,
     artifact_dir: Optional[str] = None,
     session_id: Optional[str] = None,
+    sandbox_root: Optional[Path] = None,
+    subprocess_env: Optional[dict[str, str]] = None,
 ) -> ToolResult:
     """
     Invoke Kilo as a tool for heavy codegen execution.
@@ -384,6 +394,16 @@ def invoke_kilo(
         session_id: Session ID used to scope artifacts. If artifact_dir is set and this
                    is not provided, a new session_id is generated. Ignored if
                    artifact_dir is None.
+        sandbox_root: If set, the Kilo subprocess is launched with
+                     ``XDG_DATA_HOME`` pointing at this directory, isolating the
+                     resulting ``kilo.db`` and log files from the user's normal
+                     Kilo state. See ``tools/kilo_sandbox.py`` for the contract.
+                     ``None`` falls back to today's behaviour (inherit parent env).
+        subprocess_env: Pre-built env dict to pass to ``subprocess.run``. When
+                     ``None``, ``invoke_kilo`` will derive one from
+                     ``sandbox_root`` (lazy default) if ``ELYRA_KILO_NO_SANDBOX``
+                     is not set. Useful for tests and for callers that already
+                     built an env via ``make_sandbox_env``.
     """
     # context may contain Pydantic HttpUrl/datetime/etc. values when
     # callers pass model fields directly. Coerce them to JSON-safe types
@@ -432,6 +452,28 @@ Return your response as JSON:
     last_result = None
     max_attempts = max(1, max_retries + 1)
 
+    # Per-migration sandbox: by default, redirect Kilo's data dir into
+    # %LOCALAPPDATA%\kilo-elyra\<session_id>\ so the user's normal TUI
+    # session list stays clean. Callers can override by passing
+    # subprocess_env explicitly (e.g. tests, ELYRA_KILO_NO_SANDBOX escape
+    # hatch, or a hand-rolled env). When sandboxing is disabled or fails
+    # we silently fall back to the parent env — isolation is a quality-
+    # of-life feature, never a hard requirement for the persona call.
+    if subprocess_env is None:
+        from tools.kilo_sandbox import make_sandbox_env, NO_SANDBOX_ENV_VAR
+        sid = session_id or uuid.uuid4().hex[:12]
+        try:
+            subprocess_env, _sandbox_root = make_sandbox_env(sid)
+        except Exception as e:
+            print(f"[KILO] WARN could not build sandbox env: {e}; falling back to parent env")
+            subprocess_env = None
+    # Apply the explicit sandbox_root override (legacy/test path) by
+    # rebuilding subprocess_env from it. We only do this when the caller
+    # passed sandbox_root but not subprocess_env — when subprocess_env
+    # was passed, sandbox_root is informational and ignored.
+    elif sandbox_root is not None:
+        subprocess_env = {**os.environ, "XDG_DATA_HOME": str(sandbox_root)}
+
     while attempt < max_attempts:
         try:
             returncode, stdout, stderr = _run_kiloInteractive(
@@ -442,6 +484,7 @@ Return your response as JSON:
                 artifact_dir=artifact_dir,
                 session_id=session_id,
                 use_stdin=use_stdin,
+                subprocess_env=subprocess_env,
             )
 
             tool_result = _parse_kilo_output(stdout, returncode)
@@ -529,7 +572,15 @@ def invoke_kilo_simple(prompt: str, working_dir: str = ".", timeout: int = 300) 
 #   )
 
 _MIN_KILO_TIMEOUT = 30
-_MAX_KILO_TIMEOUT = 600
+# Phase 1.2: no upper timeout cap. The previous 600s ceiling was the
+# cause of the 15-min "preflight_max_retries:scraper_specialist" loop
+# observed in the highlandtreeservices run — Kilo needs 2-5+ minutes
+# for a real Playwright-driven agent loop, and the budget was getting
+# spent in retries that *would* have succeeded if the original call
+# had just been allowed to finish. Kilo's own subprocess and LLM API
+# timeouts bound the actual worst case; we trust the caller's choice
+# here.
+_MAX_KILO_TIMEOUT = 365 * 24 * 3600  # 1 year, effectively uncapped
 
 # Prompt-size guard rails (Phase 0.8). Evidence-based values:
 #
@@ -544,17 +595,13 @@ _MAX_KILO_TIMEOUT = 600
 #     backend       :  13,429 chars
 #     integration   :  10,189 chars
 #
-#   So 32K is comfortably above all observed personas with ~20%
-#   headroom. 64K is 2x max observed, large enough to accommodate
-#   future personas or larger sites. 256K is the absolute upper
-#   bound — anything past that is a runaway (binary file dump,
-#   unbounded scrape, etc.) that should be refused, not retried.
-#
-#   These caps are *real* — they prevent the cost/quality blow-ups
-#   of running an unbounded prompt against an LLM, while still
-#   admitting the legitimate 26-35K prompts the convergence-point
-#   personas produce.
-_PROMPT_WARN_CHARS = 32_000  # Soft warn (log + advisory gap)
+# Phase 1.2: soft warn removed. The scraper prompt is ~22K and growing
+# by design (more schema → better artifacts). Warn-at-32K produced a
+# misleading advisory gap every run and obscured the real signal. The
+# hard refuse at 256K is kept as a true safety net for genuine
+# runaways (binary file dump, unbounded scrape, forgotten f-string
+# interpolation).
+_PROMPT_WARN_CHARS = 999_999  # Soft warn disabled — see comment above
 _PROMPT_REFUSE_CHARS = 256_000  # Hard refuse (catches true runaways)
 
 
@@ -569,6 +616,8 @@ def invoke_kilo_safe(
     mutation_seed: Optional[str] = None,
     artifact_dir: Optional[str] = None,
     session_id: Optional[str] = None,
+    sandbox_root: Optional[Path] = None,
+    subprocess_env: Optional[dict[str, str]] = None,
 ) -> ToolResult:
     """Thin wrapper around invoke_kilo() with prompt-size + timeout safety.
 
@@ -584,6 +633,13 @@ def invoke_kilo_safe(
                     invoked when the Kilo subprocess times out. Use it to log
                     a gap. If None, the timeout is silent.
         mutation_seed, artifact_dir, session_id: passed through to invoke_kilo.
+        sandbox_root, subprocess_env: passed through to invoke_kilo. When both
+                    are ``None`` (the default), ``invoke_kilo`` will lazily
+                    build a sandbox env via ``tools.kilo_sandbox.make_sandbox_env``
+                    using ``session_id`` (or a fresh uuid4 hex) as the dir name.
+                    Pass ``sandbox_root`` explicitly when you want a specific
+                    path (tests, forensic inspection); pass ``subprocess_env``
+                    when you've already built an env via ``make_sandbox_env``.
 
     Returns:
         ToolResult — same shape as invoke_kilo().
@@ -666,6 +722,8 @@ def invoke_kilo_safe(
             mutation_seed=mutation_seed,
             artifact_dir=artifact_dir,
             session_id=session_id,
+            sandbox_root=sandbox_root,
+            subprocess_env=subprocess_env,
         )
     except Exception as e:
         # Defensive: invoke_kilo is supposed to catch everything and return a
