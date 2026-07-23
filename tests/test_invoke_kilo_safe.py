@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from tools.kilo import ToolResult, invoke_kilo_safe  # noqa: E402
+from tools.execution import ToolResult, invoke_kilo_safe  # noqa: E402
 
 
 def test_oversized_prompt_above_warn_below_refuse_succeeds():

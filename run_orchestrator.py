@@ -82,12 +82,18 @@ def main():
         # pipeline (architect/marketing/designer/forge) can proceed
         # without re-running an already-successful scraper.
         "force_preflight": False,
+        # Phase D: sites live outside the elyra repo. Default points
+        # at the sibling DevProjects directory on this dev box; the
+        # orchestrator validates it is absolute and not inside the
+        # elyra repo before persisting.
+        "output_root": "C:/Users/micha/DevProjects",
     }
 
     print(f"[ELYRA] Starting migration for {url}")
     print(f"[CONFIG] Platform: {platform} (confidence: {platform_confidence:.0%})")
     print(f"[CONFIG] Site name: {site_name}")
     print(f"[CONFIG] Migration ID: {task_context['migration_id']}")
+    print(f"[CONFIG] Output root: {task_context['output_root']}")
     print(f"[CONFIG] Started at: {datetime.now().strftime('%H:%M:%S')}")
     print("=" * 60)
 

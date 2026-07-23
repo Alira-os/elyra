@@ -1,0 +1,9 @@
+{
+  "migration_id": "m1",
+  "site_slug": "example",
+  "contracts": [],
+  "data_architecture_summary": "Static site.",
+  "reasoning_trace": [],
+  "produced_at": "2026-07-20T12:06:20.605634",
+  "produced_by": "data_engineer"
+}

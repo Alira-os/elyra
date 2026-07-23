@@ -1,62 +1,84 @@
 """
-scrape.py — Phase 1 Agentic Scraper CLI
+scrape.py — Phase 1 root CLI for the scraper persona.
+
+Phase 1: no thin-glue ``skills/agentic/scraper_agent.py``. The CLI calls
+the configured ``ExecutionBackend`` directly with
+``(scraper_specialist persona, prompt, SiteUnderstanding)`` and writes
+the recon output to ``memory/site_understandings/<site_id>/``.
 
 Usage:
     python scrape.py <url>
-    python scrape.py <url> --no-save
-
-Output goes to memory/site_understandings/<id>.json
 
 Architecture:
-- Python (thin glue): builds prompt, calls kilo run, validates output
-- Kilo CLI: loads persona, executes MCP tools, drives LLM reasoning
+- Python: build the prompt via ``registry.prompts.build_scraper_prompt``,
+  invoke ``backend.invoke(...)``, then load the recon directory as a
+  ``SiteUnderstanding`` and print it.
+- Backend: persona (markdown) + tools (Playwright + Fetch MCP for the
+  real Kilo backend; deterministic dummy for ``MockBackend``).
 """
 
 import sys
-import json
+from datetime import datetime
+from pathlib import Path
 
-from skills.agentic.scraper_agent import scrape
-from skills.agentic.site_interpreter import save_site_understanding
+from registry.prompts import build_scraper_prompt
+from memory.artifacts import (
+    SITE_UNDERSTANDINGS_DIR, load_site_understanding,
+)
+from tools.execution import get_backend, BackendInvokeError
+from models.site_schemas import SiteUnderstanding, SiteSummary
 
 
-def main(url: str, no_save: bool = False):
-    result = scrape(url)
+PERSONA_LONG = "scraper_specialist"
+PERSONA_PATH = Path(f"registry/personas/{PERSONA_LONG}.md")
 
-    if result is None:
+
+def _read_persona() -> str:
+    return PERSONA_PATH.read_text(encoding="utf-8") if PERSONA_PATH.exists() else ""
+
+
+def main(url: str) -> str | None:
+    site_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    SITE_UNDERSTANDINGS_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir = SITE_UNDERSTANDINGS_DIR / site_id
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    prompt = build_scraper_prompt(url, site_id, _read_persona())
+    # The scraper is side-effect driven — the agent writes files to
+    # ``out_dir`` during its loop. We don't trust the backend's return
+    # value for the actual artifact; we re-load from disk.
+    try:
+        get_backend().invoke(
+            persona=PERSONA_PATH,
+            prompt=prompt,
+            output_model=SiteUnderstanding,
+        )
+    except BackendInvokeError:
+        pass  # scraper frequently fails structured validation; we still try disk.
+
+    site = load_site_understanding(site_id)
+    if site is None:
         print("Scraping failed.")
-        sys.exit(1)
+        return None
 
+    summary_path = out_dir / "site.json"
+    summary = SiteSummary.model_validate_json(
+        summary_path.read_text(encoding="utf-8")
+    ) if summary_path.exists() else None
     print(f"\n[SITEUNDERSTANDING]")
     print("-" * 60)
-    print(json.dumps(result.model_dump(mode="json"), indent=2))
-
-    if not no_save:
-        output_path = save_site_understanding(result)
-        print(f"\n[SAVED] {output_path}")
-
-    return result
+    print(summary.model_dump_json(indent=2) if summary is not None else site.model_dump_json(indent=2))
+    print(f"\n[SAVED] memory/site_understandings/{site_id}/")
+    return site_id
 
 
 def cli():
     args = sys.argv[1:]
-    url = None
-    no_save = False
-
-    for i, arg in enumerate(args):
-        if arg in ("-h", "--help"):
-            print("Usage: python scrape.py <url> [--no-save]")
-            return
-        elif arg == "--no-save":
-            no_save = True
-        elif not arg.startswith("--"):
-            url = arg
-
-    if not url:
-        print("Error: URL required")
-        print("Usage: python scrape.py <url> [--no-save]")
-        sys.exit(1)
-
-    main(url, no_save)
+    if not args or args[0] in ("-h", "--help"):
+        print("Usage: python scrape.py <url>")
+        return
+    url = args[0]
+    main(url)
 
 
 if __name__ == "__main__":

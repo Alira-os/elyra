@@ -24,6 +24,7 @@ from models.site_schemas import (  # noqa: E402
     Steward,
     CoherenceGateReport,
     CoherenceGateWaiver,
+    GateBlock,
     HandoffBundle,
 )
 
@@ -204,12 +205,42 @@ def test_gate_failed_summarize():
     g = CoherenceGateReport(
         gate_name="planning",
         passed=False,
-        blocking=["site_understanding missing"],
+        blocking=[GateBlock(persona="scraper_specialist", reason="site_understanding missing")],
         warnings=["stitch unavailable"],
     )
     assert "FAIL" in g.summarize()
     assert "1 blocking" in g.summarize()
     assert "1 warnings" in g.summarize()
+
+
+def test_gate_blocking_requires_structured_persona():
+    """Phase C: blocking must be List[GateBlock], not List[str]."""
+    g = CoherenceGateReport(
+        gate_name="planning",
+        passed=False,
+        blocking=[
+            GateBlock(persona="architect_specialist", reason="low fidelity"),
+        ],
+    )
+    assert g.blocking[0].persona == "architect_specialist"
+    assert g.suggested_route_back() == "architect_specialist"
+
+
+def test_gate_suggested_route_back_none_when_mixed_personas():
+    g = CoherenceGateReport(
+        gate_name="planning",
+        passed=False,
+        blocking=[
+            GateBlock(persona="architect_specialist", reason="a"),
+            GateBlock(persona="marketing_specialist", reason="b"),
+        ],
+    )
+    assert g.suggested_route_back() is None
+
+
+def test_gate_suggested_route_back_none_when_empty():
+    g = CoherenceGateReport(gate_name="planning", passed=True)
+    assert g.suggested_route_back() is None
 
 
 def test_gate_with_waivers():

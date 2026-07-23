@@ -1,0 +1,33 @@
+{
+  "migration_id": "m1",
+  "site_slug": "blog",
+  "base_url": "https://api.blog.example.com",
+  "auth_strategy": "JWT via Supabase",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/posts",
+      "purpose": "list published posts",
+      "request_schema": null,
+      "response_schema": null,
+      "auth_required": false,
+      "notes": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/posts/{id}/comments",
+      "purpose": "create comment",
+      "request_schema": null,
+      "response_schema": null,
+      "auth_required": true,
+      "notes": "rate-limited"
+    }
+  ],
+  "business_logic_summary": "Headless CMS with authenticated comments.",
+  "reasoning_trace": [
+    "Has CMS contracts",
+    "Has auth-gated writes"
+  ],
+  "produced_at": "2026-06-08T18:00:00",
+  "produced_by": "backend_architect"
+}

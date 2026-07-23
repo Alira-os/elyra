@@ -127,7 +127,7 @@ def test_gate_blocks_when_artifacts_missing():
     }
     report = m._run_planning_coherence_gate(artifacts, gaps_logged=[])
     assert report.passed is False
-    assert any("missing planning artifacts" in b for b in report.blocking)
+    assert any("missing planning artifacts" in b.reason for b in report.blocking)
     assert report.artifact_coverage["content_recommendation"] is False
     assert report.artifact_coverage["visual_direction"] is False
 
@@ -166,7 +166,7 @@ def test_gate_blocks_on_unanswered_high_severity_gaps():
     ]
     report = m._run_planning_coherence_gate(artifacts, gaps)
     assert report.passed is False
-    assert any("unanswered high-severity gap" in b for b in report.blocking)
+    assert any("unanswered high-severity gap" in b.reason for b in report.blocking)
 
 
 def test_gate_does_not_block_on_targeted_high_severity_gaps():
@@ -190,7 +190,7 @@ def test_gate_does_not_block_on_targeted_high_severity_gaps():
     ]
     report = m._run_planning_coherence_gate(artifacts, gaps)
     # No blocking from g1 because it has a target.
-    unanswered_blocking = [b for b in report.blocking if "g1" in b or "Re-run" in b]
+    unanswered_blocking = [b for b in report.blocking if "g1" in b.reason or "Re-run" in b.reason]
     assert unanswered_blocking == []
 
 
@@ -361,65 +361,28 @@ def test_log_trace_with_room_adds_room_field():
 
 def test_e2e_stubbed_kilo_produces_bundle():
     """The full stubbed-Kilo E2E should reach `complete` and include a
-    HandoffBundle in the result."""
+    HandoffBundle in the result.
 
-    def _stub_invoke(prompt, context, working_dir, persona, timeout, **kwargs):
-        from tools.kilo import ToolResult
-        if persona == "ui_designer":
-            return ToolResult(
-                success=True,
-                summary=json.dumps({
-                    "primary_change": "No visual evolution",
-                    "rationale": "stitch unavailable",
-                    "stitch_status": "unavailable",
-                }),
-                files_created=[], files_modified=[], errors=[],
-            )
-        if persona == "builder":
-            return ToolResult(
-                success=True,
-                summary=json.dumps({
-                    "output_dir": "sites/example/",
-                    "page_builds": [],
-                    "brand_spec": {},
-                    "visual_direction": None,
-                    "ui_polish_changes": [],
-                    "self_critique": {
-                        "severity": "low",
-                        "brand_token_violations": [],
-                    },
-                    "lighthouse_scores": {
-                        "performance": 95, "accessibility": 95,
-                        "best_practices": 95, "seo": 95,
-                    },
-                    "overall_quality_score": 90,
-                    "deployment_readiness": {
-                        "static_export": True, "build_verified": True,
-                        "typescript_clean": True, "all_pages_routed": True,
-                        "json_ld_emitted": False,
-                        "dark_mode_pre_paint": False,
-                        "reduced_motion_handled": False,
-                        "external_assets_preserved": True,
-                        "ready_for_fly_deploy": True,
-                    },
-                }),
-                files_created=[], files_modified=[], errors=[],
-            )
-        # Other personas (scraper, architect, marketing) just return None,
-        # which the orchestrator treats as a failure on the first try and
-        # the manager will route based on the gap. We mock them with
-        # full artifacts directly.
-        return ToolResult(success=False, errors=["unstubbed"], summary="")
+    Phase 1: the orchestrator routes persona invocation through
+    ``MigrationManager._persona_<name>`` methods which call
+    ``backend.invoke(...)`` directly. We patch those methods to return
+    canned Pydantic artifacts (which is what ``backend.invoke(...)``
+    would do for a MockBackend in production).
+    """
 
-    # Stub the persona modules to produce real artifacts directly.
+    # --- Persona handler stubs (return canned Pydantic artifacts). ---
     def _make_scraper(*a, **kw):
-        return _make_site_understanding()
+        return {"success": True, "artifact": _make_site_understanding()}
+
     def _make_architect(*a, **kw):
-        return _make_site_architecture()
+        return {"success": True, "artifact": _make_site_architecture()}
+
     def _make_marketing(*a, **kw):
-        return _make_content_recommendation()
+        return {"success": True, "artifact": _make_content_recommendation()}
+
     def _make_designer(*a, **kw):
-        return _make_visual_direction()
+        return {"success": True, "artifact": _make_visual_direction()}
+
     def _make_builder(*a, **kw):
         from models.site_schemas import BuildManifest, SelfCritique
         bm = BuildManifest(
@@ -437,7 +400,7 @@ def test_e2e_stubbed_kilo_produces_bundle():
                 "ready_for_fly_deploy": True,
             },
         )
-        return bm, "example"
+        return {"success": True, "artifact": bm, "built_site_slug": "example"}
 
     # Phase 1.1: Forge Room persona stubs.
     from models.site_schemas import (
@@ -447,7 +410,7 @@ def test_e2e_stubbed_kilo_produces_bundle():
     )
 
     def _make_deploy_spec(*a, **kw):
-        return DeploySpec(
+        return {"success": True, "artifact": DeploySpec(
             migration_id="test-phase1-wiring",
             site_slug="example",
             platform="fly",
@@ -456,10 +419,10 @@ def test_e2e_stubbed_kilo_produces_bundle():
             monitoring=["uptime_check"],
             security=["https_only"],
             ci_cd=["github_actions"],
-        )
+        )}
 
     def _make_data_contracts(*a, **kw):
-        return DataContracts(
+        return {"success": True, "artifact": DataContracts(
             migration_id="test-phase1-wiring",
             site_slug="example",
             contracts=[
@@ -476,20 +439,20 @@ def test_e2e_stubbed_kilo_produces_bundle():
                 )
             ],
             data_architecture_summary="Static site, all content as Markdown.",
-        )
+        )}
 
     def _make_api_contracts(*a, **kw):
-        return APIContracts(
+        return {"success": True, "artifact": APIContracts(
             migration_id="test-phase1-wiring",
             site_slug="example",
             base_url=None,
             auth_strategy=None,
             endpoints=[],
             business_logic_summary="Static site, no APIs.",
-        )
+        )}
 
     def _make_integration_status(*a, **kw):
-        return IntegrationStatus(
+        return {"success": True, "artifact": IntegrationStatus(
             migration_id="test-phase1-wiring",
             site_slug="example",
             cross_layer_checks_run=[
@@ -500,36 +463,45 @@ def test_e2e_stubbed_kilo_produces_bundle():
             issues_found=[],
             resolutions=[],
             final_build_manifest_id="test-build-id",
-        )
+        )}
 
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
-        # Pre-stage the SQLite schema.sql that the Database class opens
-        # on init (relative to cwd). Without this, Memory() crashes.
         sqlite_dir = tmp / "memory" / "sqlite"
         sqlite_dir.mkdir(parents=True, exist_ok=True)
         import shutil
         schema_src = Path("memory/sqlite/schema.sql").resolve()
         shutil.copy2(schema_src, sqlite_dir / "schema.sql")
-        # Intentionally do NOT pre-populate the artifact stores — we want
-        # the pre-flight loop to actually run our stubs so the gate sees
-        # all four artifacts.
 
         import os
         old_cwd = os.getcwd()
         try:
             os.chdir(tmp)
-            with patch("skills.agentic.scraper_agent.scrape", side_effect=_make_scraper), \
-                 patch("skills.agentic.architect_agent.architect", side_effect=_make_architect), \
-                 patch("skills.agentic.marketing_agent.market", side_effect=_make_marketing), \
-                 patch("skills.agentic.designer_agent.design", side_effect=_make_designer), \
-                 patch("skills.agentic.builder_agent.build", side_effect=_make_builder), \
-                 patch("skills.agentic.devops_engineer.design_deploy_spec", side_effect=_make_deploy_spec), \
-                 patch("skills.agentic.data_engineer.design_data_contracts", side_effect=_make_data_contracts), \
-                 patch("skills.agentic.backend_architect.design_api_contracts", side_effect=_make_api_contracts), \
-                 patch("skills.agentic.frontend_architect.design_frontend", side_effect=_make_builder), \
-                 patch("skills.agentic.integration_coordinator.coordinate_integration", side_effect=_make_integration_status), \
-                 patch("tools.kilo.invoke_kilo", side_effect=lambda *a, **kw: None):
+            from models.site_schemas import ManagerDecision
+            _manager_decisions = iter([
+                ManagerDecision(action="invoke_persona", persona="architect_specialist", reason="scraper_complete"),
+                ManagerDecision(action="invoke_persona", persona="marketing_specialist", reason="architect_complete"),
+                ManagerDecision(action="invoke_persona", persona="ui_designer", reason="marketing_complete"),
+                ManagerDecision(action="complete", reason="planning done"),
+                ManagerDecision(action="complete", reason="forge loop done"),
+            ])
+            def _stub_consult_manager(self, current_state, task_context, gate_report=None, **kwargs):
+                try:
+                    return next(_manager_decisions)
+                except StopIteration:
+                    return ManagerDecision(action="complete", reason="manager stub exhausted")
+            with patch.object(MigrationManager, "_persona_scraper", side_effect=_make_scraper), \
+                 patch.object(MigrationManager, "_persona_architect", side_effect=_make_architect), \
+                 patch.object(MigrationManager, "_persona_marketing", side_effect=_make_marketing), \
+                 patch.object(MigrationManager, "_persona_designer", side_effect=_make_designer), \
+                 patch.object(MigrationManager, "_persona_builder", side_effect=_make_builder), \
+                 patch.object(MigrationManager, "_persona_devops", side_effect=_make_deploy_spec), \
+                 patch.object(MigrationManager, "_persona_data", side_effect=_make_data_contracts), \
+                 patch.object(MigrationManager, "_persona_backend", side_effect=_make_api_contracts), \
+                 patch.object(MigrationManager, "_persona_frontend", side_effect=_make_builder), \
+                 patch.object(MigrationManager, "_persona_coordinator", side_effect=_make_integration_status), \
+                 patch("tools.execution.get_backend", side_effect=lambda *a, **kw: None), \
+                 patch.object(MigrationManager, "_consult_manager_persona", _stub_consult_manager):
                 m = MigrationManager(db_path=":memory:")
                 result = m.run({
                     "url": "https://example.com",

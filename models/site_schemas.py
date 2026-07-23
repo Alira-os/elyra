@@ -2,14 +2,22 @@
 Pydantic Schemas for Agentic Scraper Phase 1
 
 SiteUnderstanding: High-level strategic overview of the entire site.
-PageStructure: Detailed per-page artifact for builder personas to consume.
+PageRef: Slim per-page reference (url, title, page_type, headings, file_path).
+PageStructure: Legacy rich per-page artifact — kept defined for backward
+  compat with test fixtures and the legacy highland artifact coercion path.
+  In the simplified scraper, rich per-page data is written to per-page files
+  and referenced via PageRef.file_path; downstream code reads the file when
+  it needs the rich data.
 NavNode: Typed hierarchy for navigation trees.
+SiteSummary: The 8-field site.json the recon agent writes at the end of its loop.
 """
 
 from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Dict, Optional, Any, Literal
 from enum import Enum
 from datetime import datetime
+from pathlib import Path
+import json
 
 
 class PlatformType(str, Enum):
@@ -90,7 +98,14 @@ class JsonLdSchema(BaseModel):
 
 
 class PageStructure(BaseModel):
-    """Detailed structure of a single page. Rich artifact for downstream builders."""
+    """Detailed structure of a single page. Rich artifact for downstream builders.
+
+    Kept defined for backward compat with test fixtures and the legacy
+    highland artifact coercion path. In the simplified scraper, rich
+    per-page data is written to per-page files (see PageRef.file_path) and
+    the legacy PageStructure round-trip is only used by the coercion module
+    to repair old artifacts already on disk.
+    """
     url: HttpUrl
     canonical_url: Optional[HttpUrl] = None
     title: str
@@ -112,6 +127,26 @@ class PageStructure(BaseModel):
     navigation_from_page: List[str] = Field(default_factory=list)  # discovered links from this page
 
 
+class PageRef(BaseModel):
+    """Slim per-page reference. The simplified scraper writes one of these
+    per discovered page; rich per-page data (text, components, forms, etc.)
+    lives in the file at `file_path`.
+
+    Downstream agents that need rich data call `read_page(site, slug)`
+    which returns the markdown body. Downstream agents that only need
+    the URL, title, page_type, or headings read PageRef fields directly.
+    """
+    url: str = ""
+    slug: str = ""  # file-system-safe identifier (e.g. "home", "blog-2024-03-foo")
+    file_path: str = ""  # absolute or root-relative path to the per-page markdown file
+    page_type: List[PageType] = Field(default_factory=list)
+    template_id: Optional[str] = None
+    is_dynamic: bool = False
+    title: str = ""
+    meta_description: Optional[str] = None
+    headings: Dict[str, List[str]] = Field(default_factory=dict)
+
+
 class NavNode(BaseModel):
     """A node in the site navigation hierarchy."""
     label: str
@@ -125,14 +160,53 @@ class NavNode(BaseModel):
 NavNode.model_rebuild()
 
 
+class SiteSummary(BaseModel):
+    """The 8-field site.json the recon agent writes at the end of its loop.
+
+    This is the *only* structured output the simplified scraper requires
+    the LLM to emit. The agent writes it as a JSON file at the end of the
+    recon pass. Everything else (sitemap, per-page files, catalog,
+    screenshots, content essence) is written as plain files by the agent
+    during its loop.
+
+    The downstream Planning Room and Forge Room consume this via
+    `SiteUnderstanding.from_directory()`, which reads site.json + the
+    per-page refs and produces the legacy `SiteUnderstanding` shape.
+    """
+    url: HttpUrl
+    site_id: str
+    platform: PlatformType
+    theme_or_template: Optional[str] = None
+    is_dynamic: bool = False
+    data_source: Optional[str] = None  # e.g. "WooCommerce REST API at /wp-json/wc/v3/products"
+    total_pages: int = 0
+    dynamic_page_count: int = 0
+    static_page_count: int = 0
+    confidence: float = Field(ge=0.0, le=1.0, default=0.5)
+    notes: List[str] = Field(default_factory=list)
+
+
 class SiteUnderstanding(BaseModel):
-    """High-level map and strategic understanding of the entire site."""
+    """High-level map and strategic understanding of the entire site.
+
+    Slimmed in the radical-simplification: `pages` is now `List[PageRef]`
+    (one per discovered page) referencing per-page files on disk, rather
+    than an inlined list of rich `PageStructure` objects. The rich
+    per-page data (text, components, forms, images, etc.) lives in the
+    file at `PageRef.file_path`; downstream code that needs it calls
+    `read_page(site, slug)`.
+
+    Wire-format fields preserved for downstream consumers:
+    url, platform, platform_confidence, site_name, total_pages_discovered,
+    navigation_structure, global_assets, contact_info, estimated_fidelity,
+    warnings, recommendations, reasoning_trace.
+    """
     url: HttpUrl
     platform: PlatformType
     platform_confidence: float = Field(ge=0.0, le=1.0)
     site_name: str
     total_pages_discovered: int
-    pages: List[PageStructure]  # Detailed per-page structures
+    pages: List[PageRef] = Field(default_factory=list)  # Slim refs; rich data in files
     global_assets: Dict[str, Any] = Field(default_factory=dict)  # logo, favicon, social
     contact_info: Dict[str, str] = Field(default_factory=dict)
     navigation_structure: List[NavNode] = Field(default_factory=list)  # typed nav hierarchy
@@ -141,6 +215,147 @@ class SiteUnderstanding(BaseModel):
     recommendations: List[str] = Field(default_factory=list)
     reasoning_trace: List[str] = Field(default_factory=list)  # LLM's step-by-step reasoning
     raw_artifacts: Dict[str, Any] = Field(default_factory=dict)  # For debugging / replay
+    # New: where the per-page files live on disk. Set by save / from_directory.
+    site_dir: Optional[str] = None
+
+    @classmethod
+    def from_directory(cls, site_dir: str | Path) -> "SiteUnderstanding":
+        """Build a slim SiteUnderstanding from a recon directory.
+
+        Reads `<site_dir>/site.json` (the SiteSummary) and `sitemap.md`
+        (flat URL list). Each line of the sitemap becomes a PageRef with
+        a default `file_path` at `<site_dir>/pages/<slug>.md`. If a
+        `catalog.json` exists, those entries become PageRef entries with
+        `is_dynamic=True` and no per-page file (the catalog is the data
+        source for them).
+
+        Per-page files are NOT read into memory; downstream code calls
+        `read_page(site, slug)` to load them on demand.
+        """
+        site_dir = Path(site_dir)
+        summary_path = site_dir / "site.json"
+        if not summary_path.exists():
+            raise FileNotFoundError(f"site.json not found at {summary_path}")
+        summary = SiteSummary.model_validate_json(summary_path.read_text(encoding="utf-8"))
+
+        pages: List[PageRef] = []
+        sitemap_path = site_dir / "sitemap.md"
+        if sitemap_path.exists():
+            for line in sitemap_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                # Format: `- /about/ | about | home`  (path | slug | page_type)
+                # Be tolerant: just take the path if the rest is missing.
+                parts = [p.strip() for p in line.lstrip("-").split("|")]
+                if not parts:
+                    continue
+                path = parts[0]
+                slug = parts[1] if len(parts) > 1 else path.strip("/").replace("/", "-") or "home"
+                page_type_str = parts[2] if len(parts) > 2 else "other"
+                page_type: List[PageType] = []
+                for pt in page_type_str.split(","):
+                    pt = pt.strip()
+                    if not pt:
+                        continue
+                    try:
+                        page_type.append(PageType(pt))
+                    except ValueError:
+                        page_type.append(PageType.OTHER)
+                pages.append(
+                    PageRef(
+                        url=str(summary.url).rstrip("/") + (path if path.startswith("/") else f"/{path}"),
+                        slug=slug,
+                        file_path=str(site_dir / "pages" / f"{slug}.md"),
+                        page_type=page_type,
+                        title=slug.replace("-", " ").title(),
+                    )
+                )
+
+        # Dynamic catalog entries
+        catalog_path = site_dir / "catalog.json"
+        if catalog_path.exists():
+            try:
+                catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+                for entry in catalog.get("entries", []):
+                    slug = entry.get("slug") or entry.get("id") or ""
+                    if not slug:
+                        continue
+                    pages.append(
+                        PageRef(
+                            url=entry.get("url", str(summary.url).rstrip("/") + f"/{slug}"),
+                            slug=str(slug),
+                            file_path="",  # dynamic; data lives in catalog
+                            page_type=[PageType.OTHER],
+                            is_dynamic=True,
+                            title=str(entry.get("title", slug)),
+                        )
+                    )
+            except Exception:
+                pass
+
+        # Navigation structure — optional, read from site.json if present.
+        navigation: List[NavNode] = []
+        nav_data = summary.model_dump().get("navigation_structure") or []
+        for n in nav_data:
+            try:
+                navigation.append(NavNode(**n))
+            except Exception:
+                continue
+
+        return cls(
+            url=summary.url,
+            platform=summary.platform,
+            platform_confidence=summary.confidence,
+            site_name=summary.theme_or_template or str(summary.url),
+            total_pages_discovered=summary.total_pages,
+            pages=pages,
+            navigation_structure=navigation,
+            estimated_fidelity=summary.confidence,
+            warnings=[],
+            recommendations=summary.notes,
+            reasoning_trace=[],
+            site_dir=str(site_dir),
+        )
+
+
+def read_page(site: "SiteUnderstanding", slug: str) -> Optional[str]:
+    """Read the markdown body of a per-page file referenced by a PageRef.
+
+    Returns the file contents (markdown) for the page with the given slug,
+    or None if the page is dynamic (no per-page file) or the file is missing.
+
+    Downstream agents that need rich per-page data (text, components,
+    forms, etc.) call this once per page they care about. The file format
+    is plain markdown — downstream code is free to parse it however it
+    wants.
+    """
+    for p in site.pages:
+        if p.slug == slug:
+            if not p.file_path or p.is_dynamic:
+                return None
+            path = Path(p.file_path)
+            if not path.exists():
+                return None
+            return path.read_text(encoding="utf-8")
+    return None
+
+
+def load_legacy_site_understanding(path: str | Path) -> "SiteUnderstanding":
+    """Load a legacy (pre-simplification) SiteUnderstanding JSON file.
+
+    Legacy files have rich `pages[]` with components/forms/text_content
+    etc. The slim SiteUnderstanding drops those fields. This loader
+    delegates to the central coercion module which:
+      1. Fills in `slug` and `file_path` for each page.
+      2. Drops legacy rich fields.
+      3. Returns the slim SiteUnderstanding.
+
+    For the rich per-page data, callers can read the original JSON
+    file directly (it's still on disk at the same path).
+    """
+    from models._coercion import load_site_understanding_from_path
+    return load_site_understanding_from_path(path)
 
 
 class ScraperConfig(BaseModel):
@@ -183,6 +398,112 @@ class SeoMigrationPlan(BaseModel):
     canonical_strategy: str = "preserve"
     og_image_strategy: str = "migrate"
     json_ld_action: Literal["preserve", "migrate-to-nextjs", "drop"] = "preserve"
+
+
+# --- Phase E: Discoverability Specialists (SEO + GEO-for-LLMs) ---
+#
+# Phase E adds two new planning-room personas — seo_specialist and
+# geo_specialist — and a second pass for geo_specialist in the Forge.
+# The artifacts live here alongside SeoMigrationPlan (which handles
+# migration-cutover URL redirect strategy, an orthogonal concern).
+#
+# Naming note: SeoStrategy (per-site post-build SEO strategy) is
+# deliberately distinct from SeoMigrationPlan (per-migration URL
+# redirect strategy during cutover). Both are first-class; they
+# coexist because their purposes differ.
+
+
+class SeoStrategy(BaseModel):
+    """Planning-Room SEO strategy. Produced by seo_specialist.
+
+    Read by:
+      - ui_designer (DOM structure must host the planned meta templates)
+      - geo_specialist (which routes get FAQPage / BreadcrumbList schema)
+      - frontend_architect (page templates carry the meta tags)
+      - build_quality_gate (post-build verification of meta descriptions)
+
+    Every recommendation must trace to a specific route / page / content
+    type from the upstream SiteArchitecture and ContentRecommendation.
+    """
+    site_slug: str
+    migration_id: str
+    target_routes: List[str] = Field(default_factory=list)
+    # e.g. ["/", "/about", "/pricing", "/faq", "/contact"]
+    meta_description_templates: Dict[str, str] = Field(default_factory=dict)
+    # route -> template (e.g. "/about": "{site_name} — about our team")
+    title_templates: Dict[str, str] = Field(default_factory=dict)
+    # route -> template (e.g. "/about": "{site_name} | About")
+    canonical_base: str = ""
+    # e.g. "https://example.com"
+    internal_link_graph: List[Dict[str, Any]] = Field(default_factory=list)
+    # [{from_route, to_route, anchor}]
+    hreflang_targets: List[Dict[str, Any]] = Field(default_factory=list)
+    # [{lang, url}]
+    sitemap_priority_overrides: Dict[str, float] = Field(default_factory=dict)
+    # route -> priority (0.0-1.0)
+    recommendations: List[Dict[str, Any]] = Field(default_factory=list)
+    # Free-form notes (per-route or cross-cutting)
+
+
+class GeoStrategy(BaseModel):
+    """Planning-Room GEO-for-LLMs strategy. Produced by geo_specialist.
+
+    Read by:
+      - ui_designer (DOM structure for schema.org types like FAQPage)
+      - frontend_architect (which routes need JSON-LD blocks)
+      - geo_specialist itself in the Forge (file production)
+      - build_quality_gate (post-build verification of llms.txt, JSON-LD)
+
+    The planning pass produces *strategy* only: the llms.txt body and
+    robots.txt AI stanza are produced by the Forge pass and persisted
+    as GeoBuildArtifacts.
+    """
+    site_slug: str
+    migration_id: str
+    target_first_class_routes: List[str] = Field(default_factory=list)
+    # e.g. ["/about", "/contact", "/pricing", "/faq"]
+    schema_org_types_by_route: Dict[str, List[str]] = Field(default_factory=dict)
+    # route -> [schema.org types] (locked: Organization, Person, WebSite,
+    # FAQPage, BreadcrumbList)
+    llms_txt_outline: str = ""
+    # H1 + section list; body comes from the Forge pass
+    author_block: Dict[str, Any] = Field(default_factory=dict)
+    # {name, role, sameAs links}
+    organization_block: Dict[str, Any] = Field(default_factory=dict)
+    # {name, url, logo, sameAs links}
+    facts_with_sources: List[Dict[str, Any]] = Field(default_factory=list)
+    # [{claim, source_url, retrieved_at}]
+    recommendations: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class GeoBuildArtifacts(BaseModel):
+    """Forge-Room output of geo_specialist's second pass.
+
+    The actual file contents for llms.txt, the AI-crawler stanza in
+    robots.txt, sitemap.xml additions, and a map of which routes got
+    which JSON-LD blocks. geo_specialist writes these to sites/<slug>/
+    and persists this artifact to memory/geo_builds/.
+
+    The ai_crawler_allowlist must cover the locked allowlist
+    (MigrationManager.LOCKED_AI_CRAWLERS) or build_quality_gate fails.
+    """
+    site_slug: str
+    migration_id: str
+    llms_txt: str = ""
+    # Full file body for sites/<slug>/llms.txt
+    robots_txt_ai_stanza: str = ""
+    # User-agent / Allow block to be merged with frontend_architect's
+    # robots.txt
+    sitemap_xml_extras: List[Dict[str, Any]] = Field(default_factory=list)
+    # Entries added beyond frontend_architect's sitemap.xml
+    json_ld_blocks_by_route: Dict[str, List[Dict[str, Any]]] = Field(default_factory=dict)
+    # route -> [JSON-LD dict]
+    ai_crawler_allowlist: List[str] = Field(default_factory=list)
+    files_written: List[str] = Field(default_factory=list)
+    # Absolute paths under sites/<slug>/
+    content_sha256: Dict[str, str] = Field(default_factory=dict)
+    # relative_path -> sha256
+    last_verified_at: str = ""
 
 
 class ImageMigrationStrategy(BaseModel):
@@ -315,7 +636,13 @@ class VisualDirection(BaseModel):
     created_by: str = "ui_designer"
     created_at: str = ""
     stitch_status: str = "available"  # "available" | "unavailable" | "partial"
-    schema_version: str = "1.1"
+    # Phase D: Stitch project handle so the Forge Room's frontend_architect
+    # can pull the generated screens via the Stitch MCP. Both default to
+    # None so existing parses keep working — the designer_agent fills
+    # them in when the Stitch MCP is available.
+    stitch_project_id: Optional[str] = None
+    stitch_project_url: Optional[str] = None
+    schema_version: str = "1.2"
     page_layouts: Optional[Dict[str, Dict[str, Any]]] = None  # {"/": {grid_system, spacing_philosophy, section_order, ...}}
     typography_hierarchy: Optional[Dict[str, Dict[str, Any]]] = None  # {"/": {h1: {size, weight, tracking}, ...}}
     motion_class_map: Optional[Dict[str, str]] = None  # {card_hover: "motion-classical", ...}
@@ -605,6 +932,21 @@ class CoherenceGateWaiver(BaseModel):
     mitigation: Optional[str] = None  # what we'll do to reduce the risk
 
 
+class GateBlock(BaseModel):
+    """A structured blocking failure from a Coherence Gate.
+
+    Phase C: the gate's blocking output must carry enough information
+    for the Manager persona to dispatch without re-deriving routing
+    from raw prose. Each block names the persona that should fix it,
+    the human-readable reason, an optional gap_id to correlate with
+    the gap ledger, and a severity.
+    """
+    persona: str  # which persona must fix this
+    reason: str   # human-readable description
+    gap_id: Optional[str] = None
+    severity: Literal["high", "medium", "low"] = "high"
+
+
 class CoherenceGateReport(BaseModel):
     """Result of running a Coherence Gate.
 
@@ -614,7 +956,7 @@ class CoherenceGateReport(BaseModel):
     """
     gate_name: str
     passed: bool
-    blocking: List[str] = Field(default_factory=list)  # hard failures
+    blocking: List[GateBlock] = Field(default_factory=list)  # structured hard failures (Phase C)
     warnings: List[str] = Field(default_factory=list)
     waivers: List[CoherenceGateWaiver] = Field(default_factory=list)
     artifact_coverage: Dict[str, bool] = Field(default_factory=dict)
@@ -632,6 +974,25 @@ class CoherenceGateReport(BaseModel):
             waiver_note = f" ({len(self.waivers)} waivers)" if self.waivers else ""
             return f"PASS{waiver_note}"
         return f"FAIL: {len(self.blocking)} blocking, {len(self.warnings)} warnings"
+
+    def suggested_route_back(self) -> Optional[str]:
+        """Return the persona the Manager should route_back to, or None.
+
+        Phase C: the manager reads this to get a hint, but the hint is
+        not a command — if multiple distinct personas are blocking,
+        the manager has to pick (and we return None).
+
+        Rules:
+          - No blocks → None.
+          - All blocks share a single persona → that persona.
+          - Otherwise → None.
+        """
+        if not self.blocking:
+            return None
+        personas = {b.persona for b in self.blocking if b.persona}
+        if len(personas) == 1:
+            return next(iter(personas))
+        return None
 
 
 class HandoffBundle(BaseModel):
@@ -660,7 +1021,20 @@ class HandoffBundle(BaseModel):
     site_architecture_id: Optional[str] = None
     content_recommendation_id: Optional[str] = None
     visual_direction_id: Optional[str] = None
+    # Phase E: discoverability strategies produced by seo_specialist
+    # and geo_specialist in the planning room. Both default to None so
+    # legacy fixtures keep working; the manager populates them when the
+    # corresponding personas emit artifacts.
+    seo_strategy_id: Optional[str] = None
+    geo_strategy_id: Optional[str] = None
     brand_spec: Optional[Dict[str, Any]] = None  # inlined — small and used everywhere
+
+    # Phase D: where the build lands and which git branch it lands on.
+    # Set by the orchestrator's Handoff Ceremony (after _setup_site_repo
+    # has run). Both default to "" so legacy test fixtures keep working;
+    # the orchestrator asserts non-empty before persisting.
+    output_root: str = ""
+    git_branch: str = ""
 
     # Rationale and open questions from the Planning Room
     planning_rationale: List[str] = Field(default_factory=list)

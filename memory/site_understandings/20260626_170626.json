@@ -1,0 +1,40 @@
+{
+  "url": "https://example.com/",
+  "platform": "wix",
+  "platform_confidence": 0.9,
+  "site_name": "example",
+  "total_pages_discovered": 1,
+  "pages": [
+    {
+      "url": "https://example.com/",
+      "canonical_url": null,
+      "title": "Example",
+      "page_type": [
+        "home"
+      ],
+      "template_id": null,
+      "meta_description": null,
+      "headings": {},
+      "components": [],
+      "images": [],
+      "links": [],
+      "forms": [],
+      "text_content": "Welcome",
+      "text_word_count": 1,
+      "seo": {},
+      "json_ld": [],
+      "breadcrumb_path": [],
+      "cta_text": [],
+      "notes": [],
+      "navigation_from_page": []
+    }
+  ],
+  "global_assets": {},
+  "contact_info": {},
+  "navigation_structure": [],
+  "estimated_fidelity": 0.5,
+  "warnings": [],
+  "recommendations": [],
+  "reasoning_trace": [],
+  "raw_artifacts": {}
+}

@@ -6,7 +6,7 @@
     },
     "fetch": {
       "command": "npx",
-      "args": ["-y", "@fetch/mcp-server"]
+      "args": ["-y", "mcp-fetch-server"]
     },
     "impeccable": {
       "command": "npx",

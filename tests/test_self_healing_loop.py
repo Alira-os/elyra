@@ -195,23 +195,38 @@ def test_invoke_persona_returns_gaps_diffed_from_ledger(tmp_path):
         gap_ledger.LEDGER_FILE = original
 
 
-# --- Step 1c: preflight_max_retries terminal phase --------------------------
+# --- Step 1c: terminal phase on persistent persona failure ------------------
 
 def test_preflight_aborts_with_retry_phase_when_persona_keeps_failing(tmp_path):
-    """When a persona fails every retry, the pre-flight should reach the
-    `preflight_max_retries:<persona>` phase rather than just `<persona>_failed`."""
-    from conductor.orchestrator import MigrationManager
+    """When a persona keeps failing in the manager-driven loop, the
+    manager should reach a terminal failure phase rather than spinning
+    forever.
+
+    Phase C: the procedural preflight that emitted
+    `preflight_max_retries:<persona>` is gone. The manager loop now
+    drives the persona; on repeated failure the safety rails emit
+    `abort` (high-severity gap with no target_persona). The test
+    asserts the new contract: success=False and a terminal phase.
+    """
+    from conductor.orchestrator import MigrationManager, ManagerDecision
 
     def _always_failing(*a, **kw):
         return None  # scraper returns None → failure
 
-    with patch("skills.agentic.scraper_agent.scrape", side_effect=_always_failing), \
-         patch("skills.agentic.architect_agent.architect", side_effect=_always_failing), \
-         patch("skills.agentic.marketing_agent.market", side_effect=_always_failing), \
-         patch("skills.agentic.designer_agent.design", side_effect=_always_failing), \
+    # Phase C: the manager persona now drives the loop. We stub it
+    # to always return `abort` so the loop terminates quickly when
+    # the persona can't produce an artifact.
+    def _stub_consult_manager(self, current_state, task_context, gate_report=None, **kwargs):
+        return ManagerDecision(action="abort", reason="persona kept failing — manager aborts")
+
+    with patch.object(MigrationManager, "_persona_scraper", side_effect=lambda **kw: {"success": False, "gaps": []}), \
+         patch.object(MigrationManager, "_persona_architect", side_effect=lambda **kw: {"success": False, "gaps": []}), \
+         patch.object(MigrationManager, "_persona_marketing", side_effect=lambda **kw: {"success": False, "gaps": []}), \
+         patch.object(MigrationManager, "_persona_designer", side_effect=lambda **kw: {"success": False, "gaps": []}), \
          patch.object(MigrationManager, "_get_latest_artifact_id", return_value=None), \
          patch.object(MigrationManager, "_save_artifact", return_value=None), \
-         patch.object(MigrationManager, "_promote_scratch_artifacts"):
+         patch.object(MigrationManager, "_promote_scratch_artifacts"), \
+         patch.object(MigrationManager, "_consult_manager_persona", _stub_consult_manager):
 
         mgr = MigrationManager(db_path=":memory:")
         result = mgr.run({
@@ -220,12 +235,12 @@ def test_preflight_aborts_with_retry_phase_when_persona_keeps_failing(tmp_path):
             "site_name": "example",
             "task_type": "test",
             "migration_id": "test-retry-phase",
-            "max_preflight_retries": 1,  # 1 retry = 2 total attempts
+            "max_preflight_retries": 1,  # legacy flag, now unused
         })
-        # The first persona (scraper) should fail and trigger max_retries phase
+        # The first persona (scraper) fails; the manager emits abort.
         assert result["success"] is False
-        assert "preflight_max_retries" in result["phase_reached"], (
-            f"expected preflight_max_retries phase, got: {result['phase_reached']}"
+        assert result["phase_reached"] in ("abort", "max_iterations_reached"), (
+            f"expected terminal phase, got: {result['phase_reached']}"
         )
 
 

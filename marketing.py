@@ -1,26 +1,54 @@
 """
-marketing.py — Phase 3 Marketing Specialist CLI
+marketing.py — Phase 1 root CLI for the marketing persona.
+
+Phase 1: no thin-glue ``skills/agentic/marketing_agent.py``. The CLI
+calls the configured ``ExecutionBackend`` directly with
+``(marketing_specialist persona, prompt, ContentRecommendation)`` and
+saves the artifact via ``memory.artifacts``.
 
 Usage:
-    python marketing.py <site_id> [<arch_id>]  Run marketing on a SiteUnderstanding + SiteArchitecture
-    python marketing.py --latest                Run on most recent for both
-    python marketing.py --list                  List available SiteUnderstandings and Architectures
-
-Output goes to memory/site_recommendations/<id>.json
-
-Architecture:
-- Python (thin glue): loads SiteUnderstanding + SiteArchitecture, calls marketing_agent, validates output
-- Kilo CLI: loads persona, drives LLM reasoning over content data
+    python marketing.py <site_id> [<arch_id>]
+    python marketing.py --latest
+    python marketing.py --list
 """
 
 import sys
 import json
+from pathlib import Path
 
-from skills.agentic.marketing_agent import (
-    market,
-    list_architectures,
+from registry.prompts import build_marketing_prompt
+from memory.artifacts import (
+    SITE_UNDERSTANDINGS_DIR, SITE_ARCHITECTURES_DIR,
+    load_site_architecture, load_site_understanding,
 )
-from skills.agentic.architect_agent import list_site_understandings
+from tools.execution import get_backend
+from models.site_schemas import ContentRecommendation
+
+
+PERSONA_LONG = "marketing_specialist"
+PERSONA_PATH = Path(f"registry/personas/{PERSONA_LONG}.md")
+
+
+def _read_persona() -> str:
+    return PERSONA_PATH.read_text(encoding="utf-8") if PERSONA_PATH.exists() else ""
+
+
+def list_site_understandings():
+    if not SITE_UNDERSTANDINGS_DIR.exists():
+        return []
+    files = sorted(SITE_UNDERSTANDINGS_DIR.glob("*.json"), reverse=True)
+    dirs = sorted(
+        [d for d in SITE_UNDERSTANDINGS_DIR.iterdir() if d.is_dir()],
+        key=lambda d: d.name,
+        reverse=True,
+    )
+    return files + [d / "site.json" for d in dirs if (d / "site.json").exists()]
+
+
+def list_architectures():
+    if not SITE_ARCHITECTURES_DIR.exists():
+        return []
+    return sorted(SITE_ARCHITECTURES_DIR.glob("*.json"), reverse=True)
 
 
 def get_latest_ids():
@@ -35,17 +63,33 @@ def get_latest_ids():
     return site_id, arch_id
 
 
-def main(site_id: str, arch_id: str):
-    result = market(site_id, arch_id)
+def run_marketing(site_id: str, arch_id: str):
+    site = load_site_understanding(site_id)
+    arch = load_site_architecture(arch_id)
+    if site is None or arch is None:
+        print("Marketing analysis failed (missing upstream artifacts).")
+        return None
 
-    if result is None:
+    prompt = build_marketing_prompt(site, arch, _read_persona())
+    rec = get_backend().invoke(
+        persona=PERSONA_PATH,
+        prompt=prompt,
+        output_model=ContentRecommendation,
+    )
+    if rec is None:
         print("Marketing analysis failed.")
-        sys.exit(1)
+        return None
 
     print(f"\n[CONTENTRECOMMENDATION]")
     print("-" * 60)
-    print(json.dumps(result.model_dump(mode="json"), indent=2))
+    print(json.dumps(rec.model_dump(mode="json"), indent=2))
+    return rec
 
+
+def main(site_id: str, arch_id: str):
+    result = run_marketing(site_id, arch_id)
+    if result is None:
+        sys.exit(1)
     return result
 
 

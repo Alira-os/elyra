@@ -155,7 +155,9 @@ def test_forge_room_has_five_personas():
     from conductor.orchestrator import MigrationManager
     m = MigrationManager(db_path=":memory:")
     personas = m.FORGE_ROOM.ordered_personas()
-    assert len(personas) == 5
+    # Phase E: geo_specialist joined the Forge (between frontend_architect
+    # and integration_coordinator) so the room now has six personas.
+    assert len(personas) == 6
     assert personas[0] == "deploy_specialist"  # devops runs first
     assert personas[-1] == "integration_coordinator"  # steward last
 

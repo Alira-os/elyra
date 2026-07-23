@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "elyra"
+version = "0.1.0"
+description = "AI-powered site migration, refinement, and optimization"
+requires-python = ">=3.11"
+readme = "README.md"
+authors = [
+    { name = "Elyra" },
+]
+
+[project.scripts]
+elyra = "elyra:main"
+
+[tool.setuptools]
+# The package is the `elyra/` directory at the repo root; everything else
+# (conductor/, tools/, registry/, models/, memory/) is data + runtime code
+# pulled in by sys.path injection from the package __init__.
+packages = ["elyra"]
+
+[tool.setuptools.package-dir]
+elyra = "elyra"

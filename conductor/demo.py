@@ -1,56 +1,54 @@
 #!/usr/bin/env python3
 """
-Elyra Phase 0 MVP Demo Script
+Elyra Migration Demo (Phase A — Manager-based)
 
-Runs the Conductor on a hardcoded test URL to verify end-to-end functionality.
+Runs the MigrationManager on a hardcoded test URL to verify end-to-end
+functionality.
 
 Usage:
     python conductor/demo.py [url]
 
 Example:
     python conductor/demo.py https://example.wixsite.com
+
+The legacy `Conductor` class was removed in Phase A; the demo now
+goes through MigrationManager, which is the live Room-based pipeline.
 """
 
 import sys
-import json
-from conductor.orchestrator import Conductor
-from conductor.trace import Trace
+from pathlib import Path
+
+if str(Path(__file__).resolve().parents[1]) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from conductor.orchestrator import MigrationManager
 
 
 def run_demo(url: str = "https://example.wixsite.com"):
     print("=" * 60)
-    print("ELYRA PHASE 0 MVP DEMO")
+    print("ELYRA MANAGER DEMO")
     print("=" * 60)
     print(f"\nTarget URL: {url}\n")
 
-    conductor = Conductor()
+    manager = MigrationManager()
 
     task_context = {
         "url": url,
         "platform": "wix",
         "task_type": "portfolio",
         "stack_preference": "modernize",
-        "must_haves": ["home", "about", "portfolio", "contact"]
+        "must_haves": ["home", "about", "portfolio", "contact"],
     }
 
     print("Starting migration...\n")
-    result = conductor.run(task_context)
+    result = manager.run(task_context)
 
-    print(result.trace.summary())
-
-    print("\n--- Migration Result ---")
-    print(f"Success: {result.success}")
-    print(f"Phase Reached: {result.phase_reached}")
-    print(f"Stack Chosen: {result.stack_chosen}")
-    print(f"Routing: {' -> '.join(result.routing_sequence)}")
-    if result.deploy_url:
-        print(f"Staging URL: {result.deploy_url}")
-    print(f"Errors: {len(result.errors)}")
-
-    if result.errors:
-        print("\nErrors:")
-        for err in result.errors:
-            print(f"  - [{err.get('step', 'unknown')}] {err.get('error', 'Unknown error')}")
+    print(f"\n--- Migration Result ---")
+    print(f"Success: {result.get('success')}")
+    print(f"Phase Reached: {result.get('phase_reached')}")
+    print(f"Site slug: {result.get('site_slug')}")
+    gaps = result.get("gaps", [])
+    print(f"Gaps logged: {len(gaps)}")
 
     return result
 

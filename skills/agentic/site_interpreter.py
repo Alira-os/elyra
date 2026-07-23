@@ -1,15 +1,16 @@
 """
-site_interpreter — Phase 1 Agentic Scraper (Kilo Code)
+site_interpreter — LEGACY dual-pass agentic scraper (Phase 1).
 
-Thin glue that wires:
-- scraper_specialist persona (markdown charter)
-- Raw MCP artifacts (Playwright + Fetch)
-- Kilo Code LLM reasoning
-- Pydantic validation
-- JSON output / memory persistence
+Phase 2 replaced this with a single-pass file-writing scraper
+(`skills/agentic/scraper_agent.py`). The recon agent now writes its
+findings to a directory under `memory/site_understandings/<site_id>/`
+during its loop; the slim SiteUnderstanding is built from that
+directory via `SiteUnderstanding.from_directory()`.
 
-Python is ONLY glue. All intelligence lives in the LLM guided by the persona.
-No imperative parsing, no DOM manipulation — only MCP orchestration + validation.
+This module is kept only for `save_site_understanding()` (called by
+scrape.py for the legacy dual-pass output path) and the standalone
+`__main__` smoke test. The dual-pass `interpret_site()` flow is
+deprecated; downstream code should use `scraper_agent.scrape()`.
 """
 
 import json
@@ -139,7 +140,7 @@ def invoke_kilo_llm(prompt: str, timeout: int = 180) -> Optional[str]:
     Returns raw JSON string from Kilo response, or None on failure.
     """
     try:
-        from tools.kilo import invoke_kilo
+        from tools.execution import invoke_kilo
 
         result = invoke_kilo(
             prompt=prompt,

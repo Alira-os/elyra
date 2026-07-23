@@ -62,6 +62,9 @@ def build_frontend_prompt(
     deploy_spec: Optional[DeploySpec] = None,
     *,
     gap_context: Optional[str] = None,
+    output_root: str = "C:/Users/micha/DevProjects",
+    stitch_project_id: Optional[str] = None,
+    stitch_project_url: Optional[str] = None,
 ) -> str:
     """Build the frontend architect's prompt — the convergence point.
 
@@ -115,6 +118,19 @@ def build_frontend_prompt(
 Apply these changes first. Re-run your local build verification before reporting complete.
 """
 
+    stitch_section = ""
+    if stitch_project_id:
+        stitch_section = f"""
+
+## Design Reference (Stitch)
+This site has a Stitch design project: `{stitch_project_id}` ({stitch_project_url or "url unavailable"}).
+Use the Stitch MCP (`stitch.listScreens`, `stitch.getScreen`) to fetch the screens
+the ui_designer created. Treat those screens as the design reference for layout,
+component choices, and spacing. Apply the BrandSpec tokens (colors, fonts,
+spacing) on top of the Stitch layouts — Stitch is the *layout* reference,
+BrandSpec is the *token* contract.
+"""
+
     return f"""{persona}
 
 ## Task
@@ -153,15 +169,15 @@ _Full upstream JSON is available at `memory/site_understandings/`, `memory/site_
 Output ONLY a single valid JSON object matching the `BuildManifest` schema below.
 - No markdown fences. No prose. No commentary. No code samples in the response.
 - All schema fields are optional with defaults — populate only what you have evidence for.
-- At minimum, set `output_dir` (e.g. `"sites/{site_slug}/"`), `build_timestamp` (ISO-8601), `personas_used` (include `"frontend_architect"`), and `overall_quality_score` (0-100).
+- At minimum, set `output_dir` (e.g. `"{output_root}/{site_slug}/"`), `build_timestamp` (ISO-8601), `personas_used` (include `"frontend_architect"`), and `overall_quality_score` (0-100).
 - The orchestrator will run your JSON through Pydantic. Anything outside the JSON object is dropped.
 
-Code-writing is a SIDE EFFECT: use your file tools to write actual files under `sites/{site_slug}/`, but your response itself is the BuildManifest JSON describing what you did.
+Code-writing is a SIDE EFFECT: use your file tools to write actual files under `{output_root}/{site_slug}/`, but your response itself is the BuildManifest JSON describing what you did.
 
 Minimal required-shape example (not exhaustive):
 ```json
 {{
-  "output_dir": "sites/{site_slug}/",
+  "output_dir": "{output_root}/{site_slug}/",
   "build_timestamp": "2026-06-08T18:16:46-04:00",
   "personas_used": ["frontend_architect"],
   "overall_quality_score": 0,
@@ -185,12 +201,14 @@ Minimal required-shape example (not exhaustive):
 {schema_json}
 
 ## Code Output (side effect, not your response)
-Write all generated files to the directory: `sites/{site_slug}/`
+Write all generated files to the directory: `{output_root}/{site_slug}/`
 Key files to generate (per the architecture's `target_stack`):
 - pages for each route in the architecture
 - global styles + tokens from brand_spec
 - per-component files
 - package.json + framework config
+
+{stitch_section}
 
 Begin building now."""
 
@@ -207,6 +225,9 @@ def design_frontend(
     *,
     migration_id: str = "",
     gap_context: Optional[str] = None,
+    output_root: str = "C:/Users/micha/DevProjects",
+    stitch_project_id: Optional[str] = None,
+    stitch_project_url: Optional[str] = None,
 ) -> tuple[Optional[BuildManifest], str]:
     """Build the site. Returns (BuildManifest, site_slug).
 
@@ -221,6 +242,9 @@ def design_frontend(
         api_contracts=api_contracts,
         deploy_spec=deploy_spec,
         gap_context=gap_context,
+        output_root=output_root,
+        stitch_project_id=stitch_project_id,
+        stitch_project_url=stitch_project_url,
     )
 
     # Frontend architect is the heaviest prompt (everything converges
@@ -254,9 +278,9 @@ def design_frontend(
         )
         return None, site_slug
 
-    # Default the output_dir to sites/<slug>/ if the LLM didn't specify.
+    # Default the output_dir to {output_root}/{site_slug}/ if the LLM didn't specify.
     if not getattr(manifest, "output_dir", None):
-        manifest.output_dir = f"sites/{site_slug}/"
+        manifest.output_dir = f"{output_root.rstrip('/')}/{site_slug}/"
 
     return manifest, site_slug
 

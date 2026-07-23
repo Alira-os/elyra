@@ -60,24 +60,64 @@ Any gap may now carry an explicit `target_persona` field. The Manager persona ex
 - `consecutive_gate_failures[gate] >= SAME_GATE_FAIL_LIMIT (3)` → GitHub issue
 - High-severity gap with no `target_persona` → abort + GitHub issue
 
-### Routing Decision Protocol (NEW)
+### Routing Decision Protocol (Phase C — Manager-Driven)
 
-You are the Migration Manager. Your sole responsibility in this step is to decide the next action and return a single `ManagerDecision` JSON object.
+You are the Migration Manager. The Manager persona is the **single
+routing brain** for the Planning Room. There is no separate procedural
+preflight — your decisions drive every persona invocation in planning.
 
-**Rules:**
-1. You may route backward to **ANY** persona if a gap indicates missing information from that persona — look for `target_persona` in the gaps list.
-2. You may only invoke the next forward persona if all required artifacts for that persona are present in the `artifacts` map.
-3. If the same issue has occurred on 3+ consecutive iterations of the same persona, or the same quality gate has failed 3 times in a row, you **must** choose `create_github_issue`.
-4. You must never bypass the safety rails (max retries, same-gate limit). Python will reject an invalid decision.
+**First turn:** Given `PLANNING_ROOM.preflight_order` and an empty
+`artifacts` map, return `action=invoke_persona,
+persona=<first in preflight_order>`. The orchestrator seeds the
+`preflight_order` field for you on turn 1; do not invent a different
+persona unless `preflight_order` is missing.
+
+**Subsequent turns:** Examine `artifacts`, `gaps`, and the latest
+`planning_gate_report`. If `planning_gate_report.blocking` is non-empty,
+pick a persona to re-invoke — `planning_gate_report.suggested_route_back`
+is a hint, not a command. Each block has:
+```json
+{
+  "persona": "<which persona must fix this>",
+  "reason": "<human-readable description>",
+  "gap_id": "<optional correlation to gap ledger>",
+  "severity": "high|medium|low"
+}
+```
+When all four planning artifacts are present AND the gate has passed
+AND the Forge Room has emitted its build outputs, return
+`action=complete`. Otherwise return `action=invoke_persona` for the next
+forward persona, or `action=route_back` to re-invoke the persona you
+suspect produced the failing artifact.
+
+**Rules (unchanged from earlier phases):**
+1. You may route backward to **ANY** persona if a gap or gate block
+   indicates missing information from that persona.
+2. If the same issue has occurred on 3+ consecutive iterations of the
+   same persona, or the same quality gate has failed 3 times in a row,
+   you **must** choose `github_issue_created`.
+3. You must never bypass the safety rails (max retries, same-gate
+   limit). Python will reject an invalid decision.
 
 **Example Decision (route back to Scraper from Architect):**
 ```json
 {
   "action": "route_back",
-  "persona": "scraper",
+  "persona": "scraper_specialist",
   "reason": "Architect requires full faculty bios which are missing from SiteUnderstanding",
   "gap_context": "• Faculty bios absent — Scrape /team page with selector '.faculty-card'",
   "confidence": 0.92
+}
+```
+
+**Example Decision (gate-driven route_back to architect after low fidelity):**
+```json
+{
+  "action": "route_back",
+  "persona": "architect_specialist",
+  "reason": "Planning Coherence Gate blocked: fidelity_score=0.55 below 0.7 — re-run architect with stronger grounding",
+  "gap_context": "• Re-derive SiteArchitecture from SiteUnderstanding + boost reasoning_trace evidence",
+  "confidence": 0.88
 }
 ```
 
@@ -192,15 +232,60 @@ If a persona fails, the Conductor decides whether to:
 
 ---
 
+## Discoverability Specialists (Phase E)
+
+The Planning Room now includes `seo_specialist` and `geo_specialist`
+between marketing and UI. Recommended order:
+
+```
+marketing_specialist → seo_specialist → geo_specialist → ui_designer
+```
+
+The Manager may invoke them on first turn per preflight, on later
+turns via `route_back`, or skip them if upstream artifacts already
+cover the ground. Both emit typed strategy artifacts (`SeoStrategy`,
+`GeoStrategy`) that `ui_designer` reads before producing visual
+direction. The HandoffBundle carries both IDs (`seo_strategy_id`,
+`geo_strategy_id`).
+
+In the Forge, `geo_specialist` runs again — same persona, different
+prompt_mode — to produce the actual GEO files (`llms.txt`,
+`robots.txt` AI stanza, `sitemap.xml` extras, JSON-LD blocks). The
+Manager slots it after `frontend_architect` (so page templates exist)
+and before `integration_coordinator` (so the steward can verify
+everything together).
+
+Post-build, `build_quality_gate` runs four additional polish checks
+folded into `_run_quality_gates` via `_run_polish_checks(site_dir)`:
+
+1. `llms.txt` present at `sites/<slug>/llms.txt` and non-empty
+2. `meta_description` count >= `SeoStrategy.target_routes` count
+3. `GeoBuildArtifacts.ai_crawler_allowlist` covers all 11
+   `MigrationManager.LOCKED_AI_CRAWLERS` entries (canonical list in
+   `docs/GEO_FOR_LLMS.md`)
+4. At least one JSON-LD block parses (sample one route from
+   `json_ld_blocks_by_route`)
+
+Failures route_back to `geo_specialist` or `frontend_architect` via
+the existing gap machinery (the polish check sets `target_persona` on
+the gap dict).
+
+---
+
 ## State Transitions
 
 ```
-ONBOARDING → ROUTING → SCRAPING → ARCHITECT → MARKETING → DESIGNER → BUILD → QUALITY_GATE → DEPLOY → APPROVAL → COMPLETE
-                                    ↓              ↓              ↓              ↓
-                                (retry)        (fallback)    (fallback)    (block/abort)
-                                    ↓              ↓              ↓              ↓
-                                  ...            ...            ...          GAP_LEDGER
+ONBOARDING → ROUTING → SCRAPING → ARCHITECT → MARKETING → SEO → GEO → DESIGNER → BUILD → DEVOPS → DATA → BACKEND → FRONTEND → GEO (forge) → COORDINATOR → QUALITY_GATE → DEPLOY → APPROVAL → COMPLETE
+                                    ↓              ↓         ↓      ↓           ↓         ↓         ↓         ↓          ↓                ↓              ↓              ↓
+                                (retry)        (fallback)(fallbk)(fallback)(retry)   (fallback)(fallback)(fallback)(route_back)   (route_back)   (block/abort)  (block/abort)
+                                    ↓              ↓         ↓      ↓           ↓         ↓         ↓         ↓          ↓                ↓              ↓              ↓
+                                  ...            ...       ...    ...         ...       ...       ...       ...        GAP_LEDGER      GAP_LEDGER    GAP_LEDGER      GAP_LEDGER
 ```
+
+Phase E additions: `SEO` and `GEO` (planning) sit between
+`MARKETING` and `DESIGNER`. The Forge gains a second `GEO` (forge)
+slot between `FRONTEND` and `COORDINATOR` — same persona, different
+prompt_mode.
 
 **Checkpoint:** After each phase completion, the Conductor checkpoints state to memory. On crash, it can resume from last checkpoint.
 

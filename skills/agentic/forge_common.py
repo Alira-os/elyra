@@ -39,7 +39,7 @@ from skills.agentic.prompt_budget import (  # noqa: E402
     compact_visual_direction,
     compact_content_recommendation,
 )
-from tools.kilo import invoke_kilo_safe  # noqa: E402
+from tools.execution import invoke_kilo_safe  # noqa: E402
 
 
 # In-memory artifact dirs for the 4 typed Forge artifacts.

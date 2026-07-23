@@ -49,6 +49,72 @@ def _abort_decision(reason: str, raw_preview: str = "") -> ManagerDecision:
     )
 
 
+# Phase B: action normalizer. The LLM occasionally emits actions with
+# leading/trailing whitespace or unusual capitalization (e.g. "Invoke
+# persona" or "ROUTE_BACK"). Before the existing repair map lookup,
+# normalize to a canonical form so these harmless slips don't abort the
+# manager loop. The repair map itself is unchanged; this just makes the
+# lookup more forgiving.
+_VALID_ACTIONS = frozenset({
+    "invoke_persona", "route_back", "complete",
+    "github_issue_created", "abort",
+})
+
+_REPAIR_MAP = {
+    "create_github_issue": "github_issue_created",
+    "github_issue": "github_issue_created",
+    "retry": "invoke_persona",
+    "loop": "invoke_persona",
+    "continue": "complete",
+    "done": "complete",
+    "finish": "complete",
+    "stop": "abort",
+    "fail": "abort",
+}
+
+
+def _normalize_action(raw: str) -> str:
+    """Normalize a manager-decision `action` string to a canonical form.
+
+    Pipeline:
+      1. Strip whitespace.
+      2. Lower-case.
+      3. If the result is a valid action, return it.
+      4. Else if the value is multi-word (e.g. "Invoke persona"),
+         try to map the first token through the repair map. The
+         most common LLM slip is "Invoke persona" → "invoke_persona"
+         and "Create GitHub issue" → "github_issue_created".
+      5. Else consult the repair map for single-word synonyms.
+      6. Else return the normalized string unchanged so Pydantic
+         validation produces a precise abort.
+    """
+    if not isinstance(raw, str):
+        return raw
+    n = raw.strip().lower()
+    if n in _VALID_ACTIONS:
+        return n
+    # Multi-word: "Invoke persona" / "Create GitHub issue" / "Route back".
+    # The LLM sometimes emits the action as natural language rather
+    # than snake_case. Map the first word (and "github" + "issue"
+    # combo) into the canonical enum value.
+    if " " in n:
+        first = n.split()[0]
+        if first in _REPAIR_MAP:
+            return _REPAIR_MAP[first]
+        # "create github issue" / "open github issue" / "file github issue"
+        if first in {"create", "open", "file", "new", "make"} and "github" in n:
+            return "github_issue_created"
+        # "send back" / "route back" / "go back" → "route_back"
+        if first in {"send", "route", "go", "bounce"} and "back" in n:
+            return "route_back"
+        # "run persona" / "invoke persona" / "call persona" → "invoke_persona"
+        if first in {"run", "invoke", "call", "use", "try", "do", "re", "reinvoke"}:
+            return "invoke_persona"
+    if n in _REPAIR_MAP:
+        return _REPAIR_MAP[n]
+    return n
+
+
 def validate_and_repair_manager_decision(
     raw_text: Any,
     *,
@@ -127,30 +193,22 @@ def validate_and_repair_manager_decision(
         return ManagerDecision.model_validate(data)
     except Exception as e:
         # Validation failed. Try one targeted repair: if the dict has
-        # an `action` that's not in the Literal enum, coerce the most
-        # likely intended action and re-validate. Common LLM slips:
+        # an `action` that's not in the Literal enum, normalize it
+        # (Phase B: strip whitespace + lower-case) and consult the
+        # repair map for common LLM slips:
         #   "create_github_issue" → "github_issue_created"
         #   "retry", "loop" → "invoke_persona" (default)
+        #   "Invoke persona"     → "invoke_persona" (Phase B)
+        #   "ROUTE_BACK"         → "route_back"     (Phase B)
         action = data.get("action")
-        if isinstance(action, str) and action not in (
-            "invoke_persona", "route_back", "complete",
-            "github_issue_created", "abort",
-        ):
-            repair_map = {
-                "create_github_issue": "github_issue_created",
-                "github_issue": "github_issue_created",
-                "retry": "invoke_persona",
-                "loop": "invoke_persona",
-                "continue": "complete",
-                "done": "complete",
-                "finish": "complete",
-                "stop": "abort",
-                "fail": "abort",
-            }
-            repaired_action = repair_map.get(action.lower())
-            if repaired_action:
+        if isinstance(action, str):
+            normalized = _normalize_action(action)
+            if normalized and normalized != action and normalized in {
+                "invoke_persona", "route_back", "complete",
+                "github_issue_created", "abort",
+            }:
                 repaired = dict(data)
-                repaired["action"] = repaired_action
+                repaired["action"] = normalized
                 try:
                     return ManagerDecision.model_validate(repaired)
                 except Exception:
